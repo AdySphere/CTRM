@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTRM Platform — Deal Management v1.0</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══════════════════════════════ SIDEBAR ══════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-wordmark">
+        <div class="logo-icon">C</div>
+        <div class="logo-text">CTRM Platform</div>
+      </div>
+      <div class="logo-version">D365 BC · Phase I MVP</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Deal Management</div>
+      <div class="nav-item active" data-page="deals" onclick="navigate('deals',this)">
+        <span class="nav-icon">⟳</span> Deal List <span class="nav-badge">3</span>
+      </div>
+      <div class="nav-item" data-page="new-deal" onclick="initNewDeal()">
+        <span class="nav-icon">＋</span> New Deal
+      </div>
+      <div class="nav-section-label">Procurement</div>
+      <div class="nav-item" data-page="rfq" onclick="navigate('rfq',this)">
+        <span class="nav-icon">◈</span> RFQ Management <span class="nav-badge">1</span>
+      </div>
+      <div class="nav-section-label">Pricing & Risk</div>
+      <div class="nav-item" data-page="penalties" onclick="navigate('penalties',this)">
+        <span class="nav-icon">△</span> Penalty Engine
+      </div>
+      <div class="nav-section-label">Setup</div>
+      <div class="nav-item" onclick="toast('Setup','Commodity Master — coming next sprint','info')">
+        <span class="nav-icon">◻</span> Commodity Master
+      </div>
+      <div class="nav-item" onclick="toast('Setup','Pricing Templates — coming next sprint','info')">
+        <span class="nav-icon">◆</span> Pricing Templates
+      </div>
+      <div class="nav-item" onclick="toast('Setup','Adjustment Codes — coming next sprint','info')">
+        <span class="nav-icon">≡</span> Adjustment Codes
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar">AM</div>
+        <div class="user-info">
+          <div class="user-name">Adyasha Mallick</div>
+          <div class="user-role">Solution Architect</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════ MAIN ═════════════════════════════════ -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-breadcrumb">
+        <span class="bc-item">CTRM</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-item">Deal Management</span>
+        <span class="bc-sep">›</span>
+        <span class="bc-current" id="bc-current">Deal List</span>
+      </div>
+      <div class="topbar-actions">
+        <span class="topbar-pill pill-d365">D365 BC Connected</span>
+        <span class="topbar-pill pill-phase">Phase I MVP</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ══════════════════ PAGE: DEAL LIST ══════════════════ -->
+      <div class="page active" id="page-deals">
+        <div class="page-header">
+          <div class="page-header-left">
+            <div class="page-title">Deal Management</div>
+            <div class="page-subtitle">All commodity deals · Multi-vendor · Full lifecycle</div>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-secondary" onclick="toast('Export','Deal list exported to Excel','success')">Export</button>
+            <button class="btn btn-primary" onclick="initNewDeal()">＋ New Deal</button>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-chip"><div class="stat-chip-label">Total Deals</div><div class="stat-chip-value">3</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">In Execution</div><div class="stat-chip-value text-accent">1</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Confirmed</div><div class="stat-chip-value text-green">1</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Draft</div><div class="stat-chip-value text-muted">1</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Open RFQs</div><div class="stat-chip-value text-accent2">1</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All Deals</div>
+            <div class="card-subtitle">Click row to open detail</div>
+          </div>
+          <div class="card-body-flush">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Deal No.</th><th>Commodity</th><th>Type</th><th>Target Qty</th>
+                  <th>Customer</th><th>Status</th><th>Est. Margin</th><th>Desk</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="deal-list-body">
+                <tr><td colspan="9" class="table-empty">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════ PAGE: NEW DEAL WIZARD ══════════════════ -->
+      <div class="page" id="page-new-deal">
+        <div class="page-header">
+          <div class="page-header-left">
+            <div class="page-title">New Deal</div>
+            <div class="page-subtitle">4-step wizard · DRAFT until confirmed</div>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-ghost" onclick="navigate('deals')">← Cancel</button>
+          </div>
+        </div>
+
+        <!-- Step bar -->
+        <div class="step-bar mb-16" style="max-width:600px">
+          <div class="step-item active" id="wstep-item-1">
+            <div class="step-node" id="wstep-1">1</div>
+            <div class="step-label">General</div>
+          </div>
+          <div class="step-item future" id="wstep-item-2">
+            <div class="step-node" id="wstep-2">2</div>
+            <div class="step-label">Sell Leg</div>
+          </div>
+          <div class="step-item future" id="wstep-item-3">
+            <div class="step-node" id="wstep-3">3</div>
+            <div class="step-label">Buy Legs</div>
+          </div>
+          <div class="step-item future" id="wstep-item-4">
+            <div class="step-node" id="wstep-4">4</div>
+            <div class="step-label">Review</div>
+          </div>
+        </div>
+
+        <!-- Step 1: General -->
+        <div id="ws-1">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Step 1 — General Information</div></div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="field">
+                  <div class="field-label">Deal Type <span class="required">*</span></div>
+                  <select class="field-select" onchange="onDealTypeChange(this.value)">
+                    <option value="">— Select Type —</option>
+                    <option value="BACK-TO-BACK">BACK-TO-BACK</option>
+                    <option value="OPEN-BUY">OPEN-BUY (no sell leg yet)</option>
+                    <option value="OPEN-SELL">OPEN-SELL (no buy leg yet)</option>
+                    <option value="CONSOLIDATION">CONSOLIDATION (multi-vendor → 1 customer)</option>
+                    <option value="SPLIT">SPLIT (1 vendor → multi-customer)</option>
+                    <option value="STRUCTURED">STRUCTURED</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <div class="field-label">Trading Desk <span class="required">*</span></div>
+                  <select class="field-select">
+                    <option>BASE-METALS</option><option>FERROUS</option><option>BULK</option>
+                    <option>AGRI</option><option>ENERGY</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <div class="field-label">Lead Trader <span class="required">*</span></div>
+                  <input type="text" class="field-input" value="Adyasha Mallick">
+                </div>
+                <div class="field">
+                  <div class="field-label">Secondary Trader</div>
+                  <input type="text" class="field-input" placeholder="Optional">
+                </div>
+                <div class="field">
+                  <div class="field-label">Source Enquiry No.</div>
+                  <input type="text" class="field-input" placeholder="ENQ-2026-XXXX">
+                </div>
+                <div class="field">
+                  <div class="field-label">Priority</div>
+                  <select class="field-select"><option>NORMAL</option><option>HIGH</option><option>URGENT</option></select>
+                </div>
+                <div class="field">
+                  <div class="field-label">Target Commodity <span class="required">*</span></div>
+                  <select class="field-select sel-commodity"></select>
+                </div>
+                <div class="field">
+                  <div class="field-label">Target Quantity (MT) <span class="required">*</span></div>
+                  <input type="number" class="field-input" placeholder="e.g. 500">
+                </div>
+                <div class="field">
+                  <div class="field-label">Shipment Window From</div>
+                  <input type="date" class="field-input">
+                </div>
+                <div class="field">
+                  <div class="field-label">Shipment Window To</div>
+                  <input type="date" class="field-input">
+                </div>
+                <div class="field col-span-2">
+                  <div class="field-label">Deal Description / Remarks</div>
+                  <textarea class="field-textarea" placeholder="Internal deal summary, any special conditions…"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Sell Leg -->
+        <div id="ws-2" class="hidden">
+          <div class="card">
+            <div class="leg-header">
+              <div class="leg-indicator leg-sell">S</div>
+              <div class="leg-title">Sell Leg — Customer Side</div>
+              <div class="leg-meta">One sell leg per deal (for splits, multiple SOs will be created in BC)</div>
+            </div>
+            <div class="fasttabs" style="padding:0 18px">
+              <div class="fasttab sell-leg-tab active" data-target="sl-customer">Customer & Contract</div>
+              <div class="fasttab sell-leg-tab" data-target="sl-commodity">Commodity & Qty</div>
+              <div class="fasttab sell-leg-tab" data-target="sl-pricing">Pricing</div>
+              <div class="fasttab sell-leg-tab" data-target="sl-payment">Payment Terms</div>
+              <div class="fasttab sell-leg-tab" data-target="sl-penalties">Sell-Side Penalties</div>
+            </div>
+            <!-- Customer -->
+            <div id="sl-customer" class="sell-tab-content active" style="padding:18px">
+              <div class="form-grid">
+                <div class="field"><div class="field-label">Customer <span class="required">*</span></div><select class="field-select sel-customer"></select></div>
+                <div class="field"><div class="field-label">BC Customer No.</div><div class="field-calc">— auto-synced —</div></div>
+                <div class="field"><div class="field-label">KYC Status</div><div class="field-calc text-green">APPROVED</div></div>
+                <div class="field"><div class="field-label">Credit Available (USD)</div><div class="field-calc">$5,000,000</div></div>
+                <div class="field"><div class="field-label">Incoterms <span class="required">*</span></div><select class="field-select"><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option></select></div>
+                <div class="field"><div class="field-label">Port of Delivery</div><input type="text" class="field-input" placeholder="e.g. Nhava Sheva, Mumbai"></div>
+              </div>
+            </div>
+            <!-- Commodity -->
+            <div id="sl-commodity" class="sell-tab-content hidden" style="padding:18px">
+              <div class="form-grid">
+                <div class="field col-span-2"><div class="field-label">Commodity <span class="required">*</span></div><select class="field-select sel-commodity"></select></div>
+                <div class="field"><div class="field-label">Grade / Specification <span class="required">*</span></div><input type="text" class="field-input" placeholder="Exact spec contracted with customer"></div>
+                <div class="field"><div class="field-label">Sell Quantity (MT) <span class="required">*</span></div><input type="number" class="field-input" placeholder=""></div>
+                <div class="field"><div class="field-label">Tolerance %</div><input type="number" class="field-input" placeholder="e.g. 5"></div>
+                <div class="field"><div class="field-label">Tolerance Type</div><select class="field-select"><option>MOLOO</option><option>MOLCHOPT</option><option>FIXED</option></select></div>
+                <div class="field"><div class="field-label">Weight Basis</div><select class="field-select"><option>SHIPPED-WEIGHT</option><option>OUTTURN-WEIGHT</option><option>DRAFT-SURVEY</option></select></div>
+                <div class="field"><div class="field-label">Shipment Window From <span class="required">*</span></div><input type="date" class="field-input"></div>
+                <div class="field"><div class="field-label">Shipment Window To <span class="required">*</span></div><input type="date" class="field-input"></div>
+              </div>
+            </div>
+            <!-- Pricing -->
+            <div id="sl-pricing" class="sell-tab-content hidden" style="padding:18px">
+              <div class="form-grid">
+                <div class="field col-span-2"><div class="field-label">Pricing Template <span class="required">*</span></div><select class="field-select sel-template"></select></div>
+                <div class="field"><div class="field-label">Price Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+                <div class="field"><div class="field-label">Invoice Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>INR</option></select></div>
+                <div class="field"><div class="field-label">Fixed Price (if FIXED template)</div><input type="number" class="field-input" placeholder="USD/MT"></div>
+                <div class="field"><div class="field-label">QP Period</div><select class="field-select"><option>— Use Template —</option><option>M (Month of BL)</option><option>M+1</option><option>Custom</option></select></div>
+                <div class="field"><div class="field-label">Provisional Price (calc.)</div><div class="field-calc">— awaiting market data —</div></div>
+                <div class="field"><div class="field-label">Provisional Total Value</div><div class="field-calc">—</div></div>
+              </div>
+            </div>
+            <!-- Payment -->
+            <div id="sl-payment" class="sell-tab-content hidden" style="padding:18px">
+              <div class="form-grid">
+                <div class="field"><div class="field-label">Payment Basis <span class="required">*</span></div><select class="field-select"><option>LC-SIGHT</option><option>TT-AGAINST-DOCS</option><option>OPEN-ACCOUNT</option><option>ADVANCE</option><option>CAD</option></select></div>
+                <div class="field"><div class="field-label">BC Payment Terms Code</div><select class="field-select"><option>NET30</option><option>NET60</option><option>NET90</option><option>CAD</option><option>IMMEDIATE</option></select></div>
+                <div class="field"><div class="field-label">LC Required</div><select class="field-select"><option>NO</option><option>YES</option></select></div>
+                <div class="field"><div class="field-label">Payment Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>INR</option></select></div>
+              </div>
+              <div class="divider-label mt-16">Payment Schedule</div>
+              <table class="line-table">
+                <thead><tr><th>#</th><th>%</th><th>Trigger</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+                <tbody id="sell-pay-body"><tr><td colspan="6" class="table-empty">No schedule lines</td></tr></tbody>
+              </table>
+              <div class="line-add-row"><button class="btn btn-ghost btn-sm" onclick="addPayLine('sell-pay-body')">+ Add Payment Line</button></div>
+            </div>
+            <!-- Sell Penalties -->
+            <div id="sl-penalties" class="sell-tab-content hidden" style="padding:18px">
+              <div class="banner banner-danger">
+                <span class="banner-icon">⚠</span>
+                <div><strong>Sell-side penalties</strong> — these are applied by your <strong>customer against you</strong> if you deliver off-spec, late, or short. OUTBOUND-PENALTY reduces your revenue. OUTBOUND-BONUS = you charge customer for over-spec delivery.</div>
+              </div>
+              <table class="line-table">
+                <thead><tr><th>#</th><th>Adj. Code</th><th>Calc Type</th><th>Element</th><th>Threshold</th><th>Rate</th><th>Direction</th><th>Status</th><th></th></tr></thead>
+                <tbody id="sell-pen-body"><tr><td colspan="9" class="table-empty">No penalty/bonus lines</td></tr></tbody>
+              </table>
+              <div class="line-add-row btn-row gap-8">
+                <button class="btn btn-ghost btn-sm" onclick="addPenLine('sell-pen-body','SELL')">+ Add Line</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Buy Legs -->
+        <div id="ws-3" class="hidden">
+          <div class="banner banner-info">
+            <span class="banner-icon">ℹ</span>
+            <div>
+              <strong>Multi-Vendor Buy Legs</strong> — Add as many buy legs as needed. Each leg is fully independent: different vendor, different commodity/grade, different pricing template, different payment terms, different penalty structure. Quantities do not need to match sell leg at this stage.
+            </div>
+          </div>
+          <div id="buy-legs-container"></div>
+          <div class="mt-16">
+            <button class="btn btn-secondary" onclick="addBuyLeg()">＋ Add Buy Leg</button>
+            <span class="text-dim fs-11" style="margin-left:12px">Each buy leg can go through RFQ → PO independently</span>
+          </div>
+        </div>
+
+        <!-- Step 4: Review -->
+        <div id="ws-4" class="hidden">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Step 4 — Review & Save as Draft</div></div>
+            <div class="card-body">
+              <div class="banner banner-success">
+                <span class="banner-icon">✓</span>
+                Deal is ready to save as DRAFT. After saving, use the Deal Detail page to confirm the deal, which will trigger contract reservation and D365 BC sync.
+              </div>
+              <div class="form-grid">
+                <div class="field"><div class="field-label">Deal No. (to be assigned)</div><div class="field-calc">DL-2026-XXXX</div></div>
+                <div class="field"><div class="field-label">Status on Save</div><div class="field-calc">DRAFT</div></div>
+                <div class="field"><div class="field-label">BC Integration</div><div class="field-calc">Pending Confirmation</div></div>
+                <div class="field"><div class="field-label">Approval Required</div><div class="field-calc">Auto-checked on save</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wizard nav -->
+        <div class="btn-row between mt-20">
+          <button class="btn btn-ghost hidden" id="w-prev" onclick="wPrev()">← Previous</button>
+          <div></div>
+          <div class="btn-row gap-8">
+            <button class="btn btn-secondary" id="w-next" onclick="wNext()">Next →</button>
+            <button class="btn btn-primary hidden" id="w-save" onclick="saveDeal()">Save as Draft</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════ PAGE: DEAL DETAIL ══════════════════ -->
+      <div class="page" id="page-deal-detail">
+        <div class="page-header">
+          <div class="page-header-left">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="page-title" id="dd-title">DL-2026-039</div>
+              <span id="dd-status"></span>
+              <span id="dd-commodity"></span>
+            </div>
+            <div class="page-subtitle">Deal Detail · Full lifecycle view</div>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-ghost" onclick="navigate('deals')">← Back</button>
+            <button class="btn btn-secondary" onclick="navigate('rfq')">View RFQs</button>
+            <button class="btn btn-primary" onclick="confirmDeal()">Confirm Deal →</button>
+          </div>
+        </div>
+        <div class="stat-row" id="dd-stats-row">
+          <div class="stat-chip"><div class="stat-chip-label">Type</div><div class="stat-chip-value fs-13" id="dd-type">—</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Target Qty</div><div class="stat-chip-value" id="dd-qty">—</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Buy Legs</div><div class="stat-chip-value text-accent3" id="dd-buy-legs">0</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Est. Margin</div><div class="stat-chip-value" id="dd-margin">—</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Desk</div><div class="stat-chip-value fs-13" id="dd-desk">—</div></div>
+          <div class="stat-chip"><div class="stat-chip-label">Trader</div><div class="stat-chip-value fs-13" id="dd-trader">—</div></div>
+        </div>
+        <div class="banner banner-info">
+          <span class="banner-icon">ℹ</span>
+          Full deal detail — sell leg, buy legs, RFQ history, pricing, penalties, and D365 BC integration status. Use "Confirm Deal" to lock terms and initiate BC sync.
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Deal Lifecycle</div></div>
+          <div class="card-body">
+            <div class="step-bar" style="max-width:700px">
+              <div class="step-item done"><div class="step-node">✓</div><div class="step-label">Enquiry</div></div>
+              <div class="step-item active"><div class="step-node">2</div><div class="step-label">Deal Creation</div></div>
+              <div class="step-item future"><div class="step-node">3</div><div class="step-label">RFQ / Onboarding</div></div>
+              <div class="step-item future"><div class="step-node">4</div><div class="step-label">PO / SO</div></div>
+              <div class="step-item future"><div class="step-node">5</div><div class="step-label">Shipment</div></div>
+              <div class="step-item future"><div class="step-node">6</div><div class="step-label">Pricing Final</div></div>
+              <div class="step-item future"><div class="step-node">7</div><div class="step-label">Invoice</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="two-col mt-16">
+          <div class="card">
+            <div class="leg-header"><div class="leg-indicator leg-sell">S</div><div class="leg-title">Sell Leg — Tata Metals Ltd</div><span class="badge badge-contracted">CONTRACTED</span></div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="field"><div class="field-label">Customer</div><div class="field-value">Tata Metals Ltd</div></div>
+                <div class="field"><div class="field-label">BC Customer No.</div><div class="field-value mono">C-001</div></div>
+                <div class="field"><div class="field-label">Quantity</div><div class="field-value mono">500 MT</div></div>
+                <div class="field"><div class="field-label">Pricing Template</div><div class="field-value mono text-accent">LME-CU-QP-M1</div></div>
+                <div class="field"><div class="field-label">Provisional Price</div><div class="field-value mono">$9,480/MT</div></div>
+                <div class="field"><div class="field-label">Provisional Value</div><div class="field-value mono text-green">$4,740,000</div></div>
+                <div class="field"><div class="field-label">BC Sales Order</div><div class="field-value mono text-accent2">SO-10042</div></div>
+                <div class="field"><div class="field-label">Payment Terms</div><div class="field-value">LC-SIGHT · NET30</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="leg-header"><div class="leg-indicator leg-buy">B</div><div class="leg-title">Buy Leg BL-01 — Glencore AG</div><span class="badge badge-contracted">CONTRACTED</span></div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="field"><div class="field-label">Vendor</div><div class="field-value">Glencore AG</div></div>
+                <div class="field"><div class="field-label">BC Vendor No.</div><div class="field-value mono">V-001</div></div>
+                <div class="field"><div class="field-label">Quantity</div><div class="field-value mono">500 MT</div></div>
+                <div class="field"><div class="field-label">Pricing Template</div><div class="field-value mono text-accent">LME-CU-QP-M1</div></div>
+                <div class="field"><div class="field-label">Provisional Price</div><div class="field-value mono">$9,360/MT</div></div>
+                <div class="field"><div class="field-label">Provisional Cost</div><div class="field-value mono text-accent2">$4,680,000</div></div>
+                <div class="field"><div class="field-label">BC Purchase Order</div><div class="field-value mono text-accent2">PO-20088</div></div>
+                <div class="field"><div class="field-label">Payment Terms</div><div class="field-value">LC-SIGHT · NET30</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════ PAGE: RFQ LIST ══════════════════ -->
+      <div class="page" id="page-rfq">
+        <div class="page-header">
+          <div class="page-header-left">
+            <div class="page-title">RFQ Management</div>
+            <div class="page-subtitle">PR → RFQ → Vendor Comparison → Buy Leg</div>
+          </div>
+          <div class="page-header-actions">
+            <button class="btn btn-primary" onclick="openModal('modal-new-rfq')">＋ New RFQ</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">All RFQs</div></div>
+          <div class="card-body-flush">
+            <table class="data-table">
+              <thead><tr><th>RFQ No.</th><th>Commodity</th><th>Target Qty</th><th>Deal No.</th><th>Vendors</th><th>Status</th><th>Deadline</th><th></th></tr></thead>
+              <tbody id="rfq-list-body"><tr><td colspan="8" class="table-empty">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════ PAGE: RFQ DETAIL ══════════════════ -->
+      <div class="page" id="page-rfq-detail">
+        <div class="page-header">
+          <div class="page-header-left">
+            <div id="rfq-detail-header"></div>
+          </div>
+        </div>
+        <div class="card mt-12">
+          <div class="card-header"><div class="card-title">Vendor Distribution</div><div class="card-action" onclick="openModal('modal-new-rfq')">+ Invite Vendor</div></div>
+          <div class="card-body-flush">
+            <table class="data-table">
+              <thead><tr><th>Vendor No.</th><th>Vendor Name</th><th>Status</th><th>Eval. Score</th><th></th></tr></thead>
+              <tbody id="rfq-vendor-dist"><tr><td colspan="5" class="table-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card mt-12">
+          <div class="card-header">
+            <div class="card-title">Vendor Responses</div>
+            <div class="card-action" onclick="toast('Import','Response import — coming next sprint','info')">Import Response</div>
+          </div>
+          <div class="card-body-flush">
+            <table class="data-table">
+              <thead><tr><th>Status</th><th>Vendor</th><th>Grade Offered</th><th>Qty</th><th>Price</th><th>Pricing Type</th><th>Incoterms</th><th>Payment</th><th>Score</th><th></th></tr></thead>
+              <tbody id="rfq-responses-body"><tr><td colspan="10" class="table-empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card mt-12">
+          <div class="card-header"><div class="card-title">Bid Comparison Matrix</div><div class="card-subtitle">Best values highlighted in green</div></div>
+          <div class="card-body" id="rfq-compare-grid"></div>
+        </div>
+        <div class="mt-16">
+          <button class="btn btn-ghost" onclick="navigate('rfq')">← Back to RFQ List</button>
+        </div>
+      </div>
+
+      <!-- ══════════════════ PAGE: PENALTY ENGINE ══════════════════ -->
+      <div class="page" id="page-penalties">
+        <div class="page-header">
+          <div class="page-header-left">
+            <div class="page-title">Penalty Engine</div>
+            <div class="page-subtitle">5 calculation types · Setup-based · Applicable to all commodity groups</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-chip" style="border-left:3px solid var(--accent)"><div class="stat-chip-label">FLAT-RATE</div><div class="stat-chip-value fs-13 text-accent">Type 1</div><div class="stat-chip-sub">Rate × Qty. Always applies.</div></div>
+          <div class="stat-chip" style="border-left:3px solid var(--accent2)"><div class="stat-chip-label">THRESHOLD-LINEAR</div><div class="stat-chip-value fs-13 text-accent2">Type 2</div><div class="stat-chip-sub">(Actual−Threshold) × Rate × Qty</div></div>
+          <div class="stat-chip" style="border-left:3px solid var(--purple)"><div class="stat-chip-label">TIERED</div><div class="stat-chip-value fs-13 text-purple">Type 3</div><div class="stat-chip-sub">Bracketed rates by severity</div></div>
+          <div class="stat-chip" style="border-left:3px solid var(--accent3)"><div class="stat-chip-label">FORMULA-REF</div><div class="stat-chip-value fs-13 text-accent3">Type 4</div><div class="stat-chip-sub">Parameterised expression</div></div>
+          <div class="stat-chip" style="border-left:3px solid var(--danger)"><div class="stat-chip-label">REJECTION</div><div class="stat-chip-value fs-13 text-danger">Type 5</div><div class="stat-chip-sub">Triggers rejection workflow</div></div>
+        </div>
+
+        <!-- Live calculator -->
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Live Penalty Calculator</div><div class="card-subtitle">Copper Concentrate example</div></div>
+            <div class="card-body">
+              <div class="form-grid mb-16">
+                <div class="field"><div class="field-label">Commodity</div><select class="field-select"><option>CU Concentrate</option><option>Steel Scrap HMS</option><option>Thermal Coal NAR5500</option></select></div>
+                <div class="field"><div class="field-label">Shipped Qty (wet MT)</div><input type="number" class="field-input" id="calc-wet-qty" value="500" oninput="calcPenalty()"></div>
+                <div class="field"><div class="field-label">Moisture % (actual)</div><input type="number" class="field-input" id="calc-moisture" value="9.2" step="0.1" oninput="calcPenalty()"></div>
+                <div class="field"><div class="field-label">Cu Assay % (actual)</div><input type="number" class="field-input" id="calc-assay" value="28.5" step="0.1" oninput="calcPenalty()"></div>
+                <div class="field"><div class="field-label">Pb % (actual)</div><input type="number" class="field-input" id="calc-pb" value="0.8" step="0.01" oninput="calcPenalty()"></div>
+                <div class="field"><div class="field-label">As % (actual)</div><input type="number" class="field-input" id="calc-as" value="0.05" step="0.01" oninput="calcPenalty()"></div>
+                <div class="field"><div class="field-label">LME Price (USD/MT)</div><input type="number" class="field-input" id="calc-lme" value="9420" oninput="calcPenalty()"></div>
+                <div class="field"><div class="field-label">TC (USD/dmt)</div><input type="number" class="field-input" id="calc-tc" value="180" oninput="calcPenalty()"></div>
+              </div>
+              <div id="calc-results" class="mt-8"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Adjustment Code Reference</div></div>
+            <div class="card-body-flush">
+              <table class="data-table">
+                <thead><tr><th>Code</th><th>Category</th><th>Calc Type</th><th>Default Rate</th><th>Sign</th></tr></thead>
+                <tbody>
+                  ${SEED && SEED.adjustmentCodes ? SEED.adjustmentCodes.map(a=>`
+                  <tr>
+                    <td class="mono fs-11 text-accent2">${a.code}</td>
+                    <td class="fs-11">${a.category}</td>
+                    <td><span class="calc-type-pill ct-${a.calcType.replace(/-/g,'').toLowerCase()}">${a.calcType}</span></td>
+                    <td class="mono fs-11">${a.default} <span class="text-dim">${a.unit}</span></td>
+                    <td class="mono fw-700 ${a.sign==='+'?'text-green':a.sign==='-'?'text-danger':'text-accent2'}">${a.sign}</td>
+                  </tr>`).join('') : ''}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════ MODALS ═══════════════════════════════ -->
+
+<!-- Tier Editor -->
+<div class="modal-overlay" id="modal-tier" onclick="closeModalOnBg(event,'modal-tier')">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">Tiered Penalty / Bonus Table</div>
+      <div class="modal-close" onclick="closeModal('modal-tier')">×</div>
+    </div>
+    <div class="modal-body">
+      <div class="banner banner-warn mb-16">
+        <span class="banner-icon">⚠</span>
+        Define penalty brackets. Last row should have REJECT action or unlimited upper bound. Tiers are evaluated cumulatively unless marked as marginal.
+      </div>
+      <table class="line-table">
+        <thead>
+          <tr><th>From %</th><th>To %</th><th>Rate (USD/MT per 1%)</th><th>Action</th><th>Note</th><th></th></tr>
+        </thead>
+        <tbody id="tier-modal-body"></tbody>
+      </table>
+      <div class="line-add-row"><button class="btn btn-ghost btn-sm" onclick="addTierRow()">+ Add Tier</button></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-tier')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTiers()">Save Tier Table</button>
+    </div>
+  </div>
+</div>
+
+<!-- RFQ Response Detail -->
+<div class="modal-overlay" id="modal-response-detail" onclick="closeModalOnBg(event,'modal-response-detail')">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title">Vendor Response Detail</div>
+      <div class="modal-close" onclick="closeModal('modal-response-detail')">×</div>
+    </div>
+    <div class="modal-body" id="response-detail-body"></div>
+  </div>
+</div>
+
+<!-- New RFQ -->
+<div class="modal-overlay" id="modal-new-rfq" onclick="closeModalOnBg(event,'modal-new-rfq')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">New RFQ</div>
+      <div class="modal-close" onclick="closeModal('modal-new-rfq')">×</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><div class="field-label">Linked Deal No. <span class="required">*</span></div><input type="text" class="field-input" placeholder="DL-2026-XXXX"></div>
+        <div class="field"><div class="field-label">Sourcing Type</div><select class="field-select"><option>COMPETITIVE-TENDER</option><option>DIRECTED</option><option>OPEN-MARKET</option><option>SPOT</option></select></div>
+        <div class="field"><div class="field-label">Target Commodity</div><select class="field-select sel-commodity"></select></div>
+        <div class="field"><div class="field-label">Indicative Grade</div><input type="text" class="field-input" placeholder="e.g. Grade A, HMS 80:20"></div>
+        <div class="field"><div class="field-label">Target Qty Min (MT)</div><input type="number" class="field-input"></div>
+        <div class="field"><div class="field-label">Target Qty Max (MT)</div><input type="number" class="field-input"></div>
+        <div class="field"><div class="field-label">Alternative Grades Accepted</div><select class="field-select"><option>YES</option><option>NO</option></select></div>
+        <div class="field"><div class="field-label">Response Deadline</div><input type="datetime-local" class="field-input"></div>
+        <div class="field col-span-2"><div class="field-label">Notes to Vendors</div><textarea class="field-textarea" placeholder="Specify any requirements, certifications, or terms…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-rfq')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-new-rfq');toast('RFQ Created','RFQ-2026-006 saved as DRAFT','success')">Create RFQ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Scripts -->
+<script>
+// Inline SEED reference needed before external scripts
+</script>
+<script src="js/core.js"></script>
+<script src="js/deal.js"></script>
+<script src="js/rfq.js"></script>
+<script>
+// ── SELL LEG TABS (inline init) ───────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.sell-leg-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.sell-leg-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.target;
+      document.querySelectorAll('.sell-tab-content').forEach(c => {
+        c.classList.toggle('active', c.id === target);
+        c.classList.toggle('hidden', c.id !== target);
+      });
+    });
+  });
+});
+
+// ── DEAL TYPE CHANGE ──────────────────────────────────────────
+function onDealTypeChange(val) {}
+
+// ── PENALTY CALCULATOR ────────────────────────────────────────
+function calcPenalty() {
+  const wetQty  = parseFloat(document.getElementById('calc-wet-qty')?.value) || 500;
+  const moisture= parseFloat(document.getElementById('calc-moisture')?.value) || 9.2;
+  const assay   = parseFloat(document.getElementById('calc-assay')?.value)   || 28.5;
+  const pb      = parseFloat(document.getElementById('calc-pb')?.value)      || 0.8;
+  const as_     = parseFloat(document.getElementById('calc-as')?.value)      || 0.05;
+  const lme     = parseFloat(document.getElementById('calc-lme')?.value)     || 9420;
+  const tc      = parseFloat(document.getElementById('calc-tc')?.value)      || 180;
+
+  const dryQty      = wetQty * (1 - moisture/100);
+  const payableGrade= assay - 1.0; // 1% deduction standard
+  const payableMetal= dryQty * payableGrade/100;
+  const baseValue   = payableMetal * lme;
+  const tcDeduction = dryQty * tc;
+
+  // Pb penalty: if Pb > 0.5% → $8/MT per 0.1% above
+  const pbPenalty   = pb > 0.5 ? Math.round(((pb - 0.5) / 0.1) * 8 * dryQty) : 0;
+  // As penalty: if As > 0.1% → $10/MT per 0.01%
+  const asPenalty   = as_ > 0.1 ? Math.round(((as_ - 0.1) / 0.01) * 10 * dryQty) : 0;
+  // Moisture penalty tiered: 8-10% = $2/MT/%, >10% = $4/MT/%, >12% = REJECT
+  let moisturePenalty = 0;
+  let moistureReject  = false;
+  if (moisture > 12) { moistureReject = true; }
+  else if (moisture > 10) { moisturePenalty = Math.round(((moisture-10)*4 + (10-8)*2) * wetQty); }
+  else if (moisture > 8)  { moisturePenalty = Math.round((moisture-8)*2 * wetQty); }
+
+  const totalDeductions = tcDeduction + pbPenalty + asPenalty + moisturePenalty;
+  const netPayable = baseValue - totalDeductions;
+
+  const res = document.getElementById('calc-results');
+  if (!res) return;
+  if (moistureReject) {
+    res.innerHTML = `<div class="banner banner-danger"><span class="banner-icon">✕</span><strong>CARGO REJECTION TRIGGERED</strong> — Moisture ${moisture}% exceeds 12% rejection limit. Cargo cannot be invoiced. Rejection workflow activated.</div>`;
+    return;
+  }
+  res.innerHTML = `
+    <table class="line-table">
+      <thead><tr><th>Component</th><th>Calc Type</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Dry Weight</td><td><span class="calc-type-pill ct-formularef">FORMULA</span></td><td class="mono text-green">${dryQty.toFixed(2)} dmt</td></tr>
+        <tr><td>Payable Metal</td><td><span class="calc-type-pill ct-formularef">FORMULA</span></td><td class="mono text-green">${payableMetal.toFixed(2)} MT Cu</td></tr>
+        <tr><td>Base Value (LME × Payable)</td><td><span class="calc-type-pill ct-formularef">FORMULA</span></td><td class="mono text-green">$${Math.round(baseValue).toLocaleString()}</td></tr>
+        <tr><td>TC Deduction (${tc} × ${dryQty.toFixed(1)} dmt)</td><td><span class="calc-type-pill ct-flat">FLAT-RATE</span></td><td class="mono text-danger">−$${Math.round(tcDeduction).toLocaleString()}</td></tr>
+        <tr><td>Pb Penalty (${pb}% actual, 0.5% threshold)</td><td><span class="calc-type-pill ct-threshold">THRESHOLD</span></td><td class="mono ${pbPenalty>0?'text-danger':'text-dim'}">${pbPenalty>0?'−$'+pbPenalty.toLocaleString():'No penalty'}</td></tr>
+        <tr><td>As Penalty (${as_}% actual, 0.1% threshold)</td><td><span class="calc-type-pill ct-threshold">THRESHOLD</span></td><td class="mono ${asPenalty>0?'text-danger':'text-dim'}">${asPenalty>0?'−$'+asPenalty.toLocaleString():'No penalty'}</td></tr>
+        <tr><td>Moisture Penalty (${moisture}%, tier table)</td><td><span class="calc-type-pill ct-tiered">TIERED</span></td><td class="mono ${moisturePenalty>0?'text-danger':'text-dim'}">${moisturePenalty>0?'−$'+moisturePenalty.toLocaleString():'No penalty'}</td></tr>
+      </tbody>
+      <tfoot>
+        <tr style="border-top:2px solid var(--border2)">
+          <td class="fw-700">NET PAYABLE VALUE</td><td></td>
+          <td class="mono fw-700 ${netPayable>0?'text-green':'text-danger'}" style="font-size:14px">$${Math.round(netPayable).toLocaleString()}</td>
+        </tr>
+      </tfoot>
+    </table>`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(calcPenalty, 200);
+});
+</script>
+</body>
+</html>
