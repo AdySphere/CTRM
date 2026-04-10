@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTRM Platform — Prototype v1.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d12;
+    --surface: #111520;
+    --surface2: #161c2d;
+    --border: #1e2a40;
+    --accent: #00d4aa;
+    --accent2: #f59e0b;
+    --accent3: #6366f1;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --green: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* LAYOUT */
+  .shell { display: flex; height: 100vh; overflow: hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+  .logo {
+    padding: 20px 20px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+  }
+  .logo-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  nav { flex: 1; padding: 12px 0; }
+  .nav-section { padding: 8px 16px 4px; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    position: relative;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active {
+    color: var(--accent);
+    background: rgba(0,212,170,0.06);
+    border-left-color: var(--accent);
+  }
+  .nav-icon { font-size: 15px; width: 18px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .version-tag { color: var(--accent2); }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* TOPBAR */
+  .topbar {
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .topbar-title { font-size: 16px; font-weight: 700; flex: 1; }
+  .topbar-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .pill-live { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .pill-mvp { background: rgba(99,102,241,0.15); color: var(--accent3); border: 1px solid rgba(99,102,241,0.3); }
+  .topbar-user {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent3), var(--accent));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; cursor: pointer;
+  }
+
+  /* CONTENT */
+  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* KPI STRIP */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi-card:hover { border-color: var(--accent); }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi-card.green::before { background: var(--green); }
+  .kpi-card.amber::before { background: var(--accent2); }
+  .kpi-card.blue::before { background: var(--accent3); }
+  .kpi-card.teal::before { background: var(--accent); }
+  .kpi-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 800; letter-spacing: -1px; }
+  .kpi-delta { font-family: 'JetBrains Mono', monospace; font-size: 11px; margin-top: 4px; }
+  .kpi-delta.up { color: var(--green); }
+  .kpi-delta.down { color: var(--danger); }
+  .kpi-delta.neutral { color: var(--muted); }
+
+  /* TWO-COL */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .three-col { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-title { font-size: 13px; font-weight: 700; flex: 1; }
+  .card-action {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+  .card-body { padding: 20px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(30,42,64,0.6); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  /* STATUS BADGES */
+  .badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .badge-confirmed { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+  .badge-quotation { background: rgba(245,158,11,0.12); color: var(--accent2); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-enquiry { background: rgba(99,102,241,0.12); color: var(--accent3); border: 1px solid rgba(99,102,241,0.25); }
+  .badge-shipped { background: rgba(0,212,170,0.12); color: var(--accent); border: 1px solid rgba(0,212,170,0.25); }
+  .badge-invoiced { background: rgba(100,116,139,0.12); color: var(--muted); border: 1px solid rgba(100,116,139,0.25); }
+
+  /* COMMODITY PILL */
+  .commodity {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 700;
+  }
+  .commodity-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-cu { background: #f97316; }
+  .dot-al { background: #94a3b8; }
+  .dot-zn { background: #22d3ee; }
+  .dot-ni { background: #a78bfa; }
+  .dot-pb { background: #4ade80; }
+
+  /* MTM CHART BARS */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 80px; padding: 0 4px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    transition: opacity 0.2s;
+    cursor: pointer;
+    min-height: 4px;
+  }
+  .bar:hover { opacity: 0.8; }
+  .bar-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); }
+
+  /* EXPOSURE RING */
+  .exposure-ring { display: flex; align-items: center; gap: 20px; }
+  .ring-svg { flex-shrink: 0; }
+  .ring-legend { display: flex; flex-direction: column; gap: 8px; }
+  .ring-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .ring-dot { width: 10px; height: 10px; border-radius: 2px; }
+  .ring-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-left: auto; padding-left: 12px; }
+
+  /* LIFECYCLE FLOW */
+  .lifecycle { display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 4px 0; }
+  .lc-step {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; min-width: 80px;
+  }
+  .lc-node {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    transition: all 0.2s;
+  }
+  .lc-node.done { background: rgba(34,197,94,0.15); border-color: var(--green); }
+  .lc-node.active { background: rgba(0,212,170,0.15); border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,170,0.3); }
+  .lc-node.future { opacity: 0.4; }
+  .lc-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); text-align: center; letter-spacing: 0.5px; }
+  .lc-connector { flex: 1; height: 2px; background: var(--border); min-width: 16px; margin-bottom: 22px; }
+  .lc-connector.done { background: var(--green); }
+
+  /* PRICING FORMULA */
+  .formula-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .formula-key { color: var(--accent); }
+  .formula-op { color: var(--accent2); }
+  .formula-val { color: var(--text); }
+  .formula-comment { color: var(--muted); }
+
+  /* RISK METER */
+  .risk-meter { display: flex; flex-direction: column; gap: 10px; }
+  .risk-row { display: flex; align-items: center; gap: 12px; }
+  .risk-name { font-size: 12px; width: 80px; flex-shrink: 0; }
+  .risk-bar-bg { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .risk-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .risk-pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: 36px; text-align: right; color: var(--muted); }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 560px;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .modal-title { font-size: 16px; font-weight: 800; flex: 1; }
+  .modal-close { cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; }
+  .modal-body { padding: 24px; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: span 2; }
+  label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 7px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-primary:hover { background: #00e8ba; transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 6px 14px; font-size: 11px; }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* TABS */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab {
+    padding: 10px 18px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer; color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* NOTIFICATION */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--green);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 200;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-icon { color: var(--green); font-size: 18px; }
+
+  /* SCROLL */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* PAGE SWITCH */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* INLINE ALERT */
+  .alert {
+    background: rgba(0,212,170,0.06);
+    border: 1px solid rgba(0,212,170,0.2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* MARKET DATA */
+  .market-ticker {
+    display: flex; gap: 0;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    margin-bottom: 20px;
+  }
+  .ticker-item {
+    padding: 12px 20px;
+    display: flex; flex-direction: column; gap: 3px;
+    border-right: 1px solid var(--border);
+    min-width: 120px;
+    flex-shrink: 0;
+  }
+  .ticker-item:last-child { border-right: none; }
+  .ticker-sym { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 1px; }
+  .ticker-price { font-size: 16px; font-weight: 800; }
+  .ticker-change { font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  .tick-up { color: var(--green); }
+  .tick-down { color: var(--danger); }
+
+  /* ALLOCATION TABLE */
+  .alloc-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .alloc-row:last-child { border-bottom: none; }
+  .alloc-header { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; background: var(--accent); }
+
+  /* ANIMATION */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .kpi-card { animation: fadeUp 0.4s ease both; }
+  .kpi-card:nth-child(1) { animation-delay: 0s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.06s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.12s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.18s; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">⬡ CTRM</div>
+      <div class="logo-sub">COMMODITY PLATFORM</div>
+    </div>
+    <nav>
+      <div class="nav-section">Core</div>
+      <div class="nav-item active" onclick="showPage('dashboard', this)">
+        <span class="nav-icon">◈</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('trades', this)">
+        <span class="nav-icon">⟳</span> Trade Lifecycle
+        <span class="nav-badge">12</span>
+      </div>
+      <div class="nav-item" onclick="showPage('contracts', this)">
+        <span class="nav-icon">◻</span> Contracts
+      </div>
+      <div class="nav-item" onclick="showPage('pricing', this)">
+        <span class="nav-icon">◆</span> Pricing Engine
+      </div>
+      <div class="nav-section">Risk & Ops</div>
+      <div class="nav-item" onclick="showPage('risk', this)">
+        <span class="nav-icon">△</span> Risk & MTM
+      </div>
+      <div class="nav-item" onclick="showPage('allocation', this)">
+        <span class="nav-icon">⊞</span> Allocation
+      </div>
+      <div class="nav-section">Integration</div>
+      <div class="nav-item" onclick="showPage('market', this)">
+        <span class="nav-icon">↯</span> Market Data
+      </div>
+      <div class="nav-item" onclick="showPage('reports', this)">
+        <span class="nav-icon">▣</span> Reports
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      v1.0 MVP · <span class="version-tag">Phase I</span><br>
+      Adyasha Mallick · 2026
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Risk Dashboard</div>
+      <div class="topbar-pill pill-live">● LIVE</div>
+      <div class="topbar-pill pill-mvp">MVP BUILD</div>
+      <div class="topbar-user">AM</div>
+    </div>
+
+    <div class="content">
+
+      <!-- =========== DASHBOARD =========== -->
+      <div class="page active" id="page-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card teal">
+            <div class="kpi-label">Active Deals</div>
+            <div class="kpi-value">47</div>
+            <div class="kpi-delta up">↑ 5 this week</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Total MTM</div>
+            <div class="kpi-value" style="color:var(--green)">+$2.4M</div>
+            <div class="kpi-delta up">↑ $340K today</div>
+          </div>
+          <div class="kpi-card amber">
+            <div class="kpi-label">Open Exposure</div>
+            <div class="kpi-value" style="color:var(--accent2)">8,200 MT</div>
+            <div class="kpi-delta neutral">→ Unpriced qty</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">Pending Invoices</div>
+            <div class="kpi-value" style="color:var(--accent3)">$6.1M</div>
+            <div class="kpi-delta down">↓ 3 overdue</div>
+          </div>
+        </div>
+
+        <div class="three-col">
+          <!-- RECENT TRADES -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recent Trades</div>
+              <div class="card-action" onclick="showPage('trades', document.querySelector('.nav-item:nth-child(4)'))">View all →</div>
+            </div>
+            <div class="card-body" style="padding:0">
+              <table>
+                <thead>
+                  <tr><th>Deal ID</th><th>Commodity</th><th>Qty</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="mono">DL-2026-041</td>
+                    <td><span class="commodity"><span class="commodity-dot dot-cu"></span>Copper</span></td>
+                    <td class="mono">500 MT</td>
+                    <td><span class="badge badge-confirmed">Confirmed</span></td>
+                  </tr>
+                  <tr>
+                    <td class="mono">DL-2026-040</td>
+                    <td><span class="commodity"><span class="commodity-dot dot-al"></span>Aluminium</span></td>
+                    <td class="mono">1,200 MT</td>
+                    <td><span class="badge badge-shipped">Shipped</span></td>
+                  </tr>
+                  <tr>
+                    <td class="mono">DL-2026-039</td>
+                    <td><span class="commodity"><span class="commodity-dot dot-zn"></span>Zinc</span></td>
+                    <td class="mono">300 MT</td>
+                    <td><span class="badge badge-quotation">Quotation</span></td>
+                  </tr>
+                  <tr>
+                    <td class="mono">DL-2026-038</td>
+                    <td><span class="commodity"><span class="commodity-dot dot-ni"></span>Nickel</span></td>
+                    <td class="mono">80 MT</td>
+                    <td><span class="badge badge-invoiced">Invoiced</span></td>
+                  </tr>
+                  <tr>
+                    <td class="mono">DL-2026-037</td>
+                    <td><span class="commodity"><span class="commodity-dot dot-pb"></span>Lead</span></td>
+                    <td class="mono">650 MT</td>
+                    <td><span class="badge badge-enquiry">Enquiry</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- EXPOSURE DONUT -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Commodity Exposure</div>
+            </div>
+            <div class="card-body">
+              <div class="exposure-ring">
+                <svg class="ring-svg" width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#1e2a40" stroke-width="16"/>
+                  <!-- Cu 38% -->
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#f97316" stroke-width="16"
+                    stroke-dasharray="90.7 148.7" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                  <!-- Al 27% -->
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#94a3b8" stroke-width="16"
+                    stroke-dasharray="64.4 175" stroke-dashoffset="-90.7" transform="rotate(-90 50 50)"/>
+                  <!-- Zn 18% -->
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#22d3ee" stroke-width="16"
+                    stroke-dasharray="42.9 196.5" stroke-dashoffset="-155.1" transform="rotate(-90 50 50)"/>
+                  <!-- Ni 10% -->
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#a78bfa" stroke-width="16"
+                    stroke-dasharray="23.9 215.5" stroke-dashoffset="-198" transform="rotate(-90 50 50)"/>
+                  <!-- Pb 7% -->
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#4ade80" stroke-width="16"
+                    stroke-dasharray="16.7 222.7" stroke-dashoffset="-221.9" transform="rotate(-90 50 50)"/>
+                  <text x="50" y="47" text-anchor="middle" font-family="Syne" font-size="13" font-weight="800" fill="#e2e8f0">8,200</text>
+                  <text x="50" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#64748b">MT OPEN</text>
+                </svg>
+                <div class="ring-legend">
+                  <div class="ring-item"><span class="ring-dot" style="background:#f97316"></span>Copper<span class="ring-val">38%</span></div>
+                  <div class="ring-item"><span class="ring-dot" style="background:#94a3b8"></span>Aluminium<span class="ring-val">27%</span></div>
+                  <div class="ring-item"><span class="ring-dot" style="background:#22d3ee"></span>Zinc<span class="ring-val">18%</span></div>
+                  <div class="ring-item"><span class="ring-dot" style="background:#a78bfa"></span>Nickel<span class="ring-val">10%</span></div>
+                  <div class="ring-item"><span class="ring-dot" style="background:#4ade80"></span>Lead<span class="ring-val">7%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MTM CHART -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">MTM Trend (7d)</div>
+            </div>
+            <div class="card-body">
+              <div class="bar-chart">
+                <div class="bar-wrap"><div class="bar" style="height:42%;background:var(--accent3)"></div><div class="bar-label">Mon</div></div>
+                <div class="bar-wrap"><div class="bar" style="height:55%;background:var(--accent3)"></div><div class="bar-label">Tue</div></div>
+                <div class="bar-wrap"><div class="bar" style="height:38%;background:var(--accent3)"></div><div class="bar-label">Wed</div></div>
+                <div class="bar-wrap"><div class="bar" style="height:70%;background:var(--accent3)"></div><div class="bar-label">Thu</div></div>
+                <div class="bar-wrap"><div class="bar" style="height:62%;background:var(--accent3)"></div><div class="bar-label">Fri</div></div>
+                <div class="bar-wrap"><div class="bar" style="height:88%;background:var(--accent)"></div><div class="bar-label">Sat</div></div>
+                <div class="bar-wrap"><div class="bar" style="height:95%;background:var(--accent)"></div><div class="bar-label">Today</div></div>
+              </div>
+              <div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">
+                Peak today: <span style="color:var(--green)">+$2.4M</span> &nbsp;·&nbsp; Prev week avg: <span style="color:var(--text)">$1.9M</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIFECYCLE STRIP -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Trade Lifecycle — DL-2026-041 (Copper, 500 MT)</div>
+            <span class="badge badge-confirmed">Active</span>
+          </div>
+          <div class="card-body">
+            <div class="lifecycle">
+              <div class="lc-step">
+                <div class="lc-node done">✓</div>
+                <div class="lc-label">ENQUIRY</div>
+              </div>
+              <div class="lc-connector done"></div>
+              <div class="lc-step">
+                <div class="lc-node done">✓</div>
+                <div class="lc-label">QUOTATION</div>
+              </div>
+              <div class="lc-connector done"></div>
+              <div class="lc-step">
+                <div class="lc-node done">✓</div>
+                <div class="lc-label">DEAL CONF.</div>
+              </div>
+              <div class="lc-connector done"></div>
+              <div class="lc-step">
+                <div class="lc-node done">✓</div>
+                <div class="lc-label">CONTRACT</div>
+              </div>
+              <div class="lc-connector done"></div>
+              <div class="lc-step">
+                <div class="lc-node active">⬡</div>
+                <div class="lc-label">SHIPMENT</div>
+              </div>
+              <div class="lc-connector"></div>
+              <div class="lc-step">
+                <div class="lc-node future">◇</div>
+                <div class="lc-label">PRICING</div>
+              </div>
+              <div class="lc-connector"></div>
+              <div class="lc-step">
+                <div class="lc-node future">◇</div>
+                <div class="lc-label">MTM/RISK</div>
+              </div>
+              <div class="lc-connector"></div>
+              <div class="lc-step">
+                <div class="lc-node future">◇</div>
+                <div class="lc-label">INVOICE</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========== TRADES =========== -->
+      <div class="page" id="page-trades">
+        <div class="alert">⬡ Trade Lifecycle Module — Manage deals from Enquiry through Invoicing. All state transitions are logged.</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+          <button class="btn btn-primary" onclick="openModal('modal-new-deal')">+ New Enquiry</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">All Deals</div>
+          </div>
+          <div style="padding:0">
+            <table>
+              <thead>
+                <tr><th>Deal ID</th><th>Commodity</th><th>Counterparty</th><th>Qty (MT)</th><th>Pricing Type</th><th>QP</th><th>Stage</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">DL-2026-041</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-cu"></span>Copper</span></td>
+                  <td>Tata Metals Ltd</td>
+                  <td class="mono">500</td>
+                  <td class="mono">QP Avg</td>
+                  <td class="mono">M+1</td>
+                  <td><span class="badge badge-shipped">Shipment</span></td>
+                  <td><button class="btn btn-ghost btn-sm" onclick="openModal('modal-deal-detail')">View</button></td>
+                </tr>
+                <tr>
+                  <td class="mono">DL-2026-040</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-al"></span>Aluminium</span></td>
+                  <td>JSW Steel</td>
+                  <td class="mono">1,200</td>
+                  <td class="mono">Fixed</td>
+                  <td class="mono">—</td>
+                  <td><span class="badge badge-confirmed">Confirmed</span></td>
+                  <td><button class="btn btn-ghost btn-sm">View</button></td>
+                </tr>
+                <tr>
+                  <td class="mono">DL-2026-039</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-zn"></span>Zinc</span></td>
+                  <td>Hindalco</td>
+                  <td class="mono">300</td>
+                  <td class="mono">QP Avg + Prem</td>
+                  <td class="mono">M</td>
+                  <td><span class="badge badge-quotation">Quotation</span></td>
+                  <td><button class="btn btn-ghost btn-sm">View</button></td>
+                </tr>
+                <tr>
+                  <td class="mono">DL-2026-038</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-ni"></span>Nickel</span></td>
+                  <td>Vedanta Ltd</td>
+                  <td class="mono">80</td>
+                  <td class="mono">Benchmark</td>
+                  <td class="mono">LME</td>
+                  <td><span class="badge badge-invoiced">Invoiced</span></td>
+                  <td><button class="btn btn-ghost btn-sm">View</button></td>
+                </tr>
+                <tr>
+                  <td class="mono">DL-2026-037</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-pb"></span>Lead</span></td>
+                  <td>Nyrstar Trading</td>
+                  <td class="mono">650</td>
+                  <td class="mono">Fixed</td>
+                  <td class="mono">—</td>
+                  <td><span class="badge badge-enquiry">Enquiry</span></td>
+                  <td><button class="btn btn-ghost btn-sm">View</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========== CONTRACTS =========== -->
+      <div class="page" id="page-contracts">
+        <div class="alert">⬡ Contract Management — Purchase & Sales contracts with lifecycle state tracking and rollover support.</div>
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab(this, 'ct-purchase')">Purchase Contracts</div>
+          <div class="tab" onclick="switchTab(this, 'ct-sales')">Sales Contracts</div>
+        </div>
+        <div id="ct-purchase">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+            <button class="btn btn-primary btn-sm" onclick="showToast('Purchase contract draft created')">+ New Purchase Contract</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr><th>Contract ID</th><th>Vendor</th><th>Commodity</th><th>Qty (MT)</th><th>Price</th><th>State</th><th>Due Date</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">PC-2026-018</td>
+                  <td>Glencore AG</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-cu"></span>Copper</span></td>
+                  <td class="mono">500</td>
+                  <td class="mono">QP M+1</td>
+                  <td><span class="badge badge-confirmed">Active</span></td>
+                  <td class="mono">2026-04-30</td>
+                </tr>
+                <tr>
+                  <td class="mono">PC-2026-017</td>
+                  <td>Novelis Inc</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-al"></span>Aluminium</span></td>
+                  <td class="mono">1,200</td>
+                  <td class="mono">$2,450/MT</td>
+                  <td><span class="badge badge-shipped">Shipped</span></td>
+                  <td class="mono">2026-04-15</td>
+                </tr>
+                <tr>
+                  <td class="mono">PC-2026-016</td>
+                  <td>Trafigura</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-zn"></span>Zinc</span></td>
+                  <td class="mono">300</td>
+                  <td class="mono">LME + $45</td>
+                  <td><span class="badge badge-enquiry">Draft</span></td>
+                  <td class="mono">2026-05-10</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div id="ct-sales" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+            <button class="btn btn-primary btn-sm" onclick="showToast('Sales contract draft created')">+ New Sales Contract</button>
+          </div>
+          <div class="card">
+            <table>
+              <thead>
+                <tr><th>Contract ID</th><th>Customer</th><th>Commodity</th><th>Qty (MT)</th><th>Price</th><th>State</th><th>Due Date</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">SC-2026-031</td>
+                  <td>Tata Metals Ltd</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-cu"></span>Copper</span></td>
+                  <td class="mono">500</td>
+                  <td class="mono">QP M+1 +$60</td>
+                  <td><span class="badge badge-shipped">Shipped</span></td>
+                  <td class="mono">2026-04-30</td>
+                </tr>
+                <tr>
+                  <td class="mono">SC-2026-030</td>
+                  <td>JSW Steel</td>
+                  <td><span class="commodity"><span class="commodity-dot dot-al"></span>Aluminium</span></td>
+                  <td class="mono">1,200</td>
+                  <td class="mono">$2,530/MT</td>
+                  <td><span class="badge badge-confirmed">Active</span></td>
+                  <td class="mono">2026-04-15</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========== PRICING ENGINE =========== -->
+      <div class="page" id="page-pricing">
+        <div class="alert">⬡ Pricing Engine — Supports QP Averaging, Fixed Price, Benchmark, and Custom formulas. ERP-agnostic computation.</div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Pricing Formula Builder</div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid" style="margin-bottom:16px">
+                <div class="form-group">
+                  <label>Pricing Type</label>
+                  <select id="pricing-type" onchange="updateFormula()">
+                    <option value="qp">QP Averaging (LME)</option>
+                    <option value="fixed">Fixed Price</option>
+                    <option value="benchmark">Benchmark (Oil/Agri)</option>
+                    <option value="quality">Quality Adjustment</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Commodity</label>
+                  <select>
+                    <option>Copper (Cu)</option>
+                    <option>Aluminium (Al)</option>
+                    <option>Zinc (Zn)</option>
+                    <option>Nickel (Ni)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Premium / Discount</label>
+                  <input type="number" value="60" placeholder="USD/MT">
+                </div>
+                <div class="form-group">
+                  <label>QP Period</label>
+                  <select>
+                    <option>Month of Shipment (M)</option>
+                    <option>Month After (M+1)</option>
+                    <option>Custom Window</option>
+                  </select>
+                </div>
+              </div>
+              <div class="formula-box" id="formula-display">
+                <span class="formula-comment">// QP Average Pricing Formula</span><br>
+                <span class="formula-key">FinalPrice</span> <span class="formula-op">=</span>
+                <span class="formula-val">avg(LME_Daily[QP_Start → QP_End])</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <span class="formula-op">+</span> <span class="formula-val">Premium</span>
+                <span class="formula-comment"> // $60/MT</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                <span class="formula-op">×</span> <span class="formula-val">Quantity</span>
+                <span class="formula-comment"> // 500 MT</span><br><br>
+                <span class="formula-comment">// QP: Month After Shipment (M+1)</span><br>
+                <span class="formula-comment">// Exchange: LME · Grade: Cu-A</span>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-ghost btn-sm">Validate Formula</button>
+                <button class="btn btn-primary btn-sm" onclick="showToast('Pricing formula saved to engine')">Save to Engine</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Live Pricing Calculation</div>
+              <div class="card-action" onclick="showToast('Pricing recalculated')">↻ Recalc</div>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:7px">
+                  <span style="font-size:12px;color:var(--muted)">LME Avg (QP M+1)</span>
+                  <span class="mono" style="color:var(--text)">$9,420 / MT</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:7px">
+                  <span style="font-size:12px;color:var(--muted)">Premium</span>
+                  <span class="mono" style="color:var(--accent)">+ $60 / MT</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:7px">
+                  <span style="font-size:12px;color:var(--muted)">Provisional Price</span>
+                  <span class="mono" style="color:var(--accent2)">$9,480 / MT</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:12px 14px;background:rgba(0,212,170,0.06);border:1px solid rgba(0,212,170,0.2);border-radius:7px">
+                  <span style="font-size:13px;font-weight:700;">Total Invoice Value</span>
+                  <span class="mono" style="font-size:15px;font-weight:800;color:var(--accent)">$4,740,000</span>
+                </div>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">
+                Status: <span style="color:var(--accent2)">PROVISIONAL</span> · QP closes Apr 30 · 12 days remaining
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========== RISK & MTM =========== -->
+      <div class="page" id="page-risk">
+        <div class="alert">⬡ Risk & MTM Engine — Real-time Mark-to-Market, exposure valuation, and hedge coverage tracking.</div>
+        <div class="kpi-grid">
+          <div class="kpi-card teal">
+            <div class="kpi-label">Total MTM</div>
+            <div class="kpi-value" style="color:var(--green)">+$2.4M</div>
+            <div class="kpi-delta up">↑ Favorable</div>
+          </div>
+          <div class="kpi-card amber">
+            <div class="kpi-label">Total Exposure</div>
+            <div class="kpi-value">8,200 MT</div>
+            <div class="kpi-delta neutral">→ Open</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Hedge Coverage</div>
+            <div class="kpi-value" style="color:var(--green)">68%</div>
+            <div class="kpi-delta up">↑ +5% this week</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">Unpriced Qty</div>
+            <div class="kpi-value" style="color:var(--accent2)">2,624 MT</div>
+            <div class="kpi-delta down">↓ At risk</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">MTM by Commodity</div></div>
+            <div class="card-body">
+              <div class="risk-meter">
+                <div class="risk-row">
+                  <div class="risk-name" style="color:var(--text)">Copper</div>
+                  <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:82%;background:#f97316"></div></div>
+                  <div class="risk-pct" style="color:var(--green)">+$1.1M</div>
+                </div>
+                <div class="risk-row">
+                  <div class="risk-name">Aluminium</div>
+                  <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:60%;background:#94a3b8"></div></div>
+                  <div class="risk-pct" style="color:var(--green)">+$780K</div>
+                </div>
+                <div class="risk-row">
+                  <div class="risk-name">Zinc</div>
+                  <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:38%;background:#22d3ee"></div></div>
+                  <div class="risk-pct" style="color:var(--green)">+$340K</div>
+                </div>
+                <div class="risk-row">
+                  <div class="risk-name">Nickel</div>
+                  <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:18%;background:#a78bfa"></div></div>
+                  <div class="risk-pct" style="color:var(--danger)">-$120K</div>
+                </div>
+                <div class="risk-row">
+                  <div class="risk-name">Lead</div>
+                  <div class="risk-bar-bg"><div class="risk-bar-fill" style="width:28%;background:#4ade80"></div></div>
+                  <div class="risk-pct" style="color:var(--green)">+$290K</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">MTM Report — Today</div><div class="card-action" onclick="showToast('MTM Report exported to Excel')">Export ↓</div></div>
+            <div style="padding:0">
+              <table>
+                <thead><tr><th>Contract</th><th>Contract $</th><th>Market $</th><th>MTM</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td class="mono">PC-018</td>
+                    <td class="mono">$9,360</td>
+                    <td class="mono">$9,420</td>
+                    <td class="mono" style="color:var(--green)">+$30K</td>
+                  </tr>
+                  <tr>
+                    <td class="mono">PC-017</td>
+                    <td class="mono">$2,450</td>
+                    <td class="mono">$2,510</td>
+                    <td class="mono" style="color:var(--green)">+$72K</td>
+                  </tr>
+                  <tr>
+                    <td class="mono">SC-031</td>
+                    <td class="mono">$9,480</td>
+                    <td class="mono">$9,420</td>
+                    <td class="mono" style="color:var(--danger)">-$30K</td>
+                  </tr>
+                  <tr>
+                    <td class="mono">SC-030</td>
+                    <td class="mono">$2,530</td>
+                    <td class="mono">$2,510</td>
+                    <td class="mono" style="color:var(--danger)">-$24K</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========== ALLOCATION =========== -->
+      <div class="page" id="page-allocation">
+        <div class="alert">⬡ Allocation Engine — Links purchase lots to sales contracts. Tracks priced vs unpriced quantities.</div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Purchase → Sales Allocation</div>
+            <button class="btn btn-primary btn-sm" onclick="showToast('Allocation saved successfully')">Save Allocation</button>
+          </div>
+          <div class="card-body">
+            <div class="alloc-row alloc-header">
+              <div>Purchase Contract</div><div>Sales Contract</div><div>Allocated MT</div><div>% Filled</div><div></div>
+            </div>
+            <div class="alloc-row">
+              <div><strong>PC-2026-018</strong><br><span style="font-size:11px;color:var(--muted)">Copper · 500 MT</span></div>
+              <div>SC-2026-031</div>
+              <div class="mono">500 MT</div>
+              <div>
+                <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--green)">100%</span>
+              </div>
+              <div><button class="btn btn-ghost btn-sm">Edit</button></div>
+            </div>
+            <div class="alloc-row">
+              <div><strong>PC-2026-017</strong><br><span style="font-size:11px;color:var(--muted)">Aluminium · 1,200 MT</span></div>
+              <div>SC-2026-030</div>
+              <div class="mono">900 MT</div>
+              <div>
+                <div class="progress-bar"><div class="progress-fill" style="width:75%;background:var(--accent2)"></div></div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent2)">75%</span>
+              </div>
+              <div><button class="btn btn-ghost btn-sm">Edit</button></div>
+            </div>
+            <div class="alloc-row">
+              <div><strong>PC-2026-016</strong><br><span style="font-size:11px;color:var(--muted)">Zinc · 300 MT</span></div>
+              <div style="color:var(--muted)">Unallocated</div>
+              <div class="mono" style="color:var(--muted)">0 MT</div>
+              <div>
+                <div class="progress-bar"><div class="progress-fill" style="width:0%;background:var(--danger)"></div></div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--danger)">0%</span>
+              </div>
+              <div><button class="btn btn-primary btn-sm" onclick="showToast('Allocation wizard opened')">Allocate</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========== MARKET DATA =========== -->
+      <div class="page" id="page-market">
+        <div class="alert">⬡ Market Data Integration — LME / CME prices. MVP: Manual upload. Phase II: API-based ingestion.</div>
+        <div class="market-ticker">
+          <div class="ticker-item">
+            <div class="ticker-sym">LME · CU</div>
+            <div class="ticker-price">$9,420</div>
+            <div class="ticker-change tick-up">▲ +$85 (0.91%)</div>
+          </div>
+          <div class="ticker-item">
+            <div class="ticker-sym">LME · AL</div>
+            <div class="ticker-price">$2,510</div>
+            <div class="ticker-change tick-down">▼ -$20 (0.79%)</div>
+          </div>
+          <div class="ticker-item">
+            <div class="ticker-sym">LME · ZN</div>
+            <div class="ticker-price">$2,890</div>
+            <div class="ticker-change tick-up">▲ +$40 (1.41%)</div>
+          </div>
+          <div class="ticker-item">
+            <div class="ticker-sym">LME · NI</div>
+            <div class="ticker-price">$15,640</div>
+            <div class="ticker-change tick-down">▼ -$120 (0.76%)</div>
+          </div>
+          <div class="ticker-item">
+            <div class="ticker-sym">LME · PB</div>
+            <div class="ticker-price">$2,040</div>
+            <div class="ticker-change tick-up">▲ +$15 (0.74%)</div>
+          </div>
+          <div class="ticker-item">
+            <div class="ticker-sym">USD/EUR</div>
+            <div class="ticker-price">0.9182</div>
+            <div class="ticker-change tick-up">▲ +0.0012</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Manual Price Upload</div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Exchange</label>
+                  <select><option>LME</option><option>CME</option></select>
+                </div>
+                <div class="form-group">
+                  <label>Commodity</label>
+                  <select><option>Copper</option><option>Aluminium</option><option>Zinc</option></select>
+                </div>
+                <div class="form-group">
+                  <label>Price Date</label>
+                  <input type="date" value="2026-03-29">
+                </div>
+                <div class="form-group">
+                  <label>Price (USD/MT)</label>
+                  <input type="number" value="9420">
+                </div>
+              </div>
+              <div class="btn-row">
+                <button class="btn btn-ghost btn-sm">Upload CSV</button>
+                <button class="btn btn-primary btn-sm" onclick="showToast('Market price saved · LME Copper $9,420')">Save Price</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Price History</div></div>
+            <div style="padding:0">
+              <table>
+                <thead><tr><th>Date</th><th>Exchange</th><th>Commodity</th><th>Price</th><th>Source</th></tr></thead>
+                <tbody>
+                  <tr><td class="mono">2026-03-29</td><td>LME</td><td>Copper</td><td class="mono">$9,420</td><td><span class="badge badge-confirmed">Manual</span></td></tr>
+                  <tr><td class="mono">2026-03-28</td><td>LME</td><td>Copper</td><td class="mono">$9,335</td><td><span class="badge badge-confirmed">Manual</span></td></tr>
+                  <tr><td class="mono">2026-03-29</td><td>LME</td><td>Aluminium</td><td class="mono">$2,510</td><td><span class="badge badge-confirmed">Manual</span></td></tr>
+                  <tr><td class="mono">2026-03-28</td><td>LME</td><td>Aluminium</td><td class="mono">$2,530</td><td><span class="badge badge-confirmed">Manual</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========== REPORTS =========== -->
+      <div class="page" id="page-reports">
+        <div class="alert">⬡ Reports — MTM, Exposure, Deal P&L. Export to Excel/CSV. Real-time aggregation by commodity, counterparty, portfolio.</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+          <div class="card" style="cursor:pointer" onclick="showToast('MTM Report generated — exporting')">
+            <div class="card-body" style="text-align:center;padding:24px 16px">
+              <div style="font-size:28px;margin-bottom:8px">📊</div>
+              <div style="font-weight:700;margin-bottom:4px">MTM Report</div>
+              <div style="font-size:11px;color:var(--muted)">By commodity · By counterparty</div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onclick="showToast('Exposure Report generated')">
+            <div class="card-body" style="text-align:center;padding:24px 16px">
+              <div style="font-size:28px;margin-bottom:8px">📉</div>
+              <div style="font-weight:700;margin-bottom:4px">Exposure Report</div>
+              <div style="font-size:11px;color:var(--muted)">Priced vs unpriced qty</div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onclick="showToast('Deal P&L Report generated')">
+            <div class="card-body" style="text-align:center;padding:24px 16px">
+              <div style="font-size:28px;margin-bottom:8px">💰</div>
+              <div style="font-weight:700;margin-bottom:4px">Deal P&L</div>
+              <div style="font-size:11px;color:var(--muted)">Margin · Purchase vs Sales</div>
+            </div>
+          </div>
+          <div class="card" style="cursor:pointer" onclick="showToast('Risk Dashboard exported')">
+            <div class="card-body" style="text-align:center;padding:24px 16px">
+              <div style="font-size:28px;margin-bottom:8px">🛡</div>
+              <div style="font-weight:700;margin-bottom:4px">Risk Dashboard</div>
+              <div style="font-size:11px;color:var(--muted)">Hedge · MTM · Exposure KPIs</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Deal P&L — Current Portfolio</div><div class="card-action" onclick="showToast('P&L exported to Excel')">Export ↓</div></div>
+          <table>
+            <thead><tr><th>Deal</th><th>Commodity</th><th>Buy Value</th><th>Sell Value</th><th>Margin</th><th>Margin %</th></tr></thead>
+            <tbody>
+              <tr>
+                <td class="mono">DL-2026-041</td>
+                <td><span class="commodity"><span class="commodity-dot dot-cu"></span>Copper</span></td>
+                <td class="mono">$4,680,000</td>
+                <td class="mono">$4,740,000</td>
+                <td class="mono" style="color:var(--green)">+$60,000</td>
+                <td class="mono" style="color:var(--green)">1.28%</td>
+              </tr>
+              <tr>
+                <td class="mono">DL-2026-040</td>
+                <td><span class="commodity"><span class="commodity-dot dot-al"></span>Aluminium</span></td>
+                <td class="mono">$2,940,000</td>
+                <td class="mono">$3,036,000</td>
+                <td class="mono" style="color:var(--green)">+$96,000</td>
+                <td class="mono" style="color:var(--green)">3.27%</td>
+              </tr>
+              <tr>
+                <td class="mono">DL-2026-038</td>
+                <td><span class="commodity"><span class="commodity-dot dot-ni"></span>Nickel</span></td>
+                <td class="mono">$1,284,000</td>
+                <td class="mono">$1,270,000</td>
+                <td class="mono" style="color:var(--danger)">-$14,000</td>
+                <td class="mono" style="color:var(--danger)">-1.09%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-new-deal" onclick="closeModalIfBg(event, 'modal-new-deal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">New Enquiry</div>
+      <div class="modal-close" onclick="closeModal('modal-new-deal')">×</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Commodity</label>
+          <select><option>Copper</option><option>Aluminium</option><option>Zinc</option><option>Nickel</option><option>Lead</option></select>
+        </div>
+        <div class="form-group">
+          <label>Trade Type</label>
+          <select><option>Buy</option><option>Sell</option></select>
+        </div>
+        <div class="form-group">
+          <label>Quantity (MT)</label>
+          <input type="number" placeholder="e.g. 500">
+        </div>
+        <div class="form-group">
+          <label>Counterparty</label>
+          <input type="text" placeholder="e.g. Tata Metals Ltd">
+        </div>
+        <div class="form-group">
+          <label>Pricing Type</label>
+          <select><option>QP Average</option><option>Fixed Price</option><option>Benchmark</option></select>
+        </div>
+        <div class="form-group">
+          <label>Incoterms</label>
+          <select><option>CIF</option><option>FOB</option><option>CFR</option><option>EXW</option></select>
+        </div>
+        <div class="form-group full">
+          <label>Notes</label>
+          <textarea rows="2" placeholder="Any special terms or remarks..."></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeModal('modal-new-deal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitEnquiry()">Create Enquiry</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-deal-detail" onclick="closeModalIfBg(event, 'modal-deal-detail')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">DL-2026-041 · Copper</div>
+      <span class="badge badge-shipped" style="margin-right:auto">Shipment</span>
+      <div class="modal-close" onclick="closeModal('modal-deal-detail')">×</div>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;font-size:12px">
+        <div style="display:flex;flex-direction:column;gap:3px"><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase">Commodity</span><strong>Copper (LME Grade A)</strong></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase">Quantity</span><strong>500 MT</strong></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase">Buy Counterparty</span><strong>Glencore AG</strong></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase">Sell Counterparty</span><strong>Tata Metals Ltd</strong></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase">Pricing</span><strong>QP M+1 + $60/MT</strong></div>
+        <div style="display:flex;flex-direction:column;gap:3px"><span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase">MTM Value</span><strong style="color:var(--green)">+$30,000</strong></div>
+      </div>
+      <div class="lifecycle" style="margin-bottom:16px">
+        <div class="lc-step"><div class="lc-node done">✓</div><div class="lc-label">ENQUIRY</div></div>
+        <div class="lc-connector done"></div>
+        <div class="lc-step"><div class="lc-node done">✓</div><div class="lc-label">QUOTATION</div></div>
+        <div class="lc-connector done"></div>
+        <div class="lc-step"><div class="lc-node done">✓</div><div class="lc-label">DEAL</div></div>
+        <div class="lc-connector done"></div>
+        <div class="lc-step"><div class="lc-node done">✓</div><div class="lc-label">CONTRACT</div></div>
+        <div class="lc-connector done"></div>
+        <div class="lc-step"><div class="lc-node active">⬡</div><div class="lc-label">SHIPMENT</div></div>
+        <div class="lc-connector"></div>
+        <div class="lc-step"><div class="lc-node future">◇</div><div class="lc-label">PRICING</div></div>
+        <div class="lc-connector"></div>
+        <div class="lc-step"><div class="lc-node future">◇</div><div class="lc-label">INVOICE</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="closeModal('modal-deal-detail')">Close</button>
+        <button class="btn btn-primary" onclick="showToast('Shipment confirmed · Moved to Pricing stage'); closeModal('modal-deal-detail')">Confirm Shipment →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon">✓</span>
+  <span id="toast-msg">Done</span>
+</div>
+
+<script>
+  const pageTitles = {
+    dashboard: 'Risk Dashboard',
+    trades: 'Trade Lifecycle',
+    contracts: 'Contract Management',
+    pricing: 'Pricing Engine',
+    risk: 'Risk & MTM',
+    allocation: 'Allocation Engine',
+    market: 'Market Data',
+    reports: 'Reports'
+  };
+
+  function showPage(id, navEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (navEl) navEl.classList.add('active');
+    document.getElementById('page-title').textContent = pageTitles[id];
+  }
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+  function closeModalIfBg(event, id) {
+    if (event.target === document.getElementById(id)) closeModal(id);
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function submitEnquiry() {
+    closeModal('modal-new-deal');
+    showToast('Enquiry created · DL-2026-042 registered');
+  }
+
+  function switchTab(el, target) {
+    el.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('ct-purchase').style.display = target === 'ct-purchase' ? 'block' : 'none';
+    document.getElementById('ct-sales').style.display = target === 'ct-sales' ? 'block' : 'none';
+  }
+
+  function updateFormula() {
+    const type = document.getElementById('pricing-type').value;
+    const formulas = {
+      qp: `<span class="formula-comment">// QP Average Pricing Formula</span><br>
+<span class="formula-key">FinalPrice</span> <span class="formula-op">=</span>
+<span class="formula-val">avg(LME_Daily[QP_Start → QP_End])</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="formula-op">+</span> <span class="formula-val">Premium</span><span class="formula-comment"> // $60/MT</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="formula-op">×</span> <span class="formula-val">Quantity</span><span class="formula-comment"> // 500 MT</span><br><br>
+<span class="formula-comment">// QP: Month After Shipment (M+1)</span>`,
+      fixed: `<span class="formula-comment">// Fixed Price Formula</span><br>
+<span class="formula-key">FinalPrice</span> <span class="formula-op">=</span>
+<span class="formula-val">FixedRate</span><span class="formula-comment"> // agreed at deal time</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="formula-op">×</span> <span class="formula-val">Quantity</span><br><br>
+<span class="formula-comment">// No market data dependency</span><br>
+<span class="formula-comment">// MTM = FixedRate - CurrentMarketPrice</span>`,
+      benchmark: `<span class="formula-comment">// Benchmark Pricing (Oil/Agri)</span><br>
+<span class="formula-key">FinalPrice</span> <span class="formula-op">=</span>
+<span class="formula-val">avg(Benchmark[Window_Start → Window_End])</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="formula-op">+</span> <span class="formula-val">Differential</span><br><br>
+<span class="formula-comment">// Benchmark: Platts / Argus / ICIS</span>`,
+      quality: `<span class="formula-comment">// Quality Adjustment Formula (Zinc)</span><br>
+<span class="formula-key">FinalPrice</span> <span class="formula-op">=</span>
+<span class="formula-val">BasePrice</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="formula-op">+</span> <span class="formula-val">Premium_Zn_Grade</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="formula-op">-</span> <span class="formula-val">Penalty_Pb_Content</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="formula-op">-</span> <span class="formula-val">Penalty_Cd_Content</span><br><br>
+<span class="formula-comment">// Adjustments per assay report</span>`
+    };
+    document.getElementById('formula-display').innerHTML = formulas[type];
+  }
+</script>
+</body>
+</html>
