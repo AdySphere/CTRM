@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTRM Platform — Deal Management v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080b10;--bg2:#0d1117;--surface:#111820;--surface2:#162030;--surface3:#1c2a3a;--border:#1e2d40;--border2:#253548;--accent:#00c896;--accent-dim:rgba(0,200,150,0.08);--accent-mid:rgba(0,200,150,0.18);--accent2:#f0a500;--accent2-dim:rgba(240,165,0,0.08);--accent3:#5b8af0;--accent3-dim:rgba(91,138,240,0.08);--danger:#e05252;--danger-dim:rgba(224,82,82,0.08);--green:#3dd68c;--green-dim:rgba(61,214,140,0.08);--purple:#9f7aea;--purple-dim:rgba(159,122,234,0.08);--text:#dce8f0;--text2:#8ba4bb;--text3:#4d6478;--muted:#3d5468;--font-ui:'Instrument Sans',sans-serif;--font-mono:'DM Mono',monospace;--radius-sm:4px;--radius:8px;--radius-lg:12px;--radius-xl:16px;--shadow:0 4px 24px rgba(0,0,0,0.4)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:var(--font-ui)}input,select,textarea{font-family:var(--font-ui)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.app{display:flex;height:100vh;overflow:hidden}
+/* SIDEBAR */
+.sidebar{width:230px;min-width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo-wordmark{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--bg);flex-shrink:0}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+.logo-version{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase}
+.sidebar-nav{flex:1;overflow-y:auto;padding:10px 0}
+.nav-section-label{font-family:var(--font-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);padding:10px 20px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 20px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .12s;user-select:none}
+.nav-item:hover{color:var(--text);background:var(--surface2)}
+.nav-item.active{color:var(--accent);background:var(--accent-dim);border-left-color:var(--accent);font-weight:600}
+.nav-icon{font-size:14px;width:16px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--accent);color:var(--bg);font-family:var(--font-mono);font-size:9px;font-weight:500;padding:2px 6px;border-radius:10px}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border);flex-shrink:0}
+.sidebar-user{display:flex;align-items:center;gap:10px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent3),var(--accent));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-family:var(--font-mono);font-size:9px;color:var(--text3)}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg2)}
+.topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+.topbar-breadcrumb{display:flex;align-items:center;gap:6px;flex:1;font-size:12px}
+.bc-item{color:var(--text3)}.bc-sep{color:var(--muted)}.bc-current{color:var(--text);font-weight:600}
+.topbar-actions{display:flex;align-items:center;gap:8px}
+.topbar-pill{font-family:var(--font-mono);font-size:9px;letter-spacing:.5px;padding:3px 10px;border-radius:20px;font-weight:500}
+.pill-phase{background:var(--accent3-dim);color:var(--accent3);border:1px solid rgba(91,138,240,.25)}
+.pill-d365{background:var(--accent2-dim);color:var(--accent2);border:1px solid rgba(240,165,0,.25)}
+.page-content{flex:1;overflow-y:auto;padding:20px 24px}
+.page{display:none}.page.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+/* PAGE HEADER */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-header-left{flex:1}
+.page-title{font-size:20px;font-weight:700;letter-spacing:-.3px;color:var(--text);line-height:1.2}
+.page-subtitle{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:.5px;margin-top:3px}
+.page-header-actions{display:flex;gap:8px;align-items:center}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.card+.card{margin-top:14px}
+.card-header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);gap:10px}
+.card-title{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.card-subtitle{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:.5px}
+.card-action{font-family:var(--font-mono);font-size:10px;color:var(--accent);cursor:pointer}
+.card-action:hover{text-decoration:underline}
+.card-body{padding:18px}.card-body-flush{padding:0}
+/* FASTTABS */
+.fasttabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);padding:0 18px;overflow-x:auto}
+.fasttab{padding:10px 16px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;white-space:nowrap;flex-shrink:0}
+.fasttab:hover{color:var(--text2)}.fasttab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.fasttab-content{display:none;padding:18px}.fasttab-content.active{display:block}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid-3{grid-template-columns:1fr 1fr 1fr}
+.col-span-2{grid-column:span 2}.col-span-full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:5px}
+.field-label{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.field-label .required{color:var(--danger);margin-left:2px}
+.field-label .optional{color:var(--muted);font-style:italic;letter-spacing:0}
+.field-input,.field-select,.field-textarea{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--font-ui);font-size:13px;padding:8px 11px;outline:none;transition:border-color .12s,background .12s;width:100%}
+.field-input:focus,.field-select:focus,.field-textarea:focus{border-color:var(--accent);background:var(--surface3)}
+.field-input::placeholder{color:var(--text3)}
+.field-select{cursor:pointer}.field-select option{background:var(--surface2);color:var(--text)}
+.field-textarea{resize:vertical;min-height:70px;line-height:1.5}
+.field-value{font-size:13px;font-weight:600;color:var(--text);padding:8px 0}
+.field-calc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px 11px;font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:500}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);font-family:var(--font-ui);font-size:13px;font-weight:600;border:none;transition:all .12s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:var(--bg)}.btn-primary:hover{background:#00dfa8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,200,150,.3)}
+.btn-secondary{background:var(--surface3);color:var(--text);border:1px solid var(--border2)}.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(224,82,82,.3)}.btn-danger:hover{background:rgba(224,82,82,.15)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}.btn-ghost:hover{color:var(--text);background:var(--surface2)}
+.btn-sm{padding:5px 12px;font-size:11px}.btn-xs{padding:3px 8px;font-size:10px;border-radius:var(--radius-sm)}
+.btn-row{display:flex;gap:8px;align-items:center}.btn-row.right{justify-content:flex-end}.btn-row.between{justify-content:space-between}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:9px;font-weight:500;padding:3px 8px;border-radius:var(--radius-sm);letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.badge-draft{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
+.badge-open{background:var(--accent3-dim);color:var(--accent3);border:1px solid rgba(91,138,240,.25)}
+.badge-confirmed{background:var(--green-dim);color:var(--green);border:1px solid rgba(61,214,140,.25)}
+.badge-rfq{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(159,122,234,.25)}
+.badge-contracted{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,200,150,.25)}
+.badge-shipped{background:var(--accent2-dim);color:var(--accent2);border:1px solid rgba(240,165,0,.25)}
+.badge-danger{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(224,82,82,.25)}
+.badge-closed{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+/* TABLES */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:8px 14px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface);position:sticky;top:0;z-index:1}
+.data-table td{padding:10px 14px;border-bottom:1px solid rgba(30,45,64,.5);vertical-align:middle;color:var(--text)}
+.data-table tr:last-child td{border-bottom:none}.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.table-empty{text-align:center;padding:32px;color:var(--text3);font-family:var(--font-mono);font-size:11px}
+.line-table{width:100%;border-collapse:collapse;font-size:12px}
+.line-table th{font-family:var(--font-mono);font-size:9px;letter-spacing:1px;color:var(--text3);padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase}
+.line-table td{padding:6px 10px;border-bottom:1px solid rgba(30,45,64,.4);vertical-align:middle}
+.line-table tr:last-child td{border-bottom:none}
+.line-table .field-input,.line-table .field-select{padding:5px 8px;font-size:11px;border-radius:var(--radius-sm)}
+.line-add-row{padding:8px 10px;border-top:1px solid var(--border)}
+/* COMMODITY CHIP */
+.commodity-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.commodity-pip{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.pip-cu{background:#e07020}.pip-al{background:#8899aa}.pip-zn{background:#20c4d0}.pip-ni{background:#9f7aea}
+.pip-pb{background:#3dd68c}.pip-sn{background:#f0a500}.pip-fe{background:#cc4444}.pip-coal{background:#4a5568}
+.pip-oil{background:#d4880a}.pip-agri{background:#48bb78}
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .18s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-xl);width:600px;max-width:95vw;max-height:85vh;overflow-y:auto;transform:translateY(16px) scale(.98);transition:transform .18s;box-shadow:var(--shadow)}
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-lg{width:800px}.modal-xl{width:960px}
+.modal-header{display:flex;align-items:center;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-size:15px;font-weight:700;flex:1}
+.modal-close{color:var(--text3);font-size:18px;cursor:pointer;line-height:1;padding:2px 4px;border-radius:var(--radius-sm);transition:color .12s}.modal-close:hover{color:var(--text)}
+.modal-body{padding:22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface)}
+/* TOAST */
+.toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:2000}
+.toast{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;gap:10px;min-width:280px;box-shadow:var(--shadow);transform:translateX(120%);transition:transform .25s cubic-bezier(.34,1.56,.64,1);font-size:12px}
+.toast.show{transform:translateX(0)}.toast-icon{font-size:16px;flex-shrink:0}.toast-text{flex:1}
+.toast-title{font-weight:600;color:var(--text)}.toast-msg{color:var(--text2);font-size:11px;margin-top:1px}
+.toast.success{border-left:3px solid var(--green)}.toast.warning{border-left:3px solid var(--accent2)}
+.toast.error{border-left:3px solid var(--danger)}.toast.info{border-left:3px solid var(--accent3)}
+/* STEPS */
+.step-bar{display:flex;align-items:center;margin-bottom:20px}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative}
+.step-item:not(:last-child)::after{content:'';position:absolute;top:14px;left:50%;right:-50%;height:2px;background:var(--border2);z-index:0}
+.step-item.done:not(:last-child)::after{background:var(--green)}
+.step-node{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid var(--border2);background:var(--surface2);position:relative;z-index:1;transition:all .2s;font-family:var(--font-mono)}
+.step-item.done .step-node{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.step-item.active .step-node{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px rgba(0,200,150,.15)}
+.step-item.future .step-node{opacity:.4}
+.step-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.5px;color:var(--text3);text-align:center}
+.step-item.active .step-label{color:var(--accent)}.step-item.done .step-label{color:var(--green)}
+/* BANNERS */
+.banner{border-radius:var(--radius);padding:10px 14px;font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:16px}
+.banner-icon{flex-shrink:0;margin-top:1px}
+.banner-info{background:var(--accent3-dim);border:1px solid rgba(91,138,240,.2);color:var(--accent3)}
+.banner-warn{background:var(--accent2-dim);border:1px solid rgba(240,165,0,.2);color:var(--accent2)}
+.banner-success{background:var(--green-dim);border:1px solid rgba(61,214,140,.2);color:var(--green)}
+.banner-danger{background:var(--danger-dim);border:1px solid rgba(224,82,82,.2);color:var(--danger)}
+/* STAT CHIPS */
+.stat-row{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat-chip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;flex:1;min-width:120px}
+.stat-chip-label{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.stat-chip-value{font-size:18px;font-weight:700;letter-spacing:-.5px}
+.stat-chip-sub{font-family:var(--font-mono);font-size:10px;color:var(--text2);margin-top:2px}
+/* DIVIDERS */
+.divider{height:1px;background:var(--border);margin:16px 0}
+.divider-label{display:flex;align-items:center;gap:10px;margin:16px 0;font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.divider-label::before,.divider-label::after{content:'';flex:1;height:1px;background:var(--border)}
+/* LAYOUT */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+/* LEG HEADERS */
+.leg-header{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.leg-indicator{width:24px;height:24px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.leg-buy{background:rgba(91,138,240,.15);color:var(--accent3);border:1px solid rgba(91,138,240,.3)}
+.leg-sell{background:var(--green-dim);color:var(--green);border:1px solid rgba(61,214,140,.3)}
+.leg-title{font-size:13px;font-weight:700}.leg-meta{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-left:auto}
+/* SCORE BAR */
+.score-bar-wrap{display:flex;align-items:center;gap:8px}
+.score-bar-bg{flex:1;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .4s ease}
+.score-val{font-family:var(--font-mono);font-size:10px;color:var(--text2);width:30px;text-align:right}
+/* CALC TYPE PILLS */
+.calc-type-pill{font-family:var(--font-mono);font-size:9px;padding:2px 7px;border-radius:3px;font-weight:500;letter-spacing:.3px}
+.ct-flat{background:var(--accent-dim);color:var(--accent)}.ct-threshold{background:var(--accent2-dim);color:var(--accent2)}
+.ct-tiered{background:var(--purple-dim);color:var(--purple)}.ct-formula,.ct-formularef{background:var(--accent3-dim);color:var(--accent3)}
+.ct-rejection{background:var(--danger-dim);color:var(--danger)}
+/* COMPARE GRID */
+.compare-grid{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.compare-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border)}.compare-row:last-child{border-bottom:none}
+.compare-label{width:160px;min-width:160px;padding:10px 14px;background:var(--surface2);border-right:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--text2);display:flex;align-items:center}
+.compare-cell{flex:1;padding:10px 14px;border-right:1px solid var(--border);font-size:12px;display:flex;align-items:center}
+.compare-cell:last-child{border-right:none}.compare-cell.best{background:var(--accent-dim);color:var(--accent);font-weight:600}
+/* UTILITY */
+.mono{font-family:var(--font-mono)}.text-accent{color:var(--accent)}.text-accent2{color:var(--accent2)}.text-accent3{color:var(--accent3)}
+.text-danger{color:var(--danger)}.text-green{color:var(--green)}.text-muted{color:var(--text2)}.text-dim{color:var(--text3)}
+.fw-700{font-weight:700}.fw-600{font-weight:600}.fs-11{font-size:11px}.fs-12{font-size:12px}.fs-13{font-size:13px}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}.mt-20{margin-top:20px}
+.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}
+.gap-8{gap:8px}.gap-12{gap:12px}.flex{display:flex}.flex-col{flex-direction:column}
+.align-center{align-items:center}.justify-between{justify-content:space-between}.flex-1{flex:1}.w-full{width:100%}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-wordmark"><div class="logo-icon">C</div><div class="logo-text">CTRM Platform</div></div>
+    <div class="logo-version">D365 BC · Phase I MVP</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Deal Management</div>
+    <div class="nav-item active" data-page="deals" onclick="navigate('deals',this)"><span class="nav-icon">⟳</span> Deal List <span class="nav-badge">3</span></div>
+    <div class="nav-item" data-page="new-deal" onclick="initNewDeal()"><span class="nav-icon">＋</span> New Deal</div>
+    <div class="nav-section-label">Procurement</div>
+    <div class="nav-item" data-page="rfq" onclick="navigate('rfq',this)"><span class="nav-icon">◈</span> RFQ Management <span class="nav-badge">1</span></div>
+    <div class="nav-section-label">Pricing & Risk</div>
+    <div class="nav-item" data-page="penalties" onclick="navigate('penalties',this)"><span class="nav-icon">△</span> Penalty Engine</div>
+    <div class="nav-section-label">Setup</div>
+    <div class="nav-item" onclick="toast('Setup','Commodity Master — next sprint','info')"><span class="nav-icon">◻</span> Commodity Master</div>
+    <div class="nav-item" onclick="toast('Setup','Pricing Templates — next sprint','info')"><span class="nav-icon">◆</span> Pricing Templates</div>
+    <div class="nav-item" onclick="toast('Setup','Adjustment Codes — next sprint','info')"><span class="nav-icon">≡</span> Adjustment Codes</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="user-avatar">AM</div>
+      <div class="user-info"><div class="user-name">Adyasha Mallick</div><div class="user-role">Solution Architect</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-breadcrumb">
+      <span class="bc-item">CTRM</span><span class="bc-sep">›</span>
+      <span class="bc-item">Deal Management</span><span class="bc-sep">›</span>
+      <span class="bc-current" id="bc-current">Deal List</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="topbar-pill pill-d365">D365 BC Connected</span>
+      <span class="topbar-pill pill-phase">Phase I MVP</span>
+    </div>
+  </div>
+  <div class="page-content">
+
+    <!-- PAGE: DEAL LIST -->
+    <div class="page active" id="page-deals">
+      <div class="page-header">
+        <div class="page-header-left"><div class="page-title">Deal Management</div><div class="page-subtitle">All commodity deals · Multi-vendor · Full lifecycle</div></div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary" onclick="toast('Export','Deal list exported to Excel','success')">Export</button>
+          <button class="btn btn-primary" onclick="initNewDeal()">＋ New Deal</button>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-chip"><div class="stat-chip-label">Total Deals</div><div class="stat-chip-value">3</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">In Execution</div><div class="stat-chip-value text-accent">1</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Confirmed</div><div class="stat-chip-value text-green">1</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Draft</div><div class="stat-chip-value text-muted">1</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Open RFQs</div><div class="stat-chip-value text-accent2">1</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">All Deals</div><div class="card-subtitle">Click any row to open deal detail</div></div>
+        <div class="card-body-flush">
+          <table class="data-table">
+            <thead><tr><th>Deal No.</th><th>Commodity</th><th>Type</th><th>Target Qty</th><th>Customer</th><th>Status</th><th>Est. Margin</th><th>Desk</th><th></th></tr></thead>
+            <tbody id="deal-list-body"><tr><td colspan="9" class="table-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: NEW DEAL WIZARD -->
+    <div class="page" id="page-new-deal">
+      <div class="page-header">
+        <div class="page-header-left"><div class="page-title">New Deal</div><div class="page-subtitle">4-step wizard · Saved as DRAFT until confirmed</div></div>
+        <div class="page-header-actions"><button class="btn btn-ghost" onclick="navigate('deals')">← Cancel</button></div>
+      </div>
+      <div class="step-bar" style="max-width:600px">
+        <div class="step-item active" id="wstep-item-1"><div class="step-node" id="wstep-1">1</div><div class="step-label">General</div></div>
+        <div class="step-item future" id="wstep-item-2"><div class="step-node" id="wstep-2">2</div><div class="step-label">Sell Leg</div></div>
+        <div class="step-item future" id="wstep-item-3"><div class="step-node" id="wstep-3">3</div><div class="step-label">Buy Legs</div></div>
+        <div class="step-item future" id="wstep-item-4"><div class="step-node" id="wstep-4">4</div><div class="step-label">Review</div></div>
+      </div>
+      <!-- STEP 1: GENERAL -->
+      <div id="ws-1">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Step 1 — General Information</div></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><div class="field-label">Deal Type <span class="required">*</span></div>
+                <select class="field-select" onchange="onDealTypeChange(this.value)">
+                  <option value="">— Select Type —</option>
+                  <option value="BACK-TO-BACK">BACK-TO-BACK</option>
+                  <option value="OPEN-BUY">OPEN-BUY (no sell leg yet)</option>
+                  <option value="OPEN-SELL">OPEN-SELL (no buy leg yet)</option>
+                  <option value="CONSOLIDATION">CONSOLIDATION (multi-vendor → 1 customer)</option>
+                  <option value="SPLIT">SPLIT (1 vendor → multi-customer)</option>
+                  <option value="STRUCTURED">STRUCTURED</option>
+                </select>
+              </div>
+              <div class="field"><div class="field-label">Trading Desk <span class="required">*</span></div>
+                <select class="field-select"><option>BASE-METALS</option><option>FERROUS</option><option>BULK</option><option>AGRI</option><option>ENERGY</option></select>
+              </div>
+              <div class="field"><div class="field-label">Lead Trader <span class="required">*</span></div><input type="text" class="field-input" value="Adyasha Mallick"></div>
+              <div class="field"><div class="field-label">Secondary Trader</div><input type="text" class="field-input" placeholder="Optional"></div>
+              <div class="field"><div class="field-label">Source Enquiry No.</div><input type="text" class="field-input" placeholder="ENQ-2026-XXXX"></div>
+              <div class="field"><div class="field-label">Priority</div><select class="field-select"><option>NORMAL</option><option>HIGH</option><option>URGENT</option></select></div>
+              <div class="field"><div class="field-label">Target Commodity <span class="required">*</span></div><select class="field-select sel-commodity"></select></div>
+              <div class="field"><div class="field-label">Target Quantity (MT) <span class="required">*</span></div><input type="number" class="field-input" placeholder="e.g. 500"></div>
+              <div class="field"><div class="field-label">Shipment Window From</div><input type="date" class="field-input"></div>
+              <div class="field"><div class="field-label">Shipment Window To</div><input type="date" class="field-input"></div>
+              <div class="field col-span-2"><div class="field-label">Remarks</div><textarea class="field-textarea" placeholder="Internal deal summary, special conditions…"></textarea></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- STEP 2: SELL LEG -->
+      <div id="ws-2" class="hidden">
+        <div class="card">
+          <div class="leg-header"><div class="leg-indicator leg-sell">S</div><div class="leg-title">Sell Leg — Customer Side</div><div class="leg-meta">One sell leg per deal</div></div>
+          <div class="fasttabs">
+            <div class="fasttab active sell-tab" data-tab="sl-customer">Customer & Contract</div>
+            <div class="fasttab sell-tab" data-tab="sl-commodity">Commodity & Qty</div>
+            <div class="fasttab sell-tab" data-tab="sl-pricing">Pricing</div>
+            <div class="fasttab sell-tab" data-tab="sl-payment">Payment Terms</div>
+            <div class="fasttab sell-tab" data-tab="sl-penalties">Sell-Side Penalties</div>
+          </div>
+          <div id="sl-customer" class="fasttab-content active" style="padding:18px">
+            <div class="form-grid">
+              <div class="field"><div class="field-label">Customer <span class="required">*</span></div><select class="field-select sel-customer"></select></div>
+              <div class="field"><div class="field-label">BC Customer No.</div><div class="field-calc">— auto-synced on confirmation —</div></div>
+              <div class="field"><div class="field-label">KYC Status</div><div class="field-calc" style="color:var(--green)">APPROVED</div></div>
+              <div class="field"><div class="field-label">Credit Available (USD)</div><div class="field-calc">$5,000,000</div></div>
+              <div class="field"><div class="field-label">Incoterms <span class="required">*</span></div><select class="field-select"><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option></select></div>
+              <div class="field"><div class="field-label">Port of Delivery</div><input type="text" class="field-input" placeholder="e.g. Nhava Sheva, Rotterdam"></div>
+            </div>
+          </div>
+          <div id="sl-commodity" class="fasttab-content hidden" style="padding:18px">
+            <div class="form-grid">
+              <div class="field col-span-2"><div class="field-label">Commodity <span class="required">*</span></div><select class="field-select sel-commodity"></select></div>
+              <div class="field"><div class="field-label">Grade / Specification <span class="required">*</span></div><input type="text" class="field-input" placeholder="Exact spec contracted with customer"></div>
+              <div class="field"><div class="field-label">Sell Quantity (MT) <span class="required">*</span></div><input type="number" class="field-input"></div>
+              <div class="field"><div class="field-label">Tolerance %</div><input type="number" class="field-input" placeholder="e.g. 5"></div>
+              <div class="field"><div class="field-label">Tolerance Type</div><select class="field-select"><option>MOLOO</option><option>MOLCHOPT</option><option>FIXED</option></select></div>
+              <div class="field"><div class="field-label">Weight Basis</div><select class="field-select"><option>SHIPPED-WEIGHT</option><option>OUTTURN-WEIGHT</option><option>DRAFT-SURVEY</option></select></div>
+              <div class="field"><div class="field-label">Partial Shipment</div><select class="field-select"><option>NOT ALLOWED</option><option>ALLOWED</option></select></div>
+              <div class="field"><div class="field-label">Shipment Window From <span class="required">*</span></div><input type="date" class="field-input"></div>
+              <div class="field"><div class="field-label">Shipment Window To <span class="required">*</span></div><input type="date" class="field-input"></div>
+            </div>
+          </div>
+          <div id="sl-pricing" class="fasttab-content hidden" style="padding:18px">
+            <div class="form-grid">
+              <div class="field col-span-2"><div class="field-label">Pricing Template <span class="required">*</span></div><select class="field-select sel-template"></select></div>
+              <div class="field"><div class="field-label">Price Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>GBP</option></select></div>
+              <div class="field"><div class="field-label">Invoice Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>INR</option></select></div>
+              <div class="field"><div class="field-label">Fixed Price (if FIXED template)</div><input type="number" class="field-input" placeholder="USD/MT"></div>
+              <div class="field"><div class="field-label">QP Period</div><select class="field-select"><option>— Use Template Default —</option><option>M (Month of BL)</option><option>M+1</option><option>M-1</option><option>Custom Window</option></select></div>
+              <div class="field"><div class="field-label">Provisional Price (calc.)</div><div class="field-calc">— awaiting market data —</div></div>
+              <div class="field"><div class="field-label">Provisional Total Value</div><div class="field-calc">—</div></div>
+            </div>
+          </div>
+          <div id="sl-payment" class="fasttab-content hidden" style="padding:18px">
+            <div class="form-grid">
+              <div class="field"><div class="field-label">Payment Basis <span class="required">*</span></div><select class="field-select"><option>LC-SIGHT</option><option>TT-AGAINST-DOCS</option><option>OPEN-ACCOUNT</option><option>ADVANCE</option><option>CAD</option></select></div>
+              <div class="field"><div class="field-label">BC Payment Terms Code</div><select class="field-select"><option>NET30</option><option>NET60</option><option>NET90</option><option>CAD</option><option>IMMEDIATE</option></select></div>
+              <div class="field"><div class="field-label">LC Required</div><select class="field-select" onchange="toggleSLC(this)"><option value="NO">NO</option><option value="YES">YES</option></select></div>
+              <div class="field"><div class="field-label">Payment Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>INR</option></select></div>
+            </div>
+            <div id="sl-lc-fields" class="hidden mt-12">
+              <div class="divider-label">LC Details</div>
+              <div class="form-grid">
+                <div class="field"><div class="field-label">LC No.</div><input type="text" class="field-input"></div>
+                <div class="field"><div class="field-label">Issuing Bank</div><input type="text" class="field-input"></div>
+                <div class="field"><div class="field-label">LC Amount (USD)</div><input type="number" class="field-input"></div>
+                <div class="field"><div class="field-label">LC Expiry Date</div><input type="date" class="field-input"></div>
+              </div>
+            </div>
+            <div class="divider-label mt-16">Payment Schedule</div>
+            <table class="line-table">
+              <thead><tr><th>#</th><th>%</th><th>Trigger</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+              <tbody id="sell-pay-body"><tr><td colspan="6" class="table-empty">No lines yet</td></tr></tbody>
+            </table>
+            <div class="line-add-row"><button class="btn btn-ghost btn-sm" onclick="addPayLine('sell-pay-body')">+ Add Payment Line</button></div>
+          </div>
+          <div id="sl-penalties" class="fasttab-content hidden" style="padding:18px">
+            <div class="banner banner-danger"><span class="banner-icon">⚠</span><div><strong>Sell-side penalties</strong> — applied by your <strong>customer against you</strong> for late, short, or off-spec delivery. OUTBOUND-PENALTY reduces your revenue. OUTBOUND-BONUS = you charge customer for over-spec delivery.</div></div>
+            <table class="line-table">
+              <thead><tr><th>#</th><th>Adj. Code</th><th>Calc Type</th><th>Element</th><th>Threshold</th><th>Rate</th><th>Direction</th><th>Status</th><th></th></tr></thead>
+              <tbody id="sell-pen-body"><tr><td colspan="9" class="table-empty">No penalty/bonus lines</td></tr></tbody>
+            </table>
+            <div class="line-add-row"><button class="btn btn-ghost btn-sm" onclick="addPenLine('sell-pen-body','SELL')">+ Add Line</button></div>
+          </div>
+        </div>
+      </div>
+      <!-- STEP 3: BUY LEGS -->
+      <div id="ws-3" class="hidden">
+        <div class="banner banner-info"><span class="banner-icon">ℹ</span><div><strong>Multi-Vendor Buy Legs</strong> — Each leg is fully independent: different vendor, commodity/grade, pricing template, payment terms, penalty structure. Quantities do not need to match sell leg at this stage — reconciliation happens at allocation.</div></div>
+        <div id="buy-legs-container"></div>
+        <div class="mt-16">
+          <button class="btn btn-secondary" onclick="addBuyLeg()">＋ Add Buy Leg</button>
+          <span class="text-dim fs-11" style="margin-left:12px">Each leg can go through RFQ → PO independently</span>
+        </div>
+      </div>
+      <!-- STEP 4: REVIEW -->
+      <div id="ws-4" class="hidden">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Step 4 — Review & Save as Draft</div></div>
+          <div class="card-body">
+            <div class="banner banner-success"><span class="banner-icon">✓</span>Deal is ready to save as DRAFT. After saving, use Deal Detail to confirm — this triggers contract reservation and D365 BC sync.</div>
+            <div class="form-grid">
+              <div class="field"><div class="field-label">Deal No. (to be assigned)</div><div class="field-calc">DL-2026-XXXX</div></div>
+              <div class="field"><div class="field-label">Status on Save</div><div class="field-calc">DRAFT</div></div>
+              <div class="field"><div class="field-label">BC Integration</div><div class="field-calc">Pending Confirmation</div></div>
+              <div class="field"><div class="field-label">Approval Check</div><div class="field-calc">Auto-run on save</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Wizard nav -->
+      <div class="btn-row between mt-20">
+        <button class="btn btn-ghost hidden" id="w-prev" onclick="wPrev()">← Previous</button>
+        <div></div>
+        <div class="btn-row gap-8">
+          <button class="btn btn-secondary" id="w-next" onclick="wNext()">Next →</button>
+          <button class="btn btn-primary hidden" id="w-save" onclick="saveDeal()">Save as Draft</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: DEAL DETAIL -->
+    <div class="page" id="page-deal-detail">
+      <div class="page-header">
+        <div class="page-header-left">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div class="page-title" id="dd-title">DL-2026-039</div>
+            <span id="dd-status"></span><span id="dd-commodity"></span>
+          </div>
+          <div class="page-subtitle">Deal Detail · Full lifecycle view</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-ghost" onclick="navigate('deals')">← Back</button>
+          <button class="btn btn-secondary" onclick="navigate('rfq',document.querySelector('[data-page=rfq]'))">View RFQs</button>
+          <button class="btn btn-primary" onclick="confirmDeal()">Confirm Deal →</button>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-chip"><div class="stat-chip-label">Type</div><div class="stat-chip-value fs-13" id="dd-type">—</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Target Qty</div><div class="stat-chip-value" id="dd-qty">—</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Buy Legs</div><div class="stat-chip-value text-accent3" id="dd-buy-legs">0</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Est. Margin</div><div class="stat-chip-value" id="dd-margin">—</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Desk</div><div class="stat-chip-value fs-13" id="dd-desk">—</div></div>
+        <div class="stat-chip"><div class="stat-chip-label">Trader</div><div class="stat-chip-value fs-13" id="dd-trader">—</div></div>
+      </div>
+      <!-- Lifecycle -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Deal Lifecycle</div></div>
+        <div class="card-body">
+          <div class="step-bar" style="max-width:800px">
+            <div class="step-item done"><div class="step-node">✓</div><div class="step-label">Enquiry</div></div>
+            <div class="step-item active"><div class="step-node">2</div><div class="step-label">Deal Creation</div></div>
+            <div class="step-item future"><div class="step-node">3</div><div class="step-label">RFQ / Onboarding</div></div>
+            <div class="step-item future"><div class="step-node">4</div><div class="step-label">PO / SO → BC</div></div>
+            <div class="step-item future"><div class="step-node">5</div><div class="step-label">Shipment</div></div>
+            <div class="step-item future"><div class="step-node">6</div><div class="step-label">Pricing Final</div></div>
+            <div class="step-item future"><div class="step-node">7</div><div class="step-label">Invoice → BC</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Sell + Buy legs side by side -->
+      <div class="two-col mt-16" id="dd-legs-row">
+        <div class="card">
+          <div class="leg-header"><div class="leg-indicator leg-sell">S</div><div class="leg-title">Sell Leg — Tata Metals Ltd</div><span class="badge badge-contracted" style="margin-left:auto">CONTRACTED</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><div class="field-label">Customer</div><div class="field-value">Tata Metals Ltd</div></div>
+              <div class="field"><div class="field-label">BC Customer No.</div><div class="field-value mono">C-001</div></div>
+              <div class="field"><div class="field-label">Quantity</div><div class="field-value mono">500 MT</div></div>
+              <div class="field"><div class="field-label">Pricing Template</div><div class="field-value mono text-accent">LME-CU-QP-M1</div></div>
+              <div class="field"><div class="field-label">QP Period</div><div class="field-value">M+1 (Month after BL)</div></div>
+              <div class="field"><div class="field-label">Provisional Price</div><div class="field-value mono">$9,480 / MT</div></div>
+              <div class="field"><div class="field-label">Provisional Value</div><div class="field-value mono text-green">$4,740,000</div></div>
+              <div class="field"><div class="field-label">BC Sales Order</div><div class="field-value mono text-accent2">SO-10042</div></div>
+              <div class="field"><div class="field-label">Incoterms</div><div class="field-value">CIF · Nhava Sheva</div></div>
+              <div class="field"><div class="field-label">Payment Terms</div><div class="field-value">LC-SIGHT · NET30</div></div>
+            </div>
+            <div class="divider-label mt-12">Sell-Side Penalty Lines</div>
+            <table class="line-table">
+              <thead><tr><th>Code</th><th>Type</th><th>Element</th><th>Threshold</th><th>Rate</th><th>Direction</th></tr></thead>
+              <tbody>
+                <tr><td class="mono fs-11 text-accent2">PEN-LATE-DEL</td><td><span class="calc-type-pill ct-flat">FLAT-RATE</span></td><td class="mono fs-11">Days Late</td><td class="mono fs-11">—</td><td class="mono fs-11">$5/MT/day</td><td><span class="badge badge-danger" style="font-size:8px">OUTBOUND</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="leg-header"><div class="leg-indicator leg-buy">B</div><div class="leg-title">Buy Leg BL-01 — Glencore AG</div><span class="badge badge-contracted" style="margin-left:auto">CONTRACTED</span></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><div class="field-label">Vendor</div><div class="field-value">Glencore AG</div></div>
+              <div class="field"><div class="field-label">BC Vendor No.</div><div class="field-value mono">V-001</div></div>
+              <div class="field"><div class="field-label">Quantity</div><div class="field-value mono">500 MT</div></div>
+              <div class="field"><div class="field-label">Pricing Template</div><div class="field-value mono text-accent">LME-CU-QP-M1</div></div>
+              <div class="field"><div class="field-label">QP Period</div><div class="field-value">M+1 (Month after BL)</div></div>
+              <div class="field"><div class="field-label">Provisional Price</div><div class="field-value mono">$9,360 / MT</div></div>
+              <div class="field"><div class="field-label">Provisional Cost</div><div class="field-value mono text-accent2">$4,680,000</div></div>
+              <div class="field"><div class="field-label">BC Purchase Order</div><div class="field-value mono text-accent2">PO-20088</div></div>
+              <div class="field"><div class="field-label">Incoterms</div><div class="field-value">CIF · Nhava Sheva</div></div>
+              <div class="field"><div class="field-label">Payment Terms</div><div class="field-value">LC-SIGHT · NET30</div></div>
+            </div>
+            <div class="divider-label mt-12">Buy-Side Penalty Lines</div>
+            <table class="line-table">
+              <thead><tr><th>Code</th><th>Type</th><th>Element</th><th>Threshold</th><th>Rate</th><th>Direction</th></tr></thead>
+              <tbody>
+                <tr><td class="mono fs-11 text-accent2">TC</td><td><span class="calc-type-pill ct-flat">FLAT-RATE</span></td><td class="mono fs-11">—</td><td class="mono fs-11">—</td><td class="mono fs-11">$180/dmt</td><td><span class="badge badge-danger" style="font-size:8px">INBOUND</span></td></tr>
+                <tr><td class="mono fs-11 text-accent2">PEN-PB</td><td><span class="calc-type-pill ct-threshold">THRESHOLD</span></td><td class="mono fs-11">Pb%</td><td class="mono fs-11">0.5%</td><td class="mono fs-11">$8/MT/0.1%</td><td><span class="badge badge-danger" style="font-size:8px">INBOUND</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- P&L Summary -->
+      <div class="card mt-16">
+        <div class="card-header"><div class="card-title">Deal P&L Summary — Provisional</div><div class="card-subtitle">Updates when pricing is finalised</div></div>
+        <div class="card-body">
+          <div class="three-col">
+            <div class="stat-chip" style="border-left:3px solid var(--green)"><div class="stat-chip-label">Sell Revenue</div><div class="stat-chip-value text-green">$4,740,000</div><div class="stat-chip-sub">500 MT × $9,480</div></div>
+            <div class="stat-chip" style="border-left:3px solid var(--accent2)"><div class="stat-chip-label">Buy Cost</div><div class="stat-chip-value text-accent2">$4,680,000</div><div class="stat-chip-sub">500 MT × $9,360 + TC</div></div>
+            <div class="stat-chip" style="border-left:3px solid var(--accent)"><div class="stat-chip-label">Provisional Margin</div><div class="stat-chip-value text-accent">$42,000</div><div class="stat-chip-sub">1.28% of revenue</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: RFQ LIST -->
+    <div class="page" id="page-rfq">
+      <div class="page-header">
+        <div class="page-header-left"><div class="page-title">RFQ Management</div><div class="page-subtitle">PR → RFQ → Vendor Responses → Comparison → Buy Leg</div></div>
+        <div class="page-header-actions"><button class="btn btn-primary" onclick="openModal('modal-new-rfq')">＋ New RFQ</button></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">All RFQs</div></div>
+        <div class="card-body-flush">
+          <table class="data-table">
+            <thead><tr><th>RFQ No.</th><th>Commodity</th><th>Target Qty</th><th>Deal No.</th><th>Vendors</th><th>Status</th><th>Deadline</th><th></th></tr></thead>
+            <tbody id="rfq-list-body"><tr><td colspan="8" class="table-empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: RFQ DETAIL -->
+    <div class="page" id="page-rfq-detail">
+      <div id="rfq-detail-header"></div>
+      <div class="card mt-12">
+        <div class="card-header"><div class="card-title">Vendor Distribution</div><div class="card-action" onclick="toast('Add Vendor','Invite additional vendor to this RFQ','info')">+ Invite Vendor</div></div>
+        <div class="card-body-flush">
+          <table class="data-table">
+            <thead><tr><th>Vendor No.</th><th>Vendor</th><th>Status</th><th>Eval. Score</th><th></th></tr></thead>
+            <tbody id="rfq-vendor-dist"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card mt-12">
+        <div class="card-header"><div class="card-title">Vendor Responses</div><div class="card-subtitle">Heterogeneous grades / specs accepted per response</div></div>
+        <div class="card-body-flush">
+          <table class="data-table">
+            <thead><tr><th>Status</th><th>Vendor</th><th>Grade Offered</th><th>Qty</th><th>Price</th><th>Pricing Type</th><th>Incoterms</th><th>Payment</th><th>Score</th><th></th></tr></thead>
+            <tbody id="rfq-responses-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card mt-12">
+        <div class="card-header"><div class="card-title">Bid Comparison Matrix</div><div class="card-subtitle">Best values highlighted · Accept any response to create a Buy Leg</div></div>
+        <div class="card-body" id="rfq-compare-grid"></div>
+      </div>
+      <div class="mt-16"><button class="btn btn-ghost" onclick="navigate('rfq',document.querySelector('[data-page=rfq]'))">← Back to RFQ List</button></div>
+    </div>
+
+    <!-- PAGE: PENALTY ENGINE -->
+    <div class="page" id="page-penalties">
+      <div class="page-header">
+        <div class="page-header-left"><div class="page-title">Penalty Engine</div><div class="page-subtitle">5 calculation types · Setup-based · Applies to all commodity groups</div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-chip" style="border-left:3px solid var(--accent)"><div class="stat-chip-label">Type 1 · FLAT-RATE</div><div class="stat-chip-value fs-13 text-accent">Rate × Qty</div><div class="stat-chip-sub">Always applies regardless of actual value</div></div>
+        <div class="stat-chip" style="border-left:3px solid var(--accent2)"><div class="stat-chip-label">Type 2 · THRESHOLD</div><div class="stat-chip-value fs-13 text-accent2">(A−T) × R × Q</div><div class="stat-chip-sub">Triggers only above threshold, linear</div></div>
+        <div class="stat-chip" style="border-left:3px solid var(--purple)"><div class="stat-chip-label">Type 3 · TIERED</div><div class="stat-chip-value fs-13 text-purple">Bracket Lookup</div><div class="stat-chip-sub">Escalating rates by severity bracket</div></div>
+        <div class="stat-chip" style="border-left:3px solid var(--accent3)"><div class="stat-chip-label">Type 4 · FORMULA-REF</div><div class="stat-chip-value fs-13 text-accent3">Expression</div><div class="stat-chip-sub">Parameterised formula (TC/RC, CV adj.)</div></div>
+        <div class="stat-chip" style="border-left:3px solid var(--danger)"><div class="stat-chip-label">Type 5 · REJECTION</div><div class="stat-chip-value fs-13 text-danger">Reject Workflow</div><div class="stat-chip-sub">Triggers cargo rejection, no financial calc</div></div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Live Penalty Calculator</div><div class="card-subtitle">Cu Concentrate example — edit values to recalculate</div></div>
+          <div class="card-body">
+            <div class="form-grid mb-16">
+              <div class="field"><div class="field-label">Commodity</div><select class="field-select" onchange="calcPenalty()"><option>CU Concentrate</option><option>Steel Scrap HMS</option><option>Thermal Coal NAR5500</option></select></div>
+              <div class="field"><div class="field-label">Shipped Qty (wet MT)</div><input type="number" id="calc-wet-qty" class="field-input" value="500" oninput="calcPenalty()"></div>
+              <div class="field"><div class="field-label">Moisture % (actual)</div><input type="number" id="calc-moisture" class="field-input" value="9.2" step="0.1" oninput="calcPenalty()"></div>
+              <div class="field"><div class="field-label">Cu Assay % (actual)</div><input type="number" id="calc-assay" class="field-input" value="28.5" step="0.1" oninput="calcPenalty()"></div>
+              <div class="field"><div class="field-label">Pb % (actual)</div><input type="number" id="calc-pb" class="field-input" value="0.8" step="0.01" oninput="calcPenalty()"></div>
+              <div class="field"><div class="field-label">As % (actual)</div><input type="number" id="calc-as" class="field-input" value="0.05" step="0.01" oninput="calcPenalty()"></div>
+              <div class="field"><div class="field-label">LME Price (USD/MT)</div><input type="number" id="calc-lme" class="field-input" value="9420" oninput="calcPenalty()"></div>
+              <div class="field"><div class="field-label">TC (USD/dmt)</div><input type="number" id="calc-tc" class="field-input" value="180" oninput="calcPenalty()"></div>
+            </div>
+            <div id="calc-results"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Adjustment Code Reference</div><div class="card-subtitle">All configured codes · Applicable across commodity groups</div></div>
+          <div class="card-body-flush">
+            <table class="data-table" id="adj-code-table">
+              <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Calc Type</th><th>Default</th><th>Sign</th></tr></thead>
+              <tbody id="adj-code-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Penalty engine detail reference table -->
+      <div class="card mt-16">
+        <div class="card-header"><div class="card-title">Commodity-Specific Penalty Reference</div></div>
+        <div class="card-body-flush">
+          <table class="data-table">
+            <thead><tr><th>Commodity Group</th><th>Typical Penalties</th><th>Calc Type</th><th>Rejection Triggers</th></tr></thead>
+            <tbody>
+              <tr><td class="fw-600"><span class="commodity-pip pip-cu" style="display:inline-block;margin-right:6px"></span>Base Metals Conc.</td><td class="fs-11">TC/RC, Pb/As/Bi/Cd/F, Payable Metal Formula</td><td><span class="calc-type-pill ct-formula">FORMULA-REF</span></td><td class="fs-11 text-danger">As &gt; 0.5%, Bi &gt; 0.3%</td></tr>
+              <tr><td class="fw-600"><span class="commodity-pip pip-fe" style="display:inline-block;margin-right:6px"></span>Ferrous / Scrap</td><td class="fs-11">Fe content, contamination %, moisture, size spec</td><td><span class="calc-type-pill ct-tiered">TIERED</span></td><td class="fs-11 text-danger">Radioactivity detected</td></tr>
+              <tr><td class="fw-600"><span class="commodity-pip pip-coal" style="display:inline-block;margin-right:6px"></span>Bulk Coal</td><td class="fs-11">CV adjustment, ash%, sulphur%, moisture%, HGI</td><td><span class="calc-type-pill ct-formula">FORMULA-REF</span></td><td class="fs-11 text-danger">CV &lt; 4800 NAR, sulphur &gt; 1.5%</td></tr>
+              <tr><td class="fw-600"><span class="commodity-pip pip-agri" style="display:inline-block;margin-right:6px"></span>Agri / Soft</td><td class="fs-11">Protein, test weight, moisture, dockage, USDA grade</td><td><span class="calc-type-pill ct-threshold">THRESHOLD</span></td><td class="fs-11 text-danger">Mycotoxin above limit</td></tr>
+              <tr><td class="fw-600"><span class="commodity-pip pip-oil" style="display:inline-block;margin-right:6px"></span>Energy Crude</td><td class="fs-11">API gravity, sulphur content, BS&amp;W, RVP</td><td><span class="calc-type-pill ct-threshold">THRESHOLD</span></td><td class="fs-11 text-danger">H2S above safe limit</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- MODAL: TIER EDITOR -->
+<div class="modal-overlay" id="modal-tier" onclick="closeModalOnBg(event,'modal-tier')">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title">Tiered Penalty / Bonus Table</div><div class="modal-close" onclick="closeModal('modal-tier')">×</div></div>
+    <div class="modal-body">
+      <div class="banner banner-warn mb-16"><span class="banner-icon">⚠</span>Define penalty brackets. Set REJECT action on the last row for outright cargo rejection. Rates are cumulative unless marked marginal.</div>
+      <table class="line-table">
+        <thead><tr><th>From %</th><th>To %</th><th>Rate (USD/MT/1%)</th><th>Action</th><th>Note</th><th></th></tr></thead>
+        <tbody id="tier-modal-body"></tbody>
+      </table>
+      <div class="line-add-row"><button class="btn btn-ghost btn-sm" onclick="addTierRow()">+ Add Tier</button></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-tier')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTiers()">Save Tier Table</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RFQ RESPONSE DETAIL -->
+<div class="modal-overlay" id="modal-response-detail" onclick="closeModalOnBg(event,'modal-response-detail')">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title">Vendor Response Detail</div><div class="modal-close" onclick="closeModal('modal-response-detail')">×</div></div>
+    <div class="modal-body" id="response-detail-body"></div>
+  </div>
+</div>
+
+<!-- MODAL: NEW RFQ -->
+<div class="modal-overlay" id="modal-new-rfq" onclick="closeModalOnBg(event,'modal-new-rfq')">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">New RFQ</div><div class="modal-close" onclick="closeModal('modal-new-rfq')">×</div></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><div class="field-label">Linked Deal No. <span class="required">*</span></div><input type="text" class="field-input" placeholder="DL-2026-XXXX"></div>
+        <div class="field"><div class="field-label">Sourcing Type</div><select class="field-select"><option>COMPETITIVE-TENDER</option><option>DIRECTED</option><option>OPEN-MARKET</option><option>SPOT</option></select></div>
+        <div class="field"><div class="field-label">Target Commodity</div><select class="field-select sel-commodity"></select></div>
+        <div class="field"><div class="field-label">Indicative Grade</div><input type="text" class="field-input" placeholder="e.g. HMS 80:20, Grade A"></div>
+        <div class="field"><div class="field-label">Target Qty Min (MT)</div><input type="number" class="field-input"></div>
+        <div class="field"><div class="field-label">Target Qty Max (MT)</div><input type="number" class="field-input"></div>
+        <div class="field"><div class="field-label">Alt. Grades Accepted</div><select class="field-select"><option>YES</option><option>NO</option></select></div>
+        <div class="field"><div class="field-label">Response Deadline</div><input type="datetime-local" class="field-input"></div>
+        <div class="field col-span-2"><div class="field-label">Notes to Vendors</div><textarea class="field-textarea" placeholder="Certifications, special requirements, delivery conditions…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-rfq')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-new-rfq');toast('RFQ Created','RFQ-2026-006 saved as DRAFT · Add vendors to distribute','success')">Create RFQ</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+'use strict';
+// ── STATE ──────────────────────────────────────────────────────────────────
+const CTRM = { currentPage:'deals', currentDeal:null, currentRFQ:null, nextDealSeq:42, nextRFQSeq:8, nextBuyLegSeq:1 };
+
+// ── SEED DATA ──────────────────────────────────────────────────────────────
+const SEED = {
+  commodities:[
+    {code:'CU-CATHODE-A',name:'Copper Cathode Grade A',group:'BASE-METAL',exchange:'LME',uom:'MT',pip:'pip-cu'},
+    {code:'ZN-SHG-995',name:'Zinc SHG 99.995%',group:'BASE-METAL',exchange:'LME',uom:'MT',pip:'pip-zn'},
+    {code:'AL-P1020',name:'Aluminium Ingot P1020A',group:'BASE-METAL',exchange:'LME',uom:'MT',pip:'pip-al'},
+    {code:'NI-FULL-PLATE',name:'Nickel Full Plate',group:'BASE-METAL',exchange:'LME',uom:'MT',pip:'pip-ni'},
+    {code:'STEEL-HMS1',name:'Steel Scrap HMS 1&2',group:'FERROUS',exchange:'CFR',uom:'MT',pip:'pip-fe'},
+    {code:'COAL-NAR5500',name:'Thermal Coal NAR 5500',group:'BULK',exchange:'PLATTS',uom:'MT',pip:'pip-coal'},
+    {code:'CRUDE-DUBAI',name:'Crude Oil Dubai',group:'ENERGY',exchange:'PLATTS',uom:'BBL',pip:'pip-oil'},
+    {code:'WHEAT-CBOT',name:'Wheat Hard Red Winter',group:'AGRI',exchange:'CBOT',uom:'MT',pip:'pip-agri'},
+  ],
+  pricingTemplates:[
+    {code:'LME-CU-QP-M1',name:'LME Copper QP M+1',type:'QP-AVERAGE',exchange:'LME'},
+    {code:'LME-ZN-QP-M',name:'LME Zinc QP Month of BL',type:'QP-AVERAGE',exchange:'LME'},
+    {code:'LME-AL-QP-M1',name:'LME Aluminium QP M+1',type:'QP-AVERAGE',exchange:'LME'},
+    {code:'FIXED-USD-MT',name:'Fixed Price USD/MT',type:'FIXED',exchange:'NONE'},
+    {code:'PLATTS-DUBAI-DIFF',name:'Platts Dubai Differential',type:'BENCHMARK',exchange:'PLATTS'},
+    {code:'COAL-PLATTS-5500',name:'Platts Newcastle 5500 NAR',type:'BENCHMARK',exchange:'PLATTS'},
+    {code:'QUAL-ADJ-HMS',name:'Quality Adjusted HMS Scrap',type:'QUALITY-ADJ',exchange:'CFR'},
+  ],
+  adjustmentCodes:[
+    {code:'PREM-BRAND',name:'Brand Premium',category:'PREMIUM',calcType:'FLAT-RATE',sign:'+',default:60,unit:'USD/MT'},
+    {code:'TC',name:'Treatment Charge',category:'TC',calcType:'FLAT-RATE',sign:'-',default:180,unit:'USD/dmt'},
+    {code:'RC',name:'Refining Charge',category:'RC',calcType:'FORMULA-REF',sign:'-',default:0,unit:'USc/lb'},
+    {code:'PEN-PB',name:'Lead Penalty',category:'QUALITY',calcType:'THRESHOLD',sign:'-',default:8,unit:'USD/MT per 0.1%'},
+    {code:'PEN-AS',name:'Arsenic Penalty',category:'QUALITY',calcType:'THRESHOLD',sign:'-',default:10,unit:'USD/MT per 0.01%'},
+    {code:'PEN-MOIST',name:'Moisture Penalty',category:'QUALITY',calcType:'TIERED',sign:'-',default:0,unit:'USD/MT'},
+    {code:'PEN-LATE-DEL',name:'Late Delivery Penalty',category:'PENALTY',calcType:'FLAT-RATE',sign:'-',default:5,unit:'USD/MT/day'},
+    {code:'PREM-FE',name:'Fe Content Bonus',category:'QUALITY',calcType:'THRESHOLD',sign:'+',default:1.2,unit:'USD/MT per 0.1%'},
+    {code:'FREIGHT-CFR',name:'Freight Deduction CFR',category:'FREIGHT',calcType:'FLAT-RATE',sign:'-',default:22,unit:'USD/MT'},
+    {code:'CV-ADJ',name:'CV Adjustment',category:'QUALITY',calcType:'FORMULA-REF',sign:'±',default:0,unit:'USD/MT per 100kcal'},
+    {code:'PEN-REJECT',name:'Rejection Trigger',category:'QUALITY',calcType:'REJECTION',sign:'-',default:0,unit:'N/A'},
+  ],
+  vendors:[
+    {no:'V-001',name:'Glencore AG',country:'CH',kyc:'APPROVED'},
+    {no:'V-002',name:'Trafigura PTE Ltd',country:'SG',kyc:'APPROVED'},
+    {no:'V-003',name:'Noble Resources Ltd',country:'HK',kyc:'APPROVED'},
+    {no:'V-004',name:'Codelco Trading SA',country:'CL',kyc:'APPROVED'},
+    {no:'V-005',name:'Hindalco Industries',country:'IN',kyc:'APPROVED'},
+    {no:'V-006',name:'New Vendor (Pending)',country:'--',kyc:'PENDING'},
+  ],
+  customers:[
+    {no:'C-001',name:'Tata Metals Ltd',country:'IN',kyc:'APPROVED'},
+    {no:'C-002',name:'JSW Steel Ltd',country:'IN',kyc:'APPROVED'},
+    {no:'C-003',name:'Vedanta Resources',country:'IN',kyc:'APPROVED'},
+    {no:'C-004',name:'ArcelorMittal SA',country:'LU',kyc:'APPROVED'},
+  ],
+  deals:[
+    {no:'DL-2026-039',date:'2026-03-15',status:'IN-EXECUTION',type:'BACK-TO-BACK',commodity:'CU-CATHODE-A',targetQty:500,uom:'MT',desk:'BASE-METALS',trader:'A. Mallick',sellCustomer:'Tata Metals Ltd',buyLegs:1,provMargin:42000,estMargin:1.28},
+    {no:'DL-2026-040',date:'2026-03-22',status:'CONFIRMED',type:'CONSOLIDATION',commodity:'STEEL-HMS1',targetQty:2000,uom:'MT',desk:'FERROUS',trader:'P. Malpani',sellCustomer:'ArcelorMittal SA',buyLegs:3,provMargin:0,estMargin:0},
+    {no:'DL-2026-041',date:'2026-04-01',status:'DRAFT',type:'OPEN-BUY',commodity:'COAL-NAR5500',targetQty:50000,uom:'MT',desk:'BULK',trader:'A. Mallick',sellCustomer:'—',buyLegs:0,provMargin:0,estMargin:0},
+  ],
+};
+
+const RFQ_SEED = {rfqs:[{
+  no:'RFQ-2026-005',date:'2026-03-20',dealNo:'DL-2026-040',commodity:'STEEL-HMS1',targetMin:1500,targetMax:2500,uom:'MT',
+  status:'RESPONSES-RECEIVED',altGrades:true,deadline:'2026-03-28',
+  vendors:[
+    {no:'V-001',name:'Glencore AG',status:'RESPONDED',score:88},
+    {no:'V-002',name:'Trafigura PTE Ltd',status:'RESPONDED',score:74},
+    {no:'V-003',name:'Noble Resources Ltd',status:'RESPONDED',score:91},
+    {no:'V-006',name:'New Vendor (Pending)',status:'NO-RESPONSE',score:0},
+  ],
+  responses:[
+    {vendor:'Glencore AG',vendorNo:'V-001',status:'SHORTLISTED',grade:'HMS 1&2 (80:20)',qty:1000,uom:'MT',pricingType:'FIXED',price:420,currency:'USD',incoterms:'CFR',port:'Nhava Sheva',paymentBasis:'LC-SIGHT',advance:0,score:88,validity:'2026-04-05',
+      penalties:[{code:'PEN-PB',calc:'THRESHOLD',element:'Pb%',threshold:'0.5%',rate:'$8/MT/0.1%',dir:'INBOUND-PENALTY'},{code:'PEN-LATE-DEL',calc:'FLAT-RATE',element:'Days Late',threshold:'—',rate:'$5/MT/day',dir:'INBOUND-PENALTY'}]},
+    {vendor:'Trafigura PTE Ltd',vendorNo:'V-002',status:'RECEIVED',grade:'HMS 1 Only',qty:1500,uom:'MT',pricingType:'QP-AVERAGE',price:415,currency:'USD',incoterms:'FOB',port:'Hamburg',paymentBasis:'TT-AGAINST-DOCS',advance:10,score:74,validity:'2026-04-03',
+      penalties:[{code:'PEN-MOIST',calc:'TIERED',element:'Moisture%',threshold:'8%',rate:'See Tiers',dir:'INBOUND-PENALTY'}]},
+    {vendor:'Noble Resources Ltd',vendorNo:'V-003',status:'SHORTLISTED',grade:'HMS 1&2 (70:30)',qty:2000,uom:'MT',pricingType:'FIXED',price:418,currency:'USD',incoterms:'CFR',port:'Nhava Sheva',paymentBasis:'LC-SIGHT',advance:0,score:91,validity:'2026-04-10',
+      penalties:[{code:'PEN-PB',calc:'THRESHOLD',element:'Pb%',threshold:'0.3%',rate:'$10/MT/0.1%',dir:'INBOUND-PENALTY'},{code:'PREM-FE',calc:'THRESHOLD',element:'Fe%',threshold:'96%',rate:'$1.2/MT/0.1%',dir:'INBOUND-BONUS'}]},
+  ]
+}]};
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+function fmtMoney(v,c='USD'){if(!v&&v!==0)return'—';return c+' '+Number(v).toLocaleString('en-US',{maximumFractionDigits:0})}
+function fmtQty(v,u='MT'){if(!v)return'—';return Number(v).toLocaleString('en-US')+' '+u}
+function fmtPct(v){return Number(v).toFixed(2)+'%'}
+function genDealNo(){return`DL-2026-0${String(CTRM.nextDealSeq++).padStart(2,'0')}`}
+
+function commodityChip(code){
+  const c=SEED.commodities.find(x=>x.code===code);
+  if(!c)return code;
+  return`<span class="commodity-chip"><span class="commodity-pip ${c.pip}"></span>${c.name}</span>`;
+}
+function statusBadge(s){
+  const m={'DRAFT':'badge-draft','OPEN':'badge-open','CONFIRMED':'badge-confirmed','IN-EXECUTION':'badge-contracted','CONTRACTED':'badge-contracted','SHIPPED':'badge-shipped','CLOSED':'badge-closed','CANCELLED':'badge-danger','SHORTLISTED':'badge-open','ACCEPTED':'badge-confirmed','REJECTED':'badge-danger','RESPONDED':'badge-rfq','NO-RESPONSE':'badge-closed','RESPONSES-RECEIVED':'badge-rfq','RECEIVED':'badge-draft'};
+  return`<span class="badge ${m[s]||'badge-draft'}">${s}</span>`;
+}
+function populateSelect(el,items,vFn,lFn,ph){
+  if(!el)return;
+  el.innerHTML=ph?`<option value="">${ph}</option>`:'';
+  items.forEach(i=>{const o=document.createElement('option');o.value=vFn(i);o.textContent=lFn(i);el.appendChild(o)});
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────
+function navigate(pageId,navEl){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+pageId);
+  if(pg)pg.classList.add('active');
+  if(navEl)navEl.classList.add('active');
+  else{const a=document.querySelector(`.nav-item[data-page="${pageId}"]`);if(a)a.classList.add('active');}
+  const labels={deals:'Deal Management','new-deal':'New Deal','deal-detail':'Deal Detail',rfq:'RFQ Management','rfq-detail':'RFQ Detail',penalties:'Penalty Engine'};
+  const bc=document.getElementById('bc-current');if(bc)bc.textContent=labels[pageId]||pageId;
+  CTRM.currentPage=pageId;
+}
+
+// ── MODAL / TOAST ──────────────────────────────────────────────────────────
+function openModal(id){const m=document.getElementById(id);if(m){m.classList.add('open');document.body.style.overflow='hidden'}}
+function closeModal(id){const m=document.getElementById(id);if(m){m.classList.remove('open');document.body.style.overflow=''}}
+function closeModalOnBg(e,id){if(e.target===document.getElementById(id))closeModal(id)}
+function toast(title,msg,type='success'){
+  const icons={success:'✓',warning:'⚠',error:'✕',info:'ℹ'};
+  const c=document.getElementById('toast-container');
+  const el=document.createElement('div');el.className=`toast ${type}`;
+  el.innerHTML=`<div class="toast-icon">${icons[type]}</div><div class="toast-text"><div class="toast-title">${title}</div>${msg?`<div class="toast-msg">${msg}</div>`:''}</div>`;
+  c.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),300)},3200);
+}
+
+// ── DEAL LIST ──────────────────────────────────────────────────────────────
+function renderDealList(){
+  const tb=document.getElementById('deal-list-body');if(!tb)return;
+  tb.innerHTML=SEED.deals.map(d=>`
+    <tr onclick="openDealDetail('${d.no}')" style="cursor:pointer">
+      <td><span class="mono text-accent">${d.no}</span></td>
+      <td>${commodityChip(d.commodity)}</td>
+      <td class="fs-11">${d.type.replace(/-/g,' ')}</td>
+      <td class="mono">${fmtQty(d.targetQty,d.uom)}</td>
+      <td class="fs-12">${d.sellCustomer}</td>
+      <td>${statusBadge(d.status)}</td>
+      <td class="mono ${d.provMargin>0?'text-green':'text-dim'}">${d.provMargin?fmtMoney(d.provMargin):'—'}</td>
+      <td class="fs-11 text-muted">${d.desk}</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openDealDetail('${d.no}')">Open</button></td>
+    </tr>`).join('');
+}
+
+function openDealDetail(no){
+  CTRM.currentDeal=no;
+  const d=SEED.deals.find(x=>x.no===no);if(!d)return;
+  document.getElementById('dd-title').textContent=no;
+  document.getElementById('dd-status').innerHTML=statusBadge(d.status);
+  document.getElementById('dd-commodity').innerHTML=commodityChip(d.commodity);
+  document.getElementById('dd-type').textContent=d.type.replace(/-/g,' ');
+  document.getElementById('dd-qty').textContent=fmtQty(d.targetQty,d.uom);
+  document.getElementById('dd-desk').textContent=d.desk;
+  document.getElementById('dd-trader').textContent=d.trader;
+  document.getElementById('dd-buy-legs').textContent=d.buyLegs;
+  document.getElementById('dd-margin').textContent=d.provMargin?fmtMoney(d.provMargin):'—';
+  navigate('deal-detail');
+}
+function confirmDeal(){
+  toast('Deal Confirmed',`${CTRM.currentDeal} → CONFIRMED. Contracts reserved.`,'success');
+  setTimeout(()=>toast('D365 BC Sync','Customer/Vendor sync queued for D365 BC','info'),900);
+}
+
+// ── WIZARD ─────────────────────────────────────────────────────────────────
+let wizardStep=1;const WIZARD_TOTAL=4;
+let buyLegSeq=1,penLineSeq=1,payLineSeq=1;
+
+function initNewDeal(){
+  wizardStep=1;buyLegSeq=1;
+  const blc=document.getElementById('buy-legs-container');if(blc)blc.innerHTML='';
+  renderWizardStep(1);navigate('new-deal');
+}
+function renderWizardStep(step){
+  for(let i=1;i<=WIZARD_TOTAL;i++){
+    const item=document.getElementById(`wstep-item-${i}`);
+    const node=document.getElementById(`wstep-${i}`);
+    if(!item||!node)continue;
+    item.className='step-item '+(i<step?'done':i===step?'active':'future');
+    node.textContent=i<step?'✓':String(i);
+  }
+  for(let i=1;i<=WIZARD_TOTAL;i++){const el=document.getElementById(`ws-${i}`);if(el)el.classList.toggle('hidden',i!==step);}
+  const prev=document.getElementById('w-prev'),next=document.getElementById('w-next'),save=document.getElementById('w-save');
+  if(prev)prev.classList.toggle('hidden',step===1);
+  if(next)next.classList.toggle('hidden',step===WIZARD_TOTAL);
+  if(save)save.classList.toggle('hidden',step!==WIZARD_TOTAL);
+}
+function wNext(){if(wizardStep<WIZARD_TOTAL){wizardStep++;renderWizardStep(wizardStep);}}
+function wPrev(){if(wizardStep>1){wizardStep--;renderWizardStep(wizardStep);}}
+function saveDeal(){toast('Deal Created',`${genDealNo()} saved as DRAFT`,'success');setTimeout(()=>navigate('deals'),400);}
+function onDealTypeChange(v){}
+
+// ── SELL LEG TABS ──────────────────────────────────────────────────────────
+function toggleSLC(sel){const el=document.getElementById('sl-lc-fields');if(el)el.classList.toggle('hidden',sel.value!=='YES')}
+
+// ── BUY LEGS ───────────────────────────────────────────────────────────────
+function addBuyLeg(){
+  const c=document.getElementById('buy-legs-container');if(!c)return;
+  const id=`BL${String(buyLegSeq++).padStart(2,'0')}`;
+  const div=document.createElement('div');div.className='card mt-16';div.id=`leg-${id}`;
+  div.innerHTML=buyLegHTML(id);c.appendChild(div);
+  populateSelect(div.querySelector('.sel-vendor'),SEED.vendors,v=>v.no,v=>`${v.no} · ${v.name}`,`— Vendor (optional) —`);
+  populateSelect(div.querySelector('.sel-commodity'),SEED.commodities,c=>c.code,c=>`${c.code} — ${c.name}`,`— Commodity —`);
+  populateSelect(div.querySelector('.sel-template'),SEED.pricingTemplates,t=>t.code,t=>`${t.code} · ${t.name}`,`— Template —`);
+  toast(`Buy Leg ${id} Added`,'Configure independently per vendor','info');
+}
+function removeLeg(id){const el=document.getElementById(id);if(el){el.remove();toast('Buy Leg Removed','','warning');}}
+function switchLegTab(el,id,tab){
+  const card=document.getElementById(`leg-${id}`);if(!card)return;
+  card.querySelectorAll('.fasttab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  ['vendor','commodity','pricing','payment','penalties'].forEach(t=>{
+    const c=document.getElementById(`${id}-${t}`);
+    if(c){c.classList.toggle('active',t===tab);c.classList.toggle('hidden',t!==tab);}
+  });
+}
+function toggleLC(sel,id){const el=document.getElementById(`${id}-lc`);if(el)el.classList.toggle('hidden',sel.value!=='YES')}
+
+function addPayLine(tbodyId){
+  const tb=document.getElementById(tbodyId);if(!tb)return;
+  tb.querySelector('.table-empty')?.closest('tr')?.remove();
+  const seq=payLineSeq++;const tr=document.createElement('tr');
+  tr.innerHTML=`<td class="mono fs-11">${seq}</td><td><input type="number" class="field-input" style="width:65px;font-size:11px" value="100"></td><td><select class="field-select" style="font-size:11px"><option>ADVANCE</option><option>ON-SHIPMENT</option><option>AGAINST-BL</option><option>ON-ARRIVAL</option><option>NET-30</option><option>NET-60</option></select></td><td><input type="date" class="field-input" style="width:128px;font-size:11px"></td><td><span class="badge badge-draft">PENDING</span></td><td><button class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tb.appendChild(tr);
+}
+function addPenLine(tbodyId,leg){
+  const tb=document.getElementById(tbodyId);if(!tb)return;
+  tb.querySelector('.table-empty')?.closest('tr')?.remove();
+  const seq=penLineSeq++;const dir=leg==='BUY'?'INBOUND-PENALTY':'OUTBOUND-PENALTY';
+  const tr=document.createElement('tr');tr.id=`pln-${seq}`;
+  tr.innerHTML=`<td class="mono fs-11">${seq}</td><td><select class="field-select sel-adj-code" style="font-size:10px;min-width:140px"></select></td><td><select class="field-select pen-ct" style="font-size:10px" onchange="onPCT(this,${seq})"><option>FLAT-RATE</option><option>THRESHOLD</option><option>TIERED</option><option>FORMULA-REF</option><option>REJECTION</option></select></td><td><input type="text" class="field-input" style="width:72px;font-size:11px" placeholder="e.g. Pb%"></td><td id="pct-thresh-${seq}"><input type="number" class="field-input" style="width:65px;font-size:11px" placeholder="Threshold"></td><td id="pct-rate-${seq}"><input type="number" class="field-input" style="width:65px;font-size:11px" placeholder="Rate"></td><td><span class="badge badge-danger" style="font-size:8px">${dir}</span></td><td><span class="badge badge-open">ACTIVE</span></td><td><button class="btn btn-danger btn-xs" onclick="document.getElementById('pln-${seq}').remove()">✕</button></td>`;
+  tb.appendChild(tr);
+  populateSelect(tr.querySelector('.sel-adj-code'),SEED.adjustmentCodes,a=>a.code,a=>`${a.code} — ${a.name}`,'— Select —');
+}
+function onPCT(sel,seq){
+  const v=sel.value;
+  const th=document.getElementById(`pct-thresh-${seq}`);
+  const rt=document.getElementById(`pct-rate-${seq}`);
+  if(th)th.innerHTML=(v==='FLAT-RATE'||v==='FORMULA-REF')?'<span class="text-dim fs-11">N/A</span>':`<input type="number" class="field-input" style="width:65px;font-size:11px" placeholder="${v==='REJECTION'?'Rej.limit':'Threshold'}">`;
+  if(rt)rt.innerHTML=v==='TIERED'?`<button class="btn btn-ghost btn-xs" onclick="openTierModal(${seq})">Edit Tiers</button>`:v==='FORMULA-REF'?'<input type="text" class="field-input" style="width:130px;font-size:10px" placeholder="Expression">':v==='REJECTION'?'<span class="badge badge-danger">REJECT</span>':'<input type="number" class="field-input" style="width:65px;font-size:11px" placeholder="Rate">';
+}
+function loadFromTemplate(tbodyId){
+  const tb=document.getElementById(tbodyId);if(!tb)return;
+  tb.querySelector('.table-empty')?.closest('tr')?.remove();
+  [{code:'TC',ct:'FLAT-RATE',el:'—',th:'—',rate:'180'},{code:'PEN-PB',ct:'THRESHOLD',el:'Pb%',th:'0.5%',rate:'$8/MT/0.1%'},{code:'PEN-AS',ct:'THRESHOLD',el:'As%',th:'0.1%',rate:'$10/0.01%'},{code:'PEN-MOIST',ct:'TIERED',el:'Moisture%',th:'8%',rate:'See Tiers'}].forEach(l=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mono fs-11">${penLineSeq++}</td><td class="mono fs-11 text-accent2">${l.code}</td><td><span class="calc-type-pill ct-${l.ct.replace(/-/g,'').toLowerCase()}">${l.ct}</span></td><td class="mono fs-11">${l.el}</td><td class="mono fs-11">${l.th}</td><td class="mono fs-11">${l.rate}</td><td><span class="badge badge-danger" style="font-size:8px">INBOUND-PENALTY</span></td><td><span class="badge badge-rfq">TEMPLATE</span></td><td><button class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  toast('Template Lines Loaded','4 default adjustment lines added','success');
+}
+
+// ── TIER MODAL ─────────────────────────────────────────────────────────────
+function openTierModal(seq){
+  document.getElementById('tier-modal-body').innerHTML=`
+    <tr><td><input type="number" class="field-input" style="width:65px" value="0"></td><td><input type="number" class="field-input" style="width:65px" value="8"></td><td><input type="number" class="field-input" style="width:65px" value="0"></td><td><select class="field-select" style="font-size:11px"><option>CALCULATE</option><option>REJECT</option></select></td><td class="fs-11 text-dim">No penalty (below 8%)</td><td><button class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">✕</button></td></tr>
+    <tr><td><input type="number" class="field-input" style="width:65px" value="8"></td><td><input type="number" class="field-input" style="width:65px" value="10"></td><td><input type="number" class="field-input" style="width:65px" value="2"></td><td><select class="field-select" style="font-size:11px"><option>CALCULATE</option><option>REJECT</option></select></td><td class="mono fs-11 text-accent2">$2/MT per 1% above 8%</td><td><button class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">✕</button></td></tr>
+    <tr><td><input type="number" class="field-input" style="width:65px" value="10"></td><td><input type="number" class="field-input" style="width:65px" value="12"></td><td><input type="number" class="field-input" style="width:65px" value="4"></td><td><select class="field-select" style="font-size:11px"><option>CALCULATE</option><option>REJECT</option></select></td><td class="mono fs-11 text-accent2">$4/MT per 1% above 10%</td><td><button class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">✕</button></td></tr>
+    <tr><td><input type="number" class="field-input" style="width:65px" value="12"></td><td><input type="text" class="field-input" style="width:65px" placeholder="∞"></td><td class="text-dim fs-11">—</td><td><select class="field-select" style="font-size:11px"><option>REJECT</option><option>CALCULATE</option></select></td><td class="mono fs-11 text-danger">Cargo rejection trigger</td><td><button class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">✕</button></td></tr>`;
+  openModal('modal-tier');
+}
+function addTierRow(){
+  const tb=document.getElementById('tier-modal-body');const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="number" class="field-input" style="width:65px"></td><td><input type="number" class="field-input" style="width:65px"></td><td><input type="number" class="field-input" style="width:65px"></td><td><select class="field-select" style="font-size:11px"><option>CALCULATE</option><option>REJECT</option></select></td><td></td><td><button class="btn btn-danger btn-xs" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tb.appendChild(tr);
+}
+function saveTiers(){closeModal('modal-tier');toast('Tier Table Saved',`${document.querySelectorAll('#tier-modal-body tr').length} tiers configured`,'success');}
+
+// ── BUY LEG HTML ───────────────────────────────────────────────────────────
+function buyLegHTML(id){
+  return`<div class="leg-header"><div class="leg-indicator leg-buy">B</div><div class="leg-title">Buy Leg ${id}</div><div class="leg-meta">Independent per vendor · PC auto-generated on confirmation</div><button class="btn btn-danger btn-xs" onclick="removeLeg('leg-${id}')">Remove</button></div>
+  <div class="fasttabs"><div class="fasttab active" onclick="switchLegTab(this,'${id}','vendor')">Vendor</div><div class="fasttab" onclick="switchLegTab(this,'${id}','commodity')">Commodity & Qty</div><div class="fasttab" onclick="switchLegTab(this,'${id}','pricing')">Pricing</div><div class="fasttab" onclick="switchLegTab(this,'${id}','payment')">Payment Terms</div><div class="fasttab" onclick="switchLegTab(this,'${id}','penalties')">Penalties / Bonuses</div></div>
+  <div id="${id}-vendor" class="fasttab-content active" style="padding:18px"><div class="form-grid">
+    <div class="field"><div class="field-label">Vendor <span class="optional">(optional at creation)</span></div><select class="field-select sel-vendor"></select></div>
+    <div class="field"><div class="field-label">Onboarding Status</div><select class="field-select"><option>APPROVED</option><option>PENDING</option><option>IN-PROGRESS</option></select></div>
+    <div class="field"><div class="field-label">Source</div><select class="field-select"><option>FROM-RFQ</option><option>DIRECT</option><option>SPOT</option></select></div>
+    <div class="field"><div class="field-label">Broker</div><input type="text" class="field-input" placeholder="Broker name if applicable"></div>
+    <div class="field"><div class="field-label">Brokerage Rate</div><input type="number" class="field-input" placeholder="USD/MT or %"></div>
+    <div class="field"><div class="field-label">Brokerage Basis</div><select class="field-select"><option>PER-MT</option><option>PERCENTAGE</option><option>FIXED</option></select></div>
+  </div></div>
+  <div id="${id}-commodity" class="fasttab-content hidden" style="padding:18px">
+    <div class="banner banner-info"><span class="banner-icon">ℹ</span>Commodity and grade are fully independent from the deal header and other buy legs.</div>
+    <div class="form-grid">
+      <div class="field col-span-2"><div class="field-label">Commodity <span class="required">*</span></div><select class="field-select sel-commodity"></select></div>
+      <div class="field"><div class="field-label">Grade / Specification <span class="required">*</span></div><input type="text" class="field-input" placeholder="e.g. Grade A, HMS 80:20"></div>
+      <div class="field"><div class="field-label">Quantity (MT) <span class="required">*</span></div><input type="number" class="field-input"></div>
+      <div class="field"><div class="field-label">Tolerance %</div><input type="number" class="field-input" placeholder="e.g. 5"></div>
+      <div class="field"><div class="field-label">Tolerance Type</div><select class="field-select"><option>MOLOO</option><option>MOLCHOPT</option><option>FIXED</option></select></div>
+      <div class="field"><div class="field-label">Partial Shipment</div><select class="field-select"><option>NOT ALLOWED</option><option>ALLOWED</option></select></div>
+      <div class="field"><div class="field-label">Weight Basis</div><select class="field-select"><option>SHIPPED-WEIGHT</option><option>OUTTURN-WEIGHT</option><option>DRAFT-SURVEY</option></select></div>
+      <div class="field"><div class="field-label">Incoterms <span class="required">*</span></div><select class="field-select"><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option><option>EXW</option></select></div>
+      <div class="field"><div class="field-label">Port of Loading</div><input type="text" class="field-input" placeholder="e.g. Shanghai, Antwerp"></div>
+      <div class="field"><div class="field-label">Port of Discharge</div><input type="text" class="field-input" placeholder="e.g. Nhava Sheva, Rotterdam"></div>
+      <div class="field"><div class="field-label">Shipment Window From <span class="required">*</span></div><input type="date" class="field-input"></div>
+      <div class="field"><div class="field-label">Shipment Window To <span class="required">*</span></div><input type="date" class="field-input"></div>
+      <div class="field"><div class="field-label">Origin Country</div><input type="text" class="field-input" placeholder="e.g. Chile, Indonesia"></div>
+      <div class="field"><div class="field-label">Manufacturing Required</div><select class="field-select"><option>NO</option><option>YES — Check Profile</option></select></div>
+    </div>
+  </div>
+  <div id="${id}-pricing" class="fasttab-content hidden" style="padding:18px">
+    <div class="banner banner-info"><span class="banner-icon">◆</span>Pricing template is fully independent per buy leg. Different vendors can have entirely different pricing bases, currencies, QP windows.</div>
+    <div class="form-grid">
+      <div class="field col-span-2"><div class="field-label">Pricing Template <span class="required">*</span></div><select class="field-select sel-template"></select></div>
+      <div class="field"><div class="field-label">Price Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>GBP</option><option>CNY</option></select></div>
+      <div class="field"><div class="field-label">Invoice Currency</div><select class="field-select"><option>USD</option><option>EUR</option><option>GBP</option><option>INR</option></select></div>
+      <div class="field"><div class="field-label">Fixed Price (if FIXED template)</div><input type="number" class="field-input" placeholder="USD/MT"></div>
+      <div class="field"><div class="field-label">QP Period Override</div><select class="field-select"><option>— Use Template Default —</option><option>M (Month of BL)</option><option>M+1</option><option>M-1</option><option>Custom Window</option></select></div>
+      <div class="field"><div class="field-label">TC — Treatment Charge USD/dmt</div><input type="number" class="field-input" placeholder="e.g. 180 (concentrates)"></div>
+      <div class="field"><div class="field-label">RC — Refining Charge USc/lb</div><input type="number" class="field-input" placeholder="e.g. 18 (concentrates)"></div>
+      <div class="field"><div class="field-label">Provisional Price</div><div class="field-calc">— pending market data —</div></div>
+      <div class="field"><div class="field-label">Provisional Total Value</div><div class="field-calc">—</div></div>
+    </div>
+  </div>
+  <div id="${id}-payment" class="fasttab-content hidden" style="padding:18px">
+    <div class="banner banner-warn"><span class="banner-icon">⚠</span>Payment terms are fully independent from the sell leg and other buy legs. Negotiated per vendor.</div>
+    <div class="form-grid">
+      <div class="field"><div class="field-label">Payment Basis <span class="required">*</span></div><select class="field-select"><option>ADVANCE</option><option>LC-SIGHT</option><option>LC-USANCE</option><option>CAD</option><option>TT-AGAINST-DOCS</option><option>OPEN-ACCOUNT</option></select></div>
+      <div class="field"><div class="field-label">BC Payment Terms Code</div><select class="field-select"><option>NET30</option><option>NET60</option><option>NET90</option><option>CAD</option><option>IMMEDIATE</option></select></div>
+      <div class="field"><div class="field-label">Advance Required %</div><input type="number" class="field-input" value="0"></div>
+      <div class="field"><div class="field-label">Retention %</div><input type="number" class="field-input" value="0"></div>
+      <div class="field"><div class="field-label">Retention Release Trigger</div><select class="field-select"><option>ASSAY-FINALISED</option><option>OUTTURN-CONFIRMED</option><option>INVOICE-SETTLED</option><option>CUSTOM</option></select></div>
+      <div class="field"><div class="field-label">LC Required</div><select class="field-select" onchange="toggleLC(this,'${id}')"><option value="NO">NO</option><option value="YES">YES</option></select></div>
+    </div>
+    <div id="${id}-lc" class="hidden mt-12">
+      <div class="divider-label">LC Details</div>
+      <div class="form-grid">
+        <div class="field"><div class="field-label">LC No.</div><input type="text" class="field-input"></div>
+        <div class="field"><div class="field-label">Issuing Bank</div><input type="text" class="field-input"></div>
+        <div class="field"><div class="field-label">LC Amount (USD)</div><input type="number" class="field-input"></div>
+        <div class="field"><div class="field-label">LC Expiry Date</div><input type="date" class="field-input"></div>
+      </div>
+    </div>
+    <div class="divider-label mt-16">Payment Schedule Lines</div>
+    <table class="line-table"><thead><tr><th>#</th><th>%</th><th>Trigger Event</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+    <tbody id="${id}-pay-body"><tr><td colspan="6" class="table-empty">No lines — add below</td></tr></tbody></table>
+    <div class="line-add-row"><button class="btn btn-ghost btn-sm" onclick="addPayLine('${id}-pay-body')">+ Add Payment Line</button></div>
+  </div>
+  <div id="${id}-penalties" class="fasttab-content hidden" style="padding:18px">
+    <div class="banner banner-warn"><span class="banner-icon">⚠</span>INBOUND-PENALTY = deducted from vendor invoice. INBOUND-BONUS = added to vendor invoice for over-spec delivery.</div>
+    <table class="line-table"><thead><tr><th>#</th><th>Adj. Code</th><th>Calc Type</th><th>Element</th><th>Threshold</th><th>Rate / Value</th><th>Direction</th><th>Status</th><th></th></tr></thead>
+    <tbody id="${id}-pen-body"><tr><td colspan="9" class="table-empty">No lines — add manually or load from template</td></tr></tbody></table>
+    <div class="line-add-row btn-row gap-8">
+      <button class="btn btn-ghost btn-sm" onclick="addPenLine('${id}-pen-body','BUY')">+ Add Line</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadFromTemplate('${id}-pen-body')">Load from Template</button>
+    </div>
+  </div>`;
+}
+
+// ── RFQ MODULE ─────────────────────────────────────────────────────────────
+function renderRFQList(){
+  const tb=document.getElementById('rfq-list-body');if(!tb)return;
+  tb.innerHTML=RFQ_SEED.rfqs.map(r=>`
+    <tr onclick="openRFQDetail('${r.no}')" style="cursor:pointer">
+      <td class="mono text-accent">${r.no}</td><td>${commodityChip(r.commodity)}</td>
+      <td class="mono">${r.targetMin}–${r.targetMax} ${r.uom}</td>
+      <td class="fs-12">${r.dealNo}</td>
+      <td class="fs-12">${r.vendors.length} invited · ${r.vendors.filter(v=>v.status==='RESPONDED').length} responded</td>
+      <td>${statusBadge(r.status)}</td><td class="mono fs-11">${r.deadline}</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();openRFQDetail('${r.no}')">Open</button></td>
+    </tr>`).join('');
+}
+
+function openRFQDetail(no){
+  CTRM.currentRFQ=no;const rfq=RFQ_SEED.rfqs.find(r=>r.no===no);if(!rfq)return;
+  renderRFQHeader(rfq);renderVendorDist(rfq);renderResponses(rfq);renderCompare(rfq);
+  navigate('rfq-detail');
+}
+
+function renderRFQHeader(rfq){
+  const el=document.getElementById('rfq-detail-header');if(!el)return;
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap"><div><div class="page-title">${rfq.no}</div><div class="page-subtitle">${rfq.dealNo} · ${rfq.commodity} · ${rfq.targetMin}–${rfq.targetMax} ${rfq.uom}</div></div><div style="margin-left:auto" class="btn-row gap-8">${statusBadge(rfq.status)}<button class="btn btn-primary btn-sm" onclick="toast('RFQ Issued','Invitations sent to ${rfq.vendors.length} vendors','success')">Issue / Reissue</button></div></div>
+  <div class="stat-row"><div class="stat-chip"><div class="stat-chip-label">Vendors Invited</div><div class="stat-chip-value">${rfq.vendors.length}</div></div><div class="stat-chip"><div class="stat-chip-label">Responses</div><div class="stat-chip-value text-green">${rfq.vendors.filter(v=>v.status==='RESPONDED').length}</div></div><div class="stat-chip"><div class="stat-chip-label">Deadline</div><div class="stat-chip-value fs-13 mono">${rfq.deadline}</div></div><div class="stat-chip"><div class="stat-chip-label">Alt. Grades Accepted</div><div class="stat-chip-value ${rfq.altGrades?'text-green':'text-danger'}">${rfq.altGrades?'YES':'NO'}</div></div></div>`;
+}
+
+function renderVendorDist(rfq){
+  const el=document.getElementById('rfq-vendor-dist');if(!el)return;
+  el.innerHTML=rfq.vendors.map(v=>`<tr><td class="mono fs-11">${v.no}</td><td class="fs-12 fw-600">${v.name}</td><td>${statusBadge(v.status)}</td><td>${v.score>0?`<div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${v.score}%"></div></div><div class="score-val">${v.score}</div></div>`:'<span class="text-dim fs-11">—</span>'}</td><td><button class="btn btn-ghost btn-xs" onclick="toast('Reminder Sent','Email sent to ${v.name}','info')">Remind</button></td></tr>`).join('');
+}
+
+function renderResponses(rfq){
+  const el=document.getElementById('rfq-responses-body');if(!el)return;
+  el.innerHTML=rfq.responses.map((r,i)=>`<tr><td>${statusBadge(r.status)}</td><td class="fs-12 fw-600">${r.vendor}</td><td><span class="commodity-chip"><span class="commodity-pip pip-fe"></span>${r.grade}</span></td><td class="mono">${fmtQty(r.qty,r.uom)}</td><td class="mono fw-600 ${i===2?'text-green':''}">${r.price} ${r.currency}/MT</td><td class="fs-11">${r.pricingType}</td><td class="fs-11">${r.incoterms} · ${r.port}</td><td class="fs-11">${r.paymentBasis}</td><td><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${r.score}%"></div></div><div class="score-val">${r.score}</div></div></td><td class="btn-row gap-8"><button class="btn btn-ghost btn-xs" onclick="openRespDetail(${i})">Detail</button><button class="btn btn-primary btn-xs" onclick="acceptResp(${i},'${rfq.no}')">Accept</button></td></tr>`).join('');
+}
+
+function renderCompare(rfq){
+  const el=document.getElementById('rfq-compare-grid');if(!el)return;
+  const r=rfq.responses;const minP=Math.min(...r.map(x=>x.price));const maxS=Math.max(...r.map(x=>x.score));
+  el.innerHTML=`<div class="compare-grid">
+    <div class="compare-row"><div class="compare-label">Vendor</div>${r.map(x=>`<div class="compare-cell fw-600">${x.vendor}</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Grade Offered</div>${r.map(x=>`<div class="compare-cell fs-11">${x.grade}</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Quantity</div>${r.map(x=>`<div class="compare-cell mono">${fmtQty(x.qty,x.uom)}</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Price (USD/MT)</div>${r.map(x=>`<div class="compare-cell mono ${x.price===minP?'best':''}">${x.price} USD</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Pricing Type</div>${r.map(x=>`<div class="compare-cell fs-11">${x.pricingType}</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Incoterms</div>${r.map(x=>`<div class="compare-cell fs-11">${x.incoterms}</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Payment Basis</div>${r.map(x=>`<div class="compare-cell fs-11">${x.paymentBasis}</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Advance Required</div>${r.map(x=>`<div class="compare-cell mono">${x.advance}%</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Penalty Lines</div>${r.map(x=>`<div class="compare-cell mono">${x.penalties.length} lines</div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Eval. Score</div>${r.map(x=>`<div class="compare-cell ${x.score===maxS?'best':''}"><div class="score-bar-wrap"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${x.score}%"></div></div><div class="score-val">${x.score}</div></div></div>`).join('')}</div>
+    <div class="compare-row"><div class="compare-label">Action</div>${r.map((x,i)=>`<div class="compare-cell"><button class="btn btn-${x.status==='SHORTLISTED'?'primary':'ghost'} btn-xs" onclick="acceptResp(${i},'${rfq.no}')">Accept → Buy Leg</button></div>`).join('')}</div>
+  </div>`;
+}
+
+function acceptResp(idx,rfqNo){
+  const rfq=RFQ_SEED.rfqs.find(r=>r.no===rfqNo);if(!rfq)return;
+  const resp=rfq.responses[idx];
+  const ln=`BL-${String(CTRM.nextBuyLegSeq++).padStart(2,'0')}`;
+  toast(`Response Accepted`,`${resp.vendor} → Buy Leg ${ln} created on ${rfq.dealNo}`,'success');
+  setTimeout(()=>toast('Penalty Terms Transferred',`${resp.penalties.length} lines copied to ${ln}`,'info'),700);
+}
+
+function openRespDetail(idx){
+  const rfq=RFQ_SEED.rfqs.find(r=>r.no===CTRM.currentRFQ);if(!rfq)return;
+  const r=rfq.responses[idx];
+  document.getElementById('response-detail-body').innerHTML=`
+    <div class="form-grid mb-16">
+      <div class="field"><div class="field-label">Vendor</div><div class="field-value">${r.vendor}</div></div>
+      <div class="field"><div class="field-label">Status</div><div class="field-value">${statusBadge(r.status)}</div></div>
+      <div class="field"><div class="field-label">Grade</div><div class="field-value">${r.grade}</div></div>
+      <div class="field"><div class="field-label">Quantity</div><div class="field-value mono">${fmtQty(r.qty,r.uom)}</div></div>
+      <div class="field"><div class="field-label">Price</div><div class="field-value mono text-accent">${r.price} ${r.currency}/MT</div></div>
+      <div class="field"><div class="field-label">Pricing Type</div><div class="field-value">${r.pricingType}</div></div>
+      <div class="field"><div class="field-label">Incoterms / Port</div><div class="field-value">${r.incoterms} · ${r.port}</div></div>
+      <div class="field"><div class="field-label">Payment Basis</div><div class="field-value">${r.paymentBasis}</div></div>
+      <div class="field"><div class="field-label">Validity</div><div class="field-value mono">${r.validity}</div></div>
+      <div class="field"><div class="field-label">Eval. Score</div><div class="field-value text-green fw-700">${r.score}/100</div></div>
+    </div>
+    <div class="divider-label">Proposed Penalty / Bonus Terms</div>
+    <table class="line-table"><thead><tr><th>Code</th><th>Calc Type</th><th>Element</th><th>Threshold</th><th>Rate</th><th>Direction</th></tr></thead>
+    <tbody>${r.penalties.map(p=>`<tr><td class="mono fs-11 text-accent2">${p.code}</td><td><span class="calc-type-pill ct-${p.calc.replace(/-/g,'').toLowerCase()}">${p.calc}</span></td><td class="mono fs-11">${p.element}</td><td class="mono fs-11">${p.threshold}</td><td class="mono fs-11">${p.rate}</td><td><span class="badge badge-danger" style="font-size:8px">${p.dir}</span></td></tr>`).join('')}</tbody></table>
+    <div class="btn-row right mt-16"><button class="btn btn-primary" onclick="closeModal('modal-response-detail');acceptResp(${idx},'${CTRM.currentRFQ}')">Accept → Create Buy Leg</button></div>`;
+  openModal('modal-response-detail');
+}
+
+// ── PENALTY CALCULATOR ─────────────────────────────────────────────────────
+function calcPenalty(){
+  const wetQty=parseFloat(document.getElementById('calc-wet-qty')?.value)||500;
+  const moisture=parseFloat(document.getElementById('calc-moisture')?.value)||9.2;
+  const assay=parseFloat(document.getElementById('calc-assay')?.value)||28.5;
+  const pb=parseFloat(document.getElementById('calc-pb')?.value)||0.8;
+  const as_=parseFloat(document.getElementById('calc-as')?.value)||0.05;
+  const lme=parseFloat(document.getElementById('calc-lme')?.value)||9420;
+  const tc=parseFloat(document.getElementById('calc-tc')?.value)||180;
+  const dryQty=wetQty*(1-moisture/100);
+  const payableGrade=assay-1.0;
+  const payableMetal=dryQty*payableGrade/100;
+  const baseValue=payableMetal*lme;
+  const tcDeduction=dryQty*tc;
+  const pbPenalty=pb>0.5?Math.round(((pb-0.5)/0.1)*8*dryQty):0;
+  const asPenalty=as_>0.1?Math.round(((as_-0.1)/0.01)*10*dryQty):0;
+  let moisturePenalty=0,moistureReject=false;
+  if(moisture>12)moistureReject=true;
+  else if(moisture>10)moisturePenalty=Math.round(((moisture-10)*4+(10-8)*2)*wetQty);
+  else if(moisture>8)moisturePenalty=Math.round((moisture-8)*2*wetQty);
+  const totalDeductions=tcDeduction+pbPenalty+asPenalty+moisturePenalty;
+  const netPayable=baseValue-totalDeductions;
+  const res=document.getElementById('calc-results');if(!res)return;
+  if(moistureReject){res.innerHTML=`<div class="banner banner-danger"><span class="banner-icon">✕</span><strong>CARGO REJECTION TRIGGERED</strong> — Moisture ${moisture}% exceeds 12% rejection limit. Cargo cannot be invoiced. Rejection workflow activated.</div>`;return;}
+  res.innerHTML=`<table class="line-table"><thead><tr><th>Component</th><th>Calc Type</th><th>Formula</th><th>Value</th></tr></thead><tbody>
+    <tr><td>Gross Wet Weight</td><td><span class="calc-type-pill ct-formula">INPUT</span></td><td class="mono fs-11">${wetQty} wet MT</td><td class="mono text-muted">${wetQty} MT</td></tr>
+    <tr><td>Dry Weight (Moisture adj.)</td><td><span class="calc-type-pill ct-formula">FORMULA</span></td><td class="mono fs-11">${wetQty} × (1 − ${moisture}%)</td><td class="mono text-green">${dryQty.toFixed(2)} dmt</td></tr>
+    <tr><td>Payable Metal (Cu)</td><td><span class="calc-type-pill ct-formula">FORMULA</span></td><td class="mono fs-11">${dryQty.toFixed(1)} × (${assay}% − 1%)</td><td class="mono text-green">${payableMetal.toFixed(2)} MT</td></tr>
+    <tr><td>Base Value (LME × Payable)</td><td><span class="calc-type-pill ct-formula">FORMULA</span></td><td class="mono fs-11">${payableMetal.toFixed(2)} MT × $${lme}</td><td class="mono text-green">$${Math.round(baseValue).toLocaleString()}</td></tr>
+    <tr><td>TC Deduction</td><td><span class="calc-type-pill ct-flat">FLAT-RATE</span></td><td class="mono fs-11">$${tc}/dmt × ${dryQty.toFixed(1)} dmt</td><td class="mono text-danger">−$${Math.round(tcDeduction).toLocaleString()}</td></tr>
+    <tr><td>Pb Penalty (actual ${pb}%, thresh 0.5%)</td><td><span class="calc-type-pill ct-threshold">THRESHOLD</span></td><td class="mono fs-11">(${pb}−0.5)/0.1 × $8 × ${dryQty.toFixed(0)}</td><td class="mono ${pbPenalty>0?'text-danger':'text-dim'}">${pbPenalty>0?'−$'+pbPenalty.toLocaleString():'No penalty'}</td></tr>
+    <tr><td>As Penalty (actual ${as_}%, thresh 0.1%)</td><td><span class="calc-type-pill ct-threshold">THRESHOLD</span></td><td class="mono fs-11">(${as_}−0.1)/0.01 × $10 × ${dryQty.toFixed(0)}</td><td class="mono ${asPenalty>0?'text-danger':'text-dim'}">${asPenalty>0?'−$'+asPenalty.toLocaleString():'No penalty'}</td></tr>
+    <tr><td>Moisture Penalty (${moisture}%, tier table)</td><td><span class="calc-type-pill ct-tiered">TIERED</span></td><td class="mono fs-11">${moisture>8?'Bracket '+Math.floor(moisture)+'% applied':'Below 8% threshold'}</td><td class="mono ${moisturePenalty>0?'text-danger':'text-dim'}">${moisturePenalty>0?'−$'+moisturePenalty.toLocaleString():'No penalty'}</td></tr>
+    </tbody><tfoot><tr style="border-top:2px solid var(--border2)"><td class="fw-700" colspan="3">NET PAYABLE VALUE</td><td class="mono fw-700 ${netPayable>0?'text-green':'text-danger'}" style="font-size:15px">$${Math.round(netPayable).toLocaleString()}</td></tr></tfoot></table>`;
+}
+
+// ── ADJUSTMENT CODE TABLE ──────────────────────────────────────────────────
+function renderAdjCodes(){
+  const tb=document.getElementById('adj-code-body');if(!tb)return;
+  tb.innerHTML=SEED.adjustmentCodes.map(a=>`<tr><td class="mono fs-11 text-accent2">${a.code}</td><td class="fs-12">${a.name}</td><td class="fs-11">${a.category}</td><td><span class="calc-type-pill ct-${a.calcType.replace(/-/g,'').toLowerCase()}">${a.calcType}</span></td><td class="mono fs-11">${a.default} <span class="text-dim">${a.unit}</span></td><td class="mono fw-700 ${a.sign==='+'?'text-green':a.sign==='-'?'text-danger':'text-accent2'}">${a.sign}</td></tr>`).join('');
+}
+
+// ── SELL LEG TABS INIT ─────────────────────────────────────────────────────
+function initSellTabs(){
+  document.querySelectorAll('.sell-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.sell-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const target=tab.dataset.tab;
+      ['sl-customer','sl-commodity','sl-pricing','sl-payment','sl-penalties'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){el.classList.toggle('active',id===target);el.classList.toggle('hidden',id!==target);}
+      });
+    });
+  });
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  navigate('deals');
+  renderDealList();
+  renderRFQList();
+  renderAdjCodes();
+  initSellTabs();
+  // Populate all static selects
+  document.querySelectorAll('.sel-commodity').forEach(el=>populateSelect(el,SEED.commodities,c=>c.code,c=>`${c.code} — ${c.name}`,'— Select Commodity —'));
+  document.querySelectorAll('.sel-template').forEach(el=>populateSelect(el,SEED.pricingTemplates,t=>t.code,t=>`${t.code} · ${t.name}`,'— Select Template —'));
+  document.querySelectorAll('.sel-vendor').forEach(el=>populateSelect(el,SEED.vendors,v=>v.no,v=>`${v.no} · ${v.name} [${v.kyc}]`,'— Select Vendor —'));
+  document.querySelectorAll('.sel-customer').forEach(el=>populateSelect(el,SEED.customers,c=>c.no,c=>`${c.no} · ${c.name}`,'— Select Customer —'));
+  document.querySelectorAll('.sel-adj-code').forEach(el=>populateSelect(el,SEED.adjustmentCodes,a=>a.code,a=>`${a.code} — ${a.name}`,'— Select Adjustment —'));
+  setTimeout(calcPenalty,200);
+});
+</script>
+</body>
+</html>
