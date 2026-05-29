@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CTRM Platform · v13 · Core</title>
+<title>CTRM Platform · v14 · Core</title>
 <style>
 /* ── DARK MODE (default) ──────────────────────────────────── */
 :root{
@@ -400,7 +400,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V13</div>
+    <div class="sb-tag">CTRM PLATFORM · V14</div>
   </div>
   <nav class="sb-nav">
 
@@ -3842,18 +3842,21 @@ document.addEventListener('DOMContentLoaded', function() {
   ['enq-tab','qt-tab','pct','sct','pot','sot','lgt','stt','prt','grnt','expt','pivt','fivt','mpt','asyt'].forEach(wireTabs);
   nav('enquiry');
 
-  // Load live data after nav is set
+  // Load all live data on startup
   setTimeout(async () => {
+    await loadEnquiryList();
+    await loadLogisticsList();
+    await loadContractList('PC');
+    await loadContractList('SC');
+    await loadContractDropdowns();
     await renderExposureTable();
     await renderHedgeCard();
     await renderQPWindow('DEAL123');
     await renderProvInvoice('DEAL456');
     await renderFinalInvoice('DEAL456');
     await recalcPricing();
-    await loadLogisticsList();
     await loadAllocationTable();
-    await loadContractDropdowns();
-  }, 150);
+  }, 300);
 });
 
 
@@ -4482,45 +4485,41 @@ async function confirmDeal(id, dealNo) {
 async function loadEnquiryList() {
   const tbody = document.getElementById('enq-list');
   if (!tbody) return;
-
-  const res = await fetch(API_BASE + '/api/deals');
-  const data = await res.json();
-  const deals = data.data || data;
-  if (!Array.isArray(deals) || !deals.length) return;
-
-  tbody.innerHTML = deals.map(d => `
-    <tr onclick="openEnquiryDetail('${d.deal_no}')" style="cursor:pointer">
-      <td class="mono ta fw6" style="color:var(--accent)">${d.deal_no}</td>
-      <td class="mono f10">${d.deal_date?.split('T')[0] || '—'}</td>
-      <td class="f11 fw6">${d.commodity_name || d.commodity_code}</td>
-      <td><span class="badge ${d.deal_type==='BACK-TO-BACK'?'bd-act':'bd-ship'}">${d.deal_type||'—'}</span></td>
-      <td class="mono">${d.qty_mt || '—'}</td>
-      <td class="f11">${d.supplier_name || '—'}</td>
-      <td class="f11">${d.customer_name || '—'}</td>
-      <td class="f10">${d.incoterms||'—'}</td>
-      <td><span class="badge ${d.confirmed?'bd-confirmed':'bd-draft'}">${d.status||'DRAFT'}</span></td>
-      <td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail('${d.deal_no}')">Open</button></td>
-    </tr>
-  `).join('');
-
-  // Update stat chips on the enquiry page
-  const enqPage = document.getElementById('page-enquiry');
-  if (enqPage) {
-    const chips = enqPage.querySelectorAll('.sr .scv');
-    const total    = deals.length;
-    const open     = deals.filter(d=>d.status==='OPEN'||d.status==='DRAFT').length;
-    const quoted   = deals.filter(d=>d.status==='QUOTED').length;
-    const converted= deals.filter(d=>d.status==='CONFIRMED'||d.confirmed).length;
-    const pending  = deals.filter(d=>!d.confirmed&&d.status!=='CONVERTED').length;
-    if (chips[0]) chips[0].textContent = total;
-    if (chips[1]) chips[1].textContent = open;
-    if (chips[2]) chips[2].textContent = quoted;
-    if (chips[3]) chips[3].textContent = converted;
-    if (chips[4]) chips[4].textContent = pending;
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading...</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    if (!res.ok) throw new Error('API returned ' + res.status);
+    const json = await res.json();
+    const deals = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
+    if (!deals.length) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">No enquiries yet · Click + New Enquiry to create one</td></tr>';
+      return;
+    }
+    tbody.innerHTML = deals.map(d => '<tr onclick="openEnquiryDetail(\'' + d.deal_no + '\')" style="cursor:pointer">'
+      + '<td class="mono ta fw6" style="color:var(--accent)">' + d.deal_no + '</td>'
+      + '<td class="mono f10">' + (d.deal_date||'').split('T')[0] + '</td>'
+      + '<td class="f11 fw6">' + (d.commodity_name || d.commodity_code || '—') + '</td>'
+      + '<td><span class="badge ' + (d.deal_type==='BACK-TO-BACK'?'bd-act':'bd-ship') + '">' + (d.deal_type||'—') + '</span></td>'
+      + '<td class="mono">' + (d.qty_mt||'—') + '</td>'
+      + '<td class="f11">' + (d.supplier_name||'—') + '</td>'
+      + '<td class="f11">' + (d.customer_name||'—') + '</td>'
+      + '<td class="f10">' + (d.incoterms||'—') + '</td>'
+      + '<td><span class="badge ' + (d.confirmed?'bd-confirmed':'bd-draft') + '">' + (d.status||'DRAFT') + '</span></td>'
+      + '<td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail(\'' + d.deal_no + '\')">Open</button></td>'
+      + '</tr>'
+    ).join('');
+    // Update stat chips
+    const chips = document.querySelectorAll('#page-enquiry .sr .scv');
+    if (chips[0]) chips[0].textContent = deals.length;
+    if (chips[1]) chips[1].textContent = deals.filter(d=>d.status==='OPEN'||d.status==='DRAFT').length;
+    if (chips[2]) chips[2].textContent = deals.filter(d=>d.status==='QUOTED').length;
+    if (chips[3]) chips[3].textContent = deals.filter(d=>d.status==='CONFIRMED'||d.confirmed).length;
+    const badge = document.querySelector('.ni[data-page=enquiry] .nb');
+    if (badge) badge.textContent = deals.length;
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--danger);font-family:var(--font-mono);font-size:11px">Error: ' + err.message + '</td></tr>';
+    console.error('loadEnquiryList:', err);
   }
-  // Update sidebar badge
-  const sidebarBadge = document.querySelector('.ni[data-page=enquiry] .nb');
-  if (sidebarBadge) sidebarBadge.textContent = deals.length;
 }
 
 // ── CONTRACT DRILL-DOWN ───────────────────────────────────────
