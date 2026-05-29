@@ -500,7 +500,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="cbf">
           <table class="dt">
           <thead><tr><th>Enquiry No.</th><th>Date</th><th>Direction</th><th>Commodity</th><th>Qty</th><th>Counterparty</th><th>Pricing Type</th><th>Status</th><th>Trader</th><th></th></tr></thead>
-            <tbody id="enq-list"><tr onclick="openEnquiryDetail('ENQ-2026-039')" style="cursor:pointer"><td class="mono ta fw6">ENQ-2026-039</td><td class="mono f10">2026-03-18</td><td class="f11 fw6">Copper MillBerry</td><td><span class="badge bd-act">BACK-TO-BACK</span></td><td class="mono">100</td><td class="f11">Glencore AG</td><td class="f11">Tata Metals Ltd</td><td class="f10">CIF · Dar es Salaam</td><td class="mono f10">91% LME Lowest</td><td><span class="badge bd-ship">CONVERTED</span></td><td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail('ENQ-2026-039')">Open</button></td></tr><tr onclick="openEnquiryDetail('ENQ-2026-041')" style="cursor:pointer"><td class="mono ta fw6">ENQ-2026-041</td><td class="mono f10">2026-04-10</td><td class="f11 fw6">Lead-Tin Ingots</td><td><span class="badge bd-act">OPEN-SELL</span></td><td class="mono">107.7</td><td class="f11 tdim">—</td><td class="f11">Aurubis Beerse NV</td><td class="f10">CIF · Antwerp</td><td class="mono f10">Pb+Sn LMEO</td><td><span class="badge bd-ship">QUOTED</span></td><td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail('ENQ-2026-041')">Open</button></td></tr></tbody>
+            <tbody id="enq-list"><tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading enquiries...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -4099,11 +4099,12 @@ async function submitNewEnquiry(){
       toast('Enquiry Created', enqNo + ' · ' + commodity + ' · ' + qty + ' MT', 'success');
       // Reset form
       ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-      // Refresh list and navigate to it
-      await loadEnquiryList();
+      // Navigate to enquiry page first
       nav('enquiry', document.querySelector('[data-page=enquiry]'));
-      // Open the new record straight away
-      setTimeout(() => openEnquiryDetail(enqNo), 300);
+      // Then load the list (now that page is visible)
+      await loadEnquiryList();
+      // Then open the new record
+      setTimeout(() => openEnquiryDetail(enqNo), 500);
     } else {
       toast('Save Failed', data.error || 'Unknown error — check server logs', 'warning');
     }
