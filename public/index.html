@@ -405,31 +405,31 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
   <nav class="sb-nav">
 
     <div class="sb-group">Commercial</div>
-    <div class="ni" data-page="enquiry" onclick="nav('enquiry',this)">Enquiries<span class="nb">4</span></div>
-    <div class="ni" data-page="quotation" onclick="nav('quotation',this)">Quotation / RFQ<span class="nb">2</span></div>
-    <div class="ni" data-page="deals" onclick="nav('deals',this)">Deal Confirmation<span class="nb">3</span></div>
+    <div class="ni" data-page="enquiry" onclick="nav('enquiry',this);afterNav('enquiry')">Enquiries<span class="nb">4</span></div>
+    <div class="ni" data-page="quotation" onclick="nav('quotation',this);afterNav('quotation')">Quotation / RFQ<span class="nb">2</span></div>
+    <div class="ni" data-page="deals" onclick="nav('deals',this);afterNav('deals')">Deal Confirmation<span class="nb">3</span></div>
     <div class="sb-group">Contracts</div>
-    <div class="ni" data-page="purchase-contracts" onclick="nav('purchase-contracts',this)">Purchase Contracts<span class="nb">2</span></div>
-    <div class="ni" data-page="sales-contracts" onclick="nav('sales-contracts',this)">Sales Contracts<span class="nb">2</span></div>
-    <div class="ni" data-page="qpwindow" onclick="nav('qpwindow',this)">QP &amp; Rollover Window</div>
-    <div class="ni" data-page="purchase-orders" onclick="nav('purchase-orders',this)">Purchase Orders<span class="nb">1</span></div>
-    <div class="ni" data-page="sales-orders" onclick="nav('sales-orders',this)">Sales Orders<span class="nb">1</span></div>
+    <div class="ni" data-page="purchase-contracts" onclick="nav('purchase-contracts',this);afterNav('purchase-contracts')">Purchase Contracts<span class="nb">2</span></div>
+    <div class="ni" data-page="sales-contracts" onclick="nav('sales-contracts',this);afterNav('sales-contracts')">Sales Contracts<span class="nb">2</span></div>
+    <div class="ni" data-page="qpwindow" onclick="nav('qpwindow',this);afterNav('qpwindow')">QP &amp; Rollover Window</div>
+    <div class="ni" data-page="purchase-orders" onclick="nav('purchase-orders',this);afterNav('purchase-orders')">Purchase Orders<span class="nb">1</span></div>
+    <div class="ni" data-page="sales-orders" onclick="nav('sales-orders',this);afterNav('sales-orders')">Sales Orders<span class="nb">1</span></div>
     <div class="sb-group">Logistics &amp; Shipment</div>
-    <div class="ni" data-page="logistics" onclick="nav('logistics',this)">Logistics</div>
-    <div class="ni" data-page="shipment-transit" onclick="nav('shipment-transit',this)">In Transit</div>
-    <div class="ni" data-page="provisional-receipt" onclick="nav('provisional-receipt',this)">Provisional Receipt</div>
-    <div class="ni" data-page="shipment" onclick="nav('shipment',this)">Assay &amp; QC</div>
-    <div class="ni" data-page="grn" onclick="nav('grn',this)">Adjustment Screen</div>
+    <div class="ni" data-page="logistics" onclick="nav('logistics',this);afterNav('logistics')">Logistics</div>
+    <div class="ni" data-page="shipment-transit" onclick="nav('shipment-transit',this);afterNav('shipment-transit')">In Transit</div>
+    <div class="ni" data-page="provisional-receipt" onclick="nav('provisional-receipt',this);afterNav('provisional-receipt')">Provisional Receipt</div>
+    <div class="ni" data-page="shipment" onclick="nav('shipment',this);afterNav('shipment')">Assay &amp; QC</div>
+    <div class="ni" data-page="grn" onclick="nav('grn',this);afterNav('grn')">Adjustment Screen</div>
     <div class="sb-group">Pricing &amp; Risk</div>
-    <div class="ni" data-page="pricing" onclick="nav('pricing',this)">Pricing Engine</div>
-    <div class="ni" data-page="allocation" onclick="nav('allocation',this)">Allocation</div>
-    <div class="ni" data-page="hedge" onclick="nav('hedge',this)">Hedge Card</div>
-    <div class="ni" data-page="exposure" onclick="nav('exposure',this)">Exposure &amp; MTM</div>
+    <div class="ni" data-page="pricing" onclick="nav('pricing',this);afterNav('pricing')">Pricing Engine</div>
+    <div class="ni" data-page="allocation" onclick="nav('allocation',this);afterNav('allocation')">Allocation</div>
+    <div class="ni" data-page="hedge" onclick="nav('hedge',this);afterNav('hedge')">Hedge Card</div>
+    <div class="ni" data-page="exposure" onclick="nav('exposure',this);afterNav('exposure')">Exposure &amp; MTM</div>
     <div class="sb-group">Finance</div>
-    <div class="ni" data-page="provisional-invoice" onclick="nav('provisional-invoice',this)">Provisional Invoice</div>
-    <div class="ni" data-page="final-invoice" onclick="nav('final-invoice',this)">Final Invoice</div>
+    <div class="ni" data-page="provisional-invoice" onclick="nav('provisional-invoice',this);afterNav('provisional-invoice')">Provisional Invoice</div>
+    <div class="ni" data-page="final-invoice" onclick="nav('final-invoice',this);afterNav('final-invoice')">Final Invoice</div>
     <div class="sb-group">Workflow</div>
-    <div class="ni" data-page="approvals" onclick="nav('approvals',this)">Approval Workflow<span class="nb">3</span></div>
+    <div class="ni" data-page="approvals" onclick="nav('approvals',this);afterNav('approvals')">Approval Workflow<span class="nb">3</span></div>
     <div class="sb-group">Master Data</div>
   </nav>
   <div class="sb-foot">
@@ -500,7 +500,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="cbf">
           <table class="dt">
           <thead><tr><th>Enquiry No.</th><th>Date</th><th>Direction</th><th>Commodity</th><th>Qty</th><th>Counterparty</th><th>Pricing Type</th><th>Status</th><th>Trader</th><th></th></tr></thead>
-            <tbody id="enq-list"><tr onclick="nav('enq-detail',document.querySelector('[data-page=enq-detail]'))" style="cursor:pointer"><td class="mono ta fw6">ENQ-2026-039</td><td class="mono f10">2026-03-18</td><td class="f11 fw6">Copper MillBerry</td><td><span class="badge bd-act">BACK-TO-BACK</span></td><td class="mono">100</td><td class="f11">Glencore AG</td><td class="f11">Tata Metals Ltd</td><td class="f10">CIF · Dar es Salaam</td><td class="mono f10">91% LME Lowest</td><td><span class="badge bd-ship">CONVERTED</span></td><td><button class="btn bxs bg">Open</button></td></tr><tr><td class="mono ta fw6">ENQ-2026-041</td><td class="mono f10">2026-04-10</td><td class="f11 fw6">Lead-Tin Ingots</td><td><span class="badge bd-act">OPEN-SELL</span></td><td class="mono">107.7</td><td class="f11 tdim">—</td><td class="f11">Aurubis Beerse NV</td><td class="f10">CIF · Antwerp</td><td class="mono f10">Pb+Sn LMEO</td><td><span class="badge bd-ship">QUOTED</span></td><td><button class="btn bxs bg">Open</button></td></tr></tbody>
+            <tbody id="enq-list"><tr onclick="openEnquiryDetail('ENQ-2026-039')" style="cursor:pointer"><td class="mono ta fw6">ENQ-2026-039</td><td class="mono f10">2026-03-18</td><td class="f11 fw6">Copper MillBerry</td><td><span class="badge bd-act">BACK-TO-BACK</span></td><td class="mono">100</td><td class="f11">Glencore AG</td><td class="f11">Tata Metals Ltd</td><td class="f10">CIF · Dar es Salaam</td><td class="mono f10">91% LME Lowest</td><td><span class="badge bd-ship">CONVERTED</span></td><td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail('ENQ-2026-039')">Open</button></td></tr><tr onclick="openEnquiryDetail('ENQ-2026-041')" style="cursor:pointer"><td class="mono ta fw6">ENQ-2026-041</td><td class="mono f10">2026-04-10</td><td class="f11 fw6">Lead-Tin Ingots</td><td><span class="badge bd-act">OPEN-SELL</span></td><td class="mono">107.7</td><td class="f11 tdim">—</td><td class="f11">Aurubis Beerse NV</td><td class="f10">CIF · Antwerp</td><td class="mono f10">Pb+Sn LMEO</td><td><span class="badge bd-ship">QUOTED</span></td><td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail('ENQ-2026-041')">Open</button></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -3656,27 +3656,6 @@ async function createLogRecord() {
 }
 
 // ── LOAD LOGISTICS LIST ──────────────────────────────────────
-async function loadLogisticsList() {
-  const data = await api('/api/logistics');
-  if (!data) return;
-  const tbody = document.getElementById('log-list-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = data.map(l => `
-    <tr style="cursor:pointer" onclick="openLogDetail(${l.id})">
-      <td class="mono ta fw6">${l.log_no}</td>
-      <td class="mono f10">${l.contract_no||'—'}</td>
-      <td><span class="badge bd-act" style="font-size:7px">${l.shipment_type||'—'}</span></td>
-      <td class="f11">${l.vessel_name||'TBC'}</td>
-      <td class="f11">${l.carrier||'—'}</td>
-      <td class="f10">${l.pol_name||'—'}</td>
-      <td class="f10">${l.pod_name||'—'}</td>
-      <td class="mono f10">${l.bl_date?.split('T')[0]||'—'}</td>
-      <td class="mono f10">${l.eta?.split('T')[0]||'—'}</td>
-      <td><span class="badge bd-ship">${l.status}</span></td>
-      <td><button class="btn bxs bg" onclick="event.stopPropagation();openLogDetail(${l.id})">Open</button></td>
-    </tr>
-  `).join('');
-}
 
 // ── OPEN LOGISTICS DETAIL ─────────────────────────────────────
 async function openLogDetail(id) {
@@ -4006,11 +3985,6 @@ function loadTemplateAdj(){
 // ── END COMPLETE FUNCTION LIST ────────────────────────────────
 
 // ── LOGISTICS FUNCTIONS ───────────────────────────────────────
-function openLogDetail(){
-  const el=document.getElementById('log-detail-card');
-  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
-  wireTabs('lgt');
-}
 
 function openTransitDetail(lotId){
   toast('In Transit','Opening shipment lot '+lotId,'info');
@@ -4091,7 +4065,6 @@ function openNewEnquiry(){ openModal('modal-new-enquiry'); }
 
 // ── CORE WORKFLOW FUNCTIONS ───────────────────────────────────
 
-function openNewEnquiry(){ openModal('modal-new-enquiry'); }
 
 async function submitNewEnquiry(){
   const g = id => document.getElementById(id)?.value;
@@ -4124,20 +4097,20 @@ async function submitNewEnquiry(){
     if(data.success){
       closeModal('modal-new-enquiry');
       toast('Enquiry Created', enqNo + ' · ' + commodity + ' · ' + qty + ' MT', 'success');
+      // Reset form
       ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+      // Refresh list and navigate to it
+      await loadEnquiryList();
+      nav('enquiry', document.querySelector('[data-page=enquiry]'));
+      // Open the new record straight away
+      setTimeout(() => openEnquiryDetail(enqNo), 300);
     } else {
       toast('Save Failed', data.error || 'Unknown error — check server logs', 'warning');
     }
   } catch(err) {
     toast('Connection Error', err.message, 'warning');
   } finally {
-    if(btn){ btn.textContent = 'Create Enquiry →'; btn.disabled = false; }
-  }
-}
-    closeModal('modal-new-enquiry');
-    toast('Enquiry Created', enqNo + ' created · ' + commodity + ' · ' + qty + ' MT','success');
-    // Reset form
-    ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+        if(btn){ btn.textContent = 'Create Enquiry →'; btn.disabled = false; }
   }
 }
 
@@ -4424,6 +4397,250 @@ async function sendHedgeToTreasury(){
     toast('Error', data.error || 'Failed to create hedge requisition', 'warning');
   }
 }
+
+
+// ══════════════════════════════════════════════════════════════
+// V13 — ERP DRILL-DOWN ENGINE
+// Click any list row → detail page populated from API
+// ══════════════════════════════════════════════════════════════
+
+// ── ENQUIRY DRILL-DOWN ────────────────────────────────────────
+async function openEnquiryDetail(dealNo) {
+  // Navigate to detail page
+  nav('enq-detail', document.querySelector('[data-page=enq-detail]'));
+  
+  // Show loading
+  const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v ?? '—'; };
+  set('enqd-no', dealNo);
+  set('enqd-commodity', 'Loading...');
+
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    const data = await res.json();
+    const deals = data.data || data;
+    const deal = Array.isArray(deals) ? deals.find(d => d.deal_no === dealNo) : null;
+
+    if (!deal) {
+      toast('Not Found', 'Deal ' + dealNo + ' not found in database', 'warning');
+      return;
+    }
+
+    // Populate header
+    set('enqd-no', deal.deal_no);
+    set('enqd-commodity', deal.commodity_name || deal.commodity_code);
+    
+    // Status badge
+    const badge = document.getElementById('enqd-badge');
+    if (badge) {
+      const colours = { DRAFT:'bd-draft', CONFIRMED:'bd-confirmed', OPEN:'bd-act', QUOTED:'bd-ship', CONVERTED:'bd-confirmed' };
+      badge.outerHTML = '<span id="enqd-badge" class="badge ' + (colours[deal.status]||'bd-draft') + '">' + (deal.status||'DRAFT') + '</span>';
+    }
+
+    // Populate general tab fields
+    set('enqd-status',   deal.status || '—');
+    set('enqd-date',     deal.deal_date?.split('T')[0] || '—');
+    set('enqd-deal-type',deal.deal_type || '—');
+    set('enqd-qty',      (deal.qty_mt || '—') + ' MT');
+    set('enqd-supplier', deal.supplier_name || '—');
+    set('enqd-customer', deal.customer_name || '—');
+    set('enqd-ref',      deal.deal_no);
+    set('enqd-incoterms',deal.incoterms || '—');
+    set('enqd-route',    '—');
+
+    // Store current deal for actions
+    window._currentDeal = deal;
+
+    // Wire action buttons on detail page
+    const confirmBtn = document.getElementById('enqd-confirm-btn');
+    if (confirmBtn) {
+      confirmBtn.onclick = () => confirmDeal(deal.id, deal.deal_no);
+      confirmBtn.style.display = deal.confirmed ? 'none' : '';
+    }
+
+    toast('Loaded', dealNo + ' · ' + (deal.commodity_name || deal.commodity_code), 'success');
+  } catch(err) {
+    toast('Error', 'Failed to load deal: ' + err.message, 'warning');
+  }
+}
+
+async function confirmDeal(id, dealNo) {
+  const res = await fetch(API_BASE + '/api/deals/' + id + '/confirm', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  const data = await res.json();
+  if (data.success) {
+    toast('Deal Confirmed', dealNo + ' confirmed · Purchase & Sales contracts can now be created', 'success');
+    openEnquiryDetail(dealNo); // refresh
+  } else {
+    toast('Error', data.error, 'warning');
+  }
+}
+
+// ── DYNAMIC ENQUIRY LIST ──────────────────────────────────────
+async function loadEnquiryList() {
+  const tbody = document.getElementById('enq-list');
+  if (!tbody) return;
+
+  const res = await fetch(API_BASE + '/api/deals');
+  const data = await res.json();
+  const deals = data.data || data;
+  if (!Array.isArray(deals) || !deals.length) return;
+
+  tbody.innerHTML = deals.map(d => `
+    <tr onclick="openEnquiryDetail('${d.deal_no}')" style="cursor:pointer">
+      <td class="mono ta fw6" style="color:var(--accent)">${d.deal_no}</td>
+      <td class="mono f10">${d.deal_date?.split('T')[0] || '—'}</td>
+      <td class="f11 fw6">${d.commodity_name || d.commodity_code}</td>
+      <td><span class="badge ${d.deal_type==='BACK-TO-BACK'?'bd-act':'bd-ship'}">${d.deal_type||'—'}</span></td>
+      <td class="mono">${d.qty_mt || '—'}</td>
+      <td class="f11">${d.supplier_name || '—'}</td>
+      <td class="f11">${d.customer_name || '—'}</td>
+      <td class="f10">${d.incoterms||'—'}</td>
+      <td><span class="badge ${d.confirmed?'bd-confirmed':'bd-draft'}">${d.status||'DRAFT'}</span></td>
+      <td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail('${d.deal_no}')">Open</button></td>
+    </tr>
+  `).join('');
+
+  // Update stat chips on the enquiry page
+  const enqPage = document.getElementById('page-enquiry');
+  if (enqPage) {
+    const chips = enqPage.querySelectorAll('.sr .scv');
+    const total    = deals.length;
+    const open     = deals.filter(d=>d.status==='OPEN'||d.status==='DRAFT').length;
+    const quoted   = deals.filter(d=>d.status==='QUOTED').length;
+    const converted= deals.filter(d=>d.status==='CONFIRMED'||d.confirmed).length;
+    const pending  = deals.filter(d=>!d.confirmed&&d.status!=='CONVERTED').length;
+    if (chips[0]) chips[0].textContent = total;
+    if (chips[1]) chips[1].textContent = open;
+    if (chips[2]) chips[2].textContent = quoted;
+    if (chips[3]) chips[3].textContent = converted;
+    if (chips[4]) chips[4].textContent = pending;
+  }
+  // Update sidebar badge
+  const sidebarBadge = document.querySelector('.ni[data-page=enquiry] .nb');
+  if (sidebarBadge) sidebarBadge.textContent = deals.length;
+}
+
+// ── CONTRACT DRILL-DOWN ───────────────────────────────────────
+async function loadContractList(type) {
+  const tbodyId = type === 'PC' ? 'pc-list-tbody' : 'sc-list-tbody';
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+
+  const res = await fetch(API_BASE + '/api/contracts?type=' + type);
+  const data = await res.json();
+  const contracts = data.data || data;
+  if (!Array.isArray(contracts)) return;
+
+  tbody.innerHTML = contracts.map(c => `
+    <tr onclick="openContractDetail(${c.id}, '${type}')" style="cursor:pointer">
+      <td class="mono ta fw6" style="color:var(--accent)">${c.contract_no}</td>
+      <td class="mono f10">${c.contract_date?.split('T')[0] || '—'}</td>
+      <td class="f11 fw6">${c.counterparty_name || '—'}</td>
+      <td class="f11">${c.commodity_name || c.commodity_code}</td>
+      <td class="mono">${c.qty_mt}</td>
+      <td class="f10">${c.incoterms||'—'}</td>
+      <td class="mono f10">${c.payment_pct||90}%</td>
+      <td><span class="badge ${c.status==='ACTIVE'?'bd-confirmed':c.status==='DRAFT'?'bd-draft':'bd-ship'}">${c.status}</span></td>
+      <td>${c.deal_no ? '<span class="mono f10 ta">'+c.deal_no+'</span>' : '—'}</td>
+      <td><button class="btn bxs bg" onclick="event.stopPropagation();openContractDetail(${c.id},'${type}')">Open</button></td>
+    </tr>
+  `).join('');
+}
+
+async function openContractDetail(contractId, type) {
+  const pageId = type === 'PC' ? 'purchase-contracts' : 'sales-contracts';
+  nav(pageId, document.querySelector('[data-page=' + pageId + ']'));
+
+  const res = await fetch(API_BASE + '/api/contracts/' + contractId);
+  const data = await res.json();
+  const c = data.data || data;
+  if (!c || !c.contract_no) return;
+
+  // Populate contract header fields
+  const prefix = type === 'PC' ? 'pcd' : 'scd';
+  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v||'—'; };
+  const setVal = (id, v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+
+  set(prefix+'-no', c.contract_no);
+  set(prefix+'-status', c.status);
+  set(prefix+'-counterparty', c.counterparty_name);
+  set(prefix+'-commodity', c.commodity_name || c.commodity_code);
+  set(prefix+'-qty', c.qty_mt + ' MT');
+  set(prefix+'-incoterms', c.incoterms);
+  set(prefix+'-deal', c.deal_no || '—');
+
+  // Pricing lines
+  if (c.pricing_lines && c.pricing_lines.length > 0) {
+    const pl = c.pricing_lines[0];
+    set(prefix+'-index-pct', (pl.index_pct||'—') + '%');
+    set(prefix+'-payable-pct', (pl.payable_pct||'—') + '%');
+    set(prefix+'-pricing-rule', pl.pricing_rule?.toUpperCase() || '—');
+    set(prefix+'-calc-method', pl.calc_method?.toUpperCase() || '—');
+    set(prefix+'-qp-start', pl.qp_start_date?.split('T')[0] || '—');
+    set(prefix+'-qp-end', pl.qp_end_date?.split('T')[0] || '—');
+  }
+
+  window._currentContract = c;
+  toast('Loaded', c.contract_no + ' · ' + (c.counterparty_name||''), 'success');
+}
+
+// ── LOGISTICS DRILL-DOWN ──────────────────────────────────────
+async function loadLogisticsList() {
+  const tbody = document.getElementById('log-list-tbody');
+  if (!tbody) return;
+
+  const data = await api('/api/logistics');
+  if (!data) return;
+
+  tbody.innerHTML = data.map(l => `
+    <tr onclick="openLogDetail(${l.id})" style="cursor:pointer">
+      <td class="mono ta fw6" style="color:var(--accent)">${l.log_no}</td>
+      <td class="mono f10">${l.contract_no || '—'}</td>
+      <td><span class="badge bd-act" style="font-size:7px">${l.shipment_type||'—'}</span></td>
+      <td class="f11">${l.vessel_name||'TBC'}</td>
+      <td class="f11">${l.carrier||'—'}</td>
+      <td class="f10">${l.pol_name||'—'}</td>
+      <td class="f10">${l.pod_name||'—'}</td>
+      <td class="mono f10">${l.bl_date?.split('T')[0]||'—'}</td>
+      <td class="mono f10">${l.eta?.split('T')[0]||'—'}</td>
+      <td><span class="badge ${l.status==='IN-TRANSIT'?'bd-ship':'bd-draft'}">${l.status}</span></td>
+      <td><button class="btn bxs bg" onclick="event.stopPropagation();openLogDetail(${l.id})">Open</button></td>
+    </tr>
+  `).join('');
+}
+
+// ── QP WINDOW DEAL SELECTOR ──────────────────────────────────
+async function loadQPDealOptions() {
+  const sel = document.getElementById('qp-deal-select');
+  if (!sel) return;
+  const data = await api('/api/deals');
+  if (!data) return;
+  sel.innerHTML = data.map(d =>
+    `<option value="${d.deal_no}">${d.deal_no} — ${d.commodity_name||d.commodity_code} (${d.deal_type||''})</option>`
+  ).join('');
+}
+
+// ── WIRE NAV TO LOAD DATA ────────────────────────────────────
+// Called after nav() to load data for the destination page
+function afterNav(pageId) {
+  setTimeout(() => {
+    if (pageId === 'enquiry') loadEnquiryList();
+    else if (pageId === 'purchase-contracts') loadContractList('PC');
+    else if (pageId === 'sales-contracts') loadContractList('SC');
+    else if (pageId === 'logistics') loadLogisticsList();
+    else if (pageId === 'qpwindow') { loadQPDealOptions(); renderQPWindow(); }
+    else if (pageId === 'exposure') renderExposureTable();
+    else if (pageId === 'hedge') renderHedgeCard();
+    else if (pageId === 'provisional-invoice') renderProvInvoice();
+    else if (pageId === 'final-invoice') renderFinalInvoice();
+  }, 80);
+}
+
+// ══════════════════════════════════════════════════════════════
+// END DRILL-DOWN ENGINE
+// ══════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════
 // END V13 FUNCTIONS
