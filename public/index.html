@@ -431,7 +431,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <div class="sb-group">Workflow</div>
     <div class="ni" data-page="approvals" onclick="nav('approvals',this)">Approval Workflow<span class="nb">3</span></div>
     <div class="sb-group">Master Data</div>
-    <div class="ni" onclick="window.location='ctrm-v11-setup.html'" style="color:var(--accent2)">⊞ Open Setup →</div>
   </nav>
   <div class="sb-foot">
     <div class="sb-user">
@@ -451,6 +450,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">
         <span id="theme-icon">☀️</span><span id="theme-label">Light</span>
       </button>
+      <a href="/setup" style="font-family:var(--font-mono);font-size:10px;color:var(--accent2);text-decoration:none;padding:4px 10px;border:1px solid rgba(240,165,0,.3);border-radius:6px">⊞ Setup</a>
     </div>
   </div>
   <div class="pc">
@@ -2503,7 +2503,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
     <div class="page" id="page-pricing">
       <div class="ph"><div class="ph-l"><div class="pt">Pricing Engine</div><div class="ps">Price source master · Formula pricing · Forward curve · Fixation lots · Assay-based slab adjustments · FX rate</div></div>
-        <div class="ph-r"><div class="br-row g7"><button class="export-btn" onclick="exportToExcel('fixation-table','Fixation_Lots')">⬇ Export</button><button class="btn bp" onclick="toast('Fixation','New fixation lot created','success')">＋ New Fixation</button></div></div></div>
+        <div class="ph-r"><div class="br-row g7"><button class="export-btn" onclick="exportToExcel('fixation-table','Fixation_Lots')">⬇ Export</button><button class="btn bp" onclick="openNewFixation()">＋ New Fixation</button></div></div></div>
 
       <!-- PRICE SOURCE + FORWARD CURVE -->
       <div class="two-col">
@@ -2602,7 +2602,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               </tbody>
             </table>
           </div>
-          <div class="lar"><button class="btn bg bsm" onclick="toast('Fixation Lot','Select lots → enter fixation price','info')">+ New Fixation Lot</button></div>
+          <div class="lar"><button class="btn bg bsm" onclick="openNewFixation()">+ New Fixation Lot</button></div>
           <!-- QC SLAB ADJUSTMENT (Type B — formula % adjustment) -->
           <div class="divl mt12">QC Slab Adjustment — Type B (Formula % Adjustment)</div>
           <div class="ban bi mb8"><span>ℹ</span>Type B: assay deviation falls into a slab → slab maps to a revised formula %. Pricing engine uses revised % instead of contracted %. E.g. Sn 10–12% → formula drops from 97% to 96%.</div>
@@ -3234,8 +3234,23 @@ function openSODetail(){
 }
 
 // Wire everything on load - MINIMAL, no content generation
-// ═══════════════════════════════════════════════════════════════
-// CTRM V12 — API CLIENT ENGINE
+// ── MODAL FUNCTIONS ──────────────────────────────────────────
+function openModal(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.add('open');document.body.style.overflow='hidden';}
+}
+function closeModal(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.remove('open');document.body.style.overflow='';}
+}
+document.addEventListener('click',function(e){
+  if(e.target.classList.contains('mo'))closeModal(e.target.id);
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape')document.querySelectorAll('.mo.open').forEach(m=>closeModal(m.id));
+});
+
+// ── API CLIENT ENGINE ─────────────────────────────────────────
 // Replaces in-memory data stores with real API calls to backend
 // Backend: http://localhost:3000 (dev) or deployed Railway URL
 // ═══════════════════════════════════════════════════════════════
@@ -4072,9 +4087,111 @@ function addContainerAllocRow(){
   openModal('modal-new-alloc');
 }
 
-function openNewEnquiry(){
-  toast('New Enquiry','Fill in the enquiry form below','info');
+function openNewEnquiry(){ openModal('modal-new-enquiry'); }
+
+// ── CORE WORKFLOW FUNCTIONS ───────────────────────────────────
+
+function openNewEnquiry(){ openModal('modal-new-enquiry'); }
+
+async function submitNewEnquiry(){
+  const g = id => document.getElementById(id)?.value;
+  const commodity = g('enq-commodity');
+  const qty = parseFloat(g('enq-qty'));
+  if(!commodity || !qty){ toast('Required','Commodity and quantity are required','warning'); return; }
+
+  const enqNo = 'ENQ-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
+  const data = await api('/api/deals', {
+    method:'POST',
+    body: JSON.stringify({
+      deal_no: enqNo,
+      deal_date: new Date().toISOString(),
+      commodity_code: commodity,
+      deal_type: g('enq-deal-type') || 'BACK-TO-BACK',
+      qty_mt: qty,
+      supplier_id: parseInt(g('enq-supplier')) || null,
+      customer_id: parseInt(g('enq-customer')) || null,
+      notes: g('enq-notes'),
+    })
+  });
+  if(data){
+    closeModal('modal-new-enquiry');
+    toast('Enquiry Created', enqNo + ' created · ' + commodity + ' · ' + qty + ' MT','success');
+    // Reset form
+    ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  }
 }
+
+function openNewFixation(){ 
+  const today = new Date().toISOString().split('T')[0];
+  const el = document.getElementById('fix-date');
+  if(el) el.value = today;
+  openModal('modal-new-fixation'); 
+}
+
+async function submitFixation(){
+  const g = id => document.getElementById(id)?.value;
+  const deal_id = g('fix-deal-id');
+  const fixed_price = parseFloat(g('fix-price'));
+  const fixed_qty_mt = parseFloat(g('fix-qty'));
+  const fix_date = g('fix-date');
+  if(!deal_id || !fixed_price || !fixed_qty_mt || !fix_date){
+    toast('Required','Deal, price, qty and date are required','warning'); return;
+  }
+  const data = await api('/api/fixations', {
+    method:'POST',
+    body: JSON.stringify({ deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date: g('fix-prompt-date'), hedge_ref: g('fix-hedge-ref') })
+  });
+  if(data){
+    closeModal('modal-new-fixation');
+    toast('Fixation Recorded', data.lot_ref + ' · ' + fixed_qty_mt + ' MT @ $' + fixed_price + ' · State → PRICED','success');
+    renderExposureTable();
+    renderQPWindow(deal_id);
+  }
+}
+
+function openNewMarketPrice(){ 
+  const today = new Date().toISOString().split('T')[0];
+  const el = document.getElementById('mp-date-modal');
+  if(el) el.value = today;
+  openModal('modal-new-price'); 
+}
+
+function autoCalcModalMid(){
+  const bid = parseFloat(document.getElementById('mp-cashbid-modal')?.value)||0;
+  const ask = parseFloat(document.getElementById('mp-cashask-modal')?.value)||0;
+  const el = document.getElementById('mp-cashmid-modal');
+  if(el && bid && ask) el.textContent = ((bid+ask)/2).toFixed(2);
+}
+
+async function submitMarketPrice(){
+  const g = id => document.getElementById(id)?.value;
+  const commodity_code = g('mp-commodity-modal');
+  const quote_date = g('mp-date-modal');
+  const settlement = parseFloat(g('mp-settlement-modal'));
+  if(!commodity_code || !quote_date || !settlement){
+    toast('Required','Commodity, date and settlement are required','warning'); return;
+  }
+  const data = await api('/api/market-prices', {
+    method:'POST',
+    body: JSON.stringify({
+      commodity_code, quote_date, settlement,
+      cash_bid: parseFloat(g('mp-cashbid-modal'))||null,
+      cash_ask: parseFloat(g('mp-cashask-modal'))||null,
+      bid_3m: parseFloat(g('mp-3mbid-modal'))||null,
+      ask_3m: parseFloat(g('mp-3mask-modal'))||null,
+    })
+  });
+  if(data){
+    closeModal('modal-new-price');
+    toast('Price Saved', commodity_code + ' · ' + quote_date + ' · Settlement: ' + settlement,'success');
+    renderExposureTable();
+    renderHedgeCard();
+    recalcPricing();
+  }
+}
+
+// Wire the fixation buttons to the real modal
+function openNewFixationLot(){ openNewFixation(); }
 
 </script>
 
@@ -4166,6 +4283,102 @@ function openNewEnquiry(){
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-alloc')">Cancel</button>
       <button class="btn bp" onclick="createAllocation()">Create Allocation →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ MODAL: NEW ENQUIRY ══ -->
+<div class="mo" id="modal-new-enquiry">
+  <div class="modal">
+    <div class="modal-hd">
+      <div><div class="modal-title">New Enquiry</div><div class="modal-sub">Start of the deal flow · All fields drive downstream contract terms</div></div>
+      <button class="btn bxs bd" onclick="closeModal('modal-new-enquiry')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="divl">Deal Details</div>
+      <div class="fg">
+        <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
+          <select class="fs" id="enq-commodity"><option value="">— Select —</option><option value="CU-MILLBERRY">Copper MillBerry</option><option value="CU-CATHODE-A">Copper Cathode Grade A</option><option value="PB-SN-INGOT">Lead-Tin Ingots</option><option value="STEEL-HMS1">Steel HMS 1&2</option></select></div>
+        <div class="f"><div class="fl">Deal Type <span class="req">*</span></div>
+          <select class="fs" id="enq-deal-type"><option value="BACK-TO-BACK">BACK-TO-BACK</option><option value="OPEN-BUY">OPEN BUY</option><option value="OPEN-SELL">OPEN SELL</option></select></div>
+        <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div><input type="number" class="fi" id="enq-qty" placeholder="e.g. 100"></div>
+        <div class="f"><div class="fl">Tolerance (%)</div><input type="number" class="fi" id="enq-tolerance" placeholder="e.g. 5" value="5"></div>
+      </div>
+      <div class="divl mt12">Counterparties</div>
+      <div class="fg">
+        <div class="f"><div class="fl">Supplier / Vendor</div>
+          <select class="fs" id="enq-supplier"><option value="">— Select —</option><option value="1">Glencore AG</option><option value="4">Noble Resources Pte</option></select></div>
+        <div class="f"><div class="fl">Customer / Buyer</div>
+          <select class="fs" id="enq-customer"><option value="">— Select —</option><option value="2">Tata Metals Ltd</option><option value="3">Aurubis Beerse NV</option></select></div>
+      </div>
+      <div class="divl mt12">Route & Pricing</div>
+      <div class="fg">
+        <div class="f"><div class="fl">Origin</div><input type="text" class="fi" id="enq-origin" placeholder="e.g. Shanghai, CN"></div>
+        <div class="f"><div class="fl">Destination</div><input type="text" class="fi" id="enq-destination" placeholder="e.g. Nhava Sheva, IN"></div>
+        <div class="f"><div class="fl">Incoterms</div><select class="fs" id="enq-incoterms"><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option></select></div>
+        <div class="f"><div class="fl">Pricing Intent</div><input type="text" class="fi" id="enq-pricing-intent" placeholder="e.g. 91% LME Lowest of 4, M+1 avg"></div>
+      </div>
+      <div class="fg mt8">
+        <div class="f"><div class="fl">Notes</div><input type="text" class="fi" id="enq-notes" placeholder="Any additional notes"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-enquiry')">Cancel</button>
+      <button class="btn bp" onclick="submitNewEnquiry()">Create Enquiry →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: NEW FIXATION ══ -->
+<div class="mo" id="modal-new-fixation">
+  <div class="modal">
+    <div class="modal-hd">
+      <div><div class="modal-title">New Fixation Lot</div><div class="modal-sub">Record a price fixation against an open deal · Changes state to PRICED</div></div>
+      <button class="btn bxs bd" onclick="closeModal('modal-new-fixation')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <div class="f"><div class="fl">Deal <span class="req">*</span></div>
+          <select class="fs" id="fix-deal-id"><option value="DEAL123">DEAL123 — Glencore Cu MillBerry (Buy)</option><option value="DEAL456">DEAL456 — Tata Metals (Sell)</option></select></div>
+        <div class="f"><div class="fl">Fix Date <span class="req">*</span></div><input type="date" class="fi" id="fix-date"></div>
+        <div class="f"><div class="fl">Fixed Price (USD/MT) <span class="req">*</span></div><input type="number" class="fi" id="fix-price" placeholder="e.g. 9240.00" step="0.01"></div>
+        <div class="f"><div class="fl">Fixed Qty (MT) <span class="req">*</span></div><input type="number" class="fi" id="fix-qty" placeholder="e.g. 68.25" step="0.001"></div>
+        <div class="f"><div class="fl">Prompt Date</div><input type="date" class="fi" id="fix-prompt-date"></div>
+        <div class="f"><div class="fl">Hedge Reference</div><input type="text" class="fi" id="fix-hedge-ref" placeholder="e.g. REQ-001"></div>
+      </div>
+      <div class="ban bi mt12"><span>ℹ</span>On save: fixation is recorded in database → deal state updates → Exposure & MTM recalculates → Invoice provisional amount updates.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-fixation')">Cancel</button>
+      <button class="btn bp" onclick="submitFixation()">Record Fixation →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: NEW MARKET PRICE ══ -->
+<div class="mo" id="modal-new-price">
+  <div class="modal">
+    <div class="modal-hd">
+      <div><div class="modal-title">Enter Market Price</div><div class="modal-sub">Daily price entry · Settlement is PRIMARY for all MTM calculations</div></div>
+      <button class="btn bxs bd" onclick="closeModal('modal-new-price')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
+          <select class="fs" id="mp-commodity-modal"><option value="LME-CU-BENCH">LME Copper (LME-CU-BENCH)</option><option value="ICE-BRENT">ICE Brent (ICE-BRENT)</option><option value="CBOT-WHEAT">CBOT Wheat (CBOT-WHEAT)</option><option value="PLATTS-DUBAI">Platts Dubai (PLATTS-DUBAI)</option></select></div>
+        <div class="f"><div class="fl">Quote Date <span class="req">*</span></div><input type="date" class="fi" id="mp-date-modal"></div>
+        <div class="f"><div class="fl">Cash Bid</div><input type="number" class="fi" id="mp-cashbid-modal" placeholder="e.g. 9233.37" step="0.01" oninput="autoCalcModalMid()"></div>
+        <div class="f"><div class="fl">Cash Ask</div><input type="number" class="fi" id="mp-cashask-modal" placeholder="e.g. 9246.37" step="0.01" oninput="autoCalcModalMid()"></div>
+        <div class="f"><div class="fl">3M Bid</div><input type="number" class="fi" id="mp-3mbid-modal" placeholder="e.g. 9244.40" step="0.01"></div>
+        <div class="f"><div class="fl">3M Ask</div><input type="number" class="fi" id="mp-3mask-modal" placeholder="e.g. 9258.40" step="0.01"></div>
+        <div class="f"><div class="fl">Settlement ★ PRIMARY <span class="req">*</span></div><input type="number" class="fi" id="mp-settlement-modal" placeholder="e.g. 9240.00" step="0.01" style="border-color:var(--accent)"></div>
+        <div class="f"><div class="fl">Cash Mid (auto)</div><div class="fc mono ta2" id="mp-cashmid-modal">—</div></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-price')">Cancel</button>
+      <button class="btn bp" onclick="submitMarketPrice()">Save Price →</button>
     </div>
   </div>
 </div>
