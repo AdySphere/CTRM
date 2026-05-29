@@ -11,17 +11,10 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
 
-// ── ROUTES ────────────────────────────────────────────────────────
-const { dealsRouter }   = require('./routes/deals');
-const { logRouter }     = require('./routes/deals');
-const { conRouter }     = require('./routes/deals');
-const { fixRouter }     = require('./routes/deals');
-const { hedgeRouter }   = require('./routes/deals');
-const { allocRouter }   = require('./routes/deals');
-const { invoiceRouter } = require('./routes/invoices');
-const { masterRouter }  = require('./routes/invoices');
+// ── API ROUTES FIRST — before static files ────────────────────────
+const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter } = require('./routes/deals');
+const { invoiceRouter, masterRouter } = require('./routes/invoices');
 
 app.use('/api/market-prices',   require('./routes/marketPrices'));
 app.use('/api/forward-curve',   require('./routes/forwardCurve'));
@@ -47,7 +40,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// ── SERVE FRONTEND ────────────────────────────────────────────────
+// ── STATIC FILES + FRONTEND — after API routes ────────────────────
+app.use(express.static(path.join(__dirname, '../public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, '../public/setup.html')));
 
