@@ -4097,23 +4097,43 @@ async function submitNewEnquiry(){
   const g = id => document.getElementById(id)?.value;
   const commodity = g('enq-commodity');
   const qty = parseFloat(g('enq-qty'));
-  if(!commodity || !qty){ toast('Required','Commodity and quantity are required','warning'); return; }
+  if(!commodity){ toast('Required','Please select a commodity','warning'); return; }
+  if(!qty || qty <= 0){ toast('Required','Please enter a valid quantity','warning'); return; }
 
   const enqNo = 'ENQ-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
-  const data = await api('/api/deals', {
-    method:'POST',
-    body: JSON.stringify({
-      deal_no: enqNo,
-      deal_date: new Date().toISOString(),
-      commodity_code: commodity,
-      deal_type: g('enq-deal-type') || 'BACK-TO-BACK',
-      qty_mt: qty,
-      supplier_id: parseInt(g('enq-supplier')) || null,
-      customer_id: parseInt(g('enq-customer')) || null,
-      notes: g('enq-notes'),
-    })
-  });
-  if(data){
+  
+  const btn = document.querySelector('#modal-new-enquiry .btn.bp');
+  if(btn){ btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deal_no: enqNo,
+        deal_date: new Date().toISOString(),
+        commodity_code: commodity,
+        deal_type: g('enq-deal-type') || 'BACK-TO-BACK',
+        qty_mt: qty,
+        supplier_id: parseInt(g('enq-supplier')) || null,
+        customer_id: parseInt(g('enq-customer')) || null,
+        notes: g('enq-notes') || null,
+      })
+    });
+    const data = await res.json();
+    if(data.success){
+      closeModal('modal-new-enquiry');
+      toast('Enquiry Created', enqNo + ' · ' + commodity + ' · ' + qty + ' MT', 'success');
+      ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    } else {
+      toast('Save Failed', data.error || 'Unknown error — check server logs', 'warning');
+    }
+  } catch(err) {
+    toast('Connection Error', err.message, 'warning');
+  } finally {
+    if(btn){ btn.textContent = 'Create Enquiry →'; btn.disabled = false; }
+  }
+}
     closeModal('modal-new-enquiry');
     toast('Enquiry Created', enqNo + ' created · ' + commodity + ' · ' + qty + ' MT','success');
     // Reset form
@@ -4299,7 +4319,7 @@ function openNewFixationLot(){ openNewFixation(); }
       <div class="divl">Deal Details</div>
       <div class="fg">
         <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
-          <select class="fs" id="enq-commodity"><option value="">— Select —</option><option value="CU-MILLBERRY">Copper MillBerry</option><option value="CU-CATHODE-A">Copper Cathode Grade A</option><option value="PB-SN-INGOT">Lead-Tin Ingots</option><option value="STEEL-HMS1">Steel HMS 1&2</option></select></div>
+          <select class="fs" id="enq-commodity"><option value="">— Select —</option><option value="CU-MILLBERRY">Copper MillBerry</option><option value="CU-CATHODE-A">Copper Cathode Grade A</option><option value="PB-SN-INGOT">Lead-Tin Ingots</option><option value="STEEL-HMS1">Steel HMS 1&2</option><option value="ICE-BRENT">ICE Brent Crude</option><option value="CBOT-WHEAT">CBOT Wheat</option></select></div>
         <div class="f"><div class="fl">Deal Type <span class="req">*</span></div>
           <select class="fs" id="enq-deal-type"><option value="BACK-TO-BACK">BACK-TO-BACK</option><option value="OPEN-BUY">OPEN BUY</option><option value="OPEN-SELL">OPEN SELL</option></select></div>
         <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div><input type="number" class="fi" id="enq-qty" placeholder="e.g. 100"></div>
