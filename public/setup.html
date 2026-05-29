@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CTRM Platform · v12 · Setup</title>
+<style>
+/* ── DARK MODE (default) ──────────────────────────────────── */
+:root{
+  --bg:#080b10;--bg2:#0d1117;--surface:#111820;--surface2:#162030;--surface3:#1c2a3a;
+  --border:#1e2d40;--border2:#253548;
+  --accent:#00c896;--accent-dim:rgba(0,200,150,.08);
+  --accent2:#f0a500;--accent2-dim:rgba(240,165,0,.08);
+  --accent3:#5b8af0;--accent3-dim:rgba(91,138,240,.08);
+  --danger:#e05252;--danger-dim:rgba(224,82,82,.08);
+  --green:#3dd68c;--green-dim:rgba(61,214,140,.08);
+  --purple:#9f7aea;--purple-dim:rgba(159,122,234,.08);
+  --text:#dce8f0;--text2:#8ba4bb;--text3:#4d6478;--muted:#3d5468;
+  --font-ui:-apple-system,'Helvetica Neue',Helvetica,Arial,sans-serif;
+  --font-mono:'SF Mono','Fira Code',monospace;
+  --r:8px;--rl:12px;--rxl:16px;--shadow:0 4px 24px rgba(0,0,0,.4);
+  --sb-bg:#060912;--sb-hover:rgba(255,255,255,.04);
+  --input-bg:#162030;--input-border:#253548;
+  --card-bg:#111820;--topbar-bg:#060912;
+}
+/* ── LIGHT MODE ──────────────────────────────────────────── */
+body.light-mode{
+  --bg:#f4f7fa;--bg2:#edf1f6;--surface:#ffffff;--surface2:#f0f4f8;--surface3:#e4eaf0;
+  --border:#d0dce8;--border2:#bccad8;
+  --accent:#00a87a;--accent-dim:rgba(0,168,122,.08);
+  --accent2:#c47f00;--accent2-dim:rgba(196,127,0,.08);
+  --accent3:#3a6fd8;--accent3-dim:rgba(58,111,216,.08);
+  --danger:#c0392b;--danger-dim:rgba(192,57,43,.08);
+  --green:#1a7a4a;--green-dim:rgba(26,122,74,.08);
+  --purple:#6c3eb5;--purple-dim:rgba(108,62,181,.08);
+  --text:#1a2b3c;--text2:#4d6478;--text3:#7d9ab0;--muted:#a0b4c4;
+  --shadow:0 2px 12px rgba(0,0,0,.1);
+  --sb-bg:#ffffff;--sb-hover:rgba(0,0,0,.04);
+  --input-bg:#ffffff;--input-border:#c8d8e4;
+  --card-bg:#ffffff;--topbar-bg:#ffffff;
+}
+/* ── LIGHT MODE OVERRIDES ────────────────────────────────── */
+body.light-mode .sb{background:var(--sb-bg);border-right-color:var(--border)}
+body.light-mode .topbar{background:var(--topbar-bg);border-bottom-color:var(--border)}
+body.light-mode .fi,body.light-mode .fs,body.light-mode .fta{background:var(--input-bg);border-color:var(--input-border);color:var(--text)}
+body.light-mode .card{background:var(--card-bg);border-color:var(--border)}
+body.light-mode .ch{background:var(--surface2);border-bottom-color:var(--border)}
+body.light-mode .dt th,body.light-mode .lt th{background:var(--surface2)}
+body.light-mode .ni{color:var(--text2)}
+body.light-mode .ni:hover,body.light-mode .ni.active{background:var(--accent-dim);color:var(--accent)}
+body.light-mode .nb{background:var(--accent-dim);color:var(--accent)}
+body.light-mode .sb-group{color:var(--text3)}
+body.light-mode .sb-tag{color:var(--text3)}
+body.light-mode .lcs.done{background:var(--green-dim);color:var(--green);border-color:var(--green)}
+body.light-mode .lcs.cur{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+body.light-mode .lcs.fut{background:var(--surface2);color:var(--text3);border-color:var(--border)}
+body.light-mode .fc{background:var(--surface2);border-color:var(--border)}
+body.light-mode .badge{border-color:var(--border2)}
+body.light-mode .btn.bg{border-color:var(--border2);color:var(--text2)}
+body.light-mode .btn.bs2{background:var(--surface2);border-color:var(--border2);color:var(--text)}
+body.light-mode .sr .sc{background:var(--surface);border-color:var(--border)}
+body.light-mode .next-step-bar{background:linear-gradient(135deg,var(--surface2),var(--surface3));border-color:var(--border2)}
+body.light-mode .flow-bar{background:var(--surface2);border-bottom-color:var(--border)}
+body.light-mode .fs-box{background:var(--surface);border-color:var(--border)}
+body.light-mode .fs-box.fs-ctrm{border-top-color:var(--accent)}
+body.light-mode .fs-box.fs-bc{border-top-color:var(--accent3)}
+body.light-mode .fts{background:var(--surface);border-bottom-color:var(--border)}
+body.light-mode .ft{color:var(--text3)}
+body.light-mode .ft.active{color:var(--accent);border-bottom-color:var(--accent)}
+body.light-mode .appr-node{background:var(--surface2);border-color:var(--border)}
+body.light-mode .mp-cell{background:var(--surface)}
+body.light-mode .ban.bi{background:var(--accent3-dim);border-color:rgba(58,111,216,.2)}
+body.light-mode .ban.bw{background:var(--accent2-dim);border-color:rgba(196,127,0,.2)}
+body.light-mode .ban.bdan{background:var(--danger-dim);border-color:rgba(192,57,43,.2)}
+body.light-mode input[type="checkbox"]{accent-color:var(--accent)}
+/* Theme toggle button */
+.theme-toggle{background:transparent;border:1px solid var(--border2);border-radius:20px;padding:4px 12px;cursor:pointer;font-family:var(--font-ui);font-size:11px;font-weight:600;color:var(--text2);display:flex;align-items:center;gap:6px;transition:all .2s}
+.theme-toggle:hover{border-color:var(--accent);color:var(--accent)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-size:14px}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;font-family:var(--font-ui)}input,select,textarea{font-family:var(--font-ui)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+html,body{height:100%;margin:0;padding:0}
+.app{display:flex;height:100vh;overflow:hidden;background:var(--bg)}
+/* SIDEBAR */
+.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100%}
+.sb-logo{padding:14px 16px 12px;border-bottom:1px solid var(--border)}
+.sb-mark{display:flex;align-items:center;gap:9px;margin-bottom:2px}
+.sb-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--bg);flex-shrink:0}
+.sb-name{font-size:14px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+.sb-tag{font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-left:37px}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 0 12px}
+.sb-nav::-webkit-scrollbar{width:4px}.sb-nav::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.sb-group{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);padding:14px 14px 4px;margin-top:2px}
+.ni{display:flex;align-items:center;gap:8px;padding:7px 14px 7px 16px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;border-left:3px solid transparent;transition:background .1s,color .1s;user-select:none;line-height:1.3}
+.ni:hover{color:var(--text);background:var(--surface2)}
+.ni.active{color:var(--accent);background:rgba(0,200,150,.07);border-left-color:var(--accent);font-weight:600}
+.ni-icon{font-size:12px;width:14px;text-align:center;flex-shrink:0;opacity:.7}
+.ni.active .ni-icon{opacity:1}
+.nb{margin-left:auto;background:var(--accent);color:var(--bg);font-family:var(--font-mono);font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;flex-shrink:0}
+.sb-foot{padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0}
+.sb-user{display:flex;align-items:center;gap:9px}
+.ava{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent3),var(--accent));display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.un{font-size:11px;font-weight:600;color:var(--text);line-height:1.3}
+.ur{font-family:var(--font-mono);font-size:8px;color:var(--text3)}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg2);min-width:0}
+.topbar{height:46px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tb-bc{display:flex;align-items:center;gap:6px;flex:1;font-size:12px;color:var(--text3)}
+.tb-bc span:first-child{font-weight:700;color:var(--text);font-size:13px}
+.tb-cur{color:var(--accent);font-weight:600;font-size:12px}
+.pc{flex:1;overflow-y:auto;padding:20px 24px;padding-bottom:40px}
+.page{display:none}.page.active{display:block;animation:fi .15s ease}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* PAGE HEADER */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+.ph-left{flex:1}
+.pt{font-size:19px;font-weight:700;letter-spacing:-.3px;line-height:1.2}
+.ps{font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.4px}
+.ph-right{display:flex;gap:8px;align-items:center}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.card+.card,.card+.two-col,.two-col+.card{margin-top:14px}
+.ch{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);gap:9px}
+.ct{font-size:12px;font-weight:700;color:var(--text);flex:1}
+.cs{font-family:var(--font-mono);font-size:9px;color:var(--text3)}
+.ca{font-family:var(--font-mono);font-size:10px;color:var(--accent);cursor:pointer}.ca:hover{text-decoration:underline}
+.cb{padding:16px}.cbf{padding:0}
+/* FASTTABS */
+.fts{display:flex;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto}
+.ft{padding:9px 15px;font-size:11px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .1s;flex-shrink:0}
+.ft:hover{color:var(--text2)}.ft.active{color:var(--accent);border-bottom-color:var(--accent)}
+.ftc{display:none;padding:16px}.ftc.active{display:block}
+/* FORMS */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg3{grid-template-columns:1fr 1fr 1fr}.fg4{grid-template-columns:1fr 1fr 1fr 1fr}
+.cs2{grid-column:span 2}.csf{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:4px}
+.fl{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.fl .req{color:var(--danger);margin-left:2px}.fl .opt{color:var(--muted);font-style:italic;letter-spacing:0}
+.fi,.fs,.fta{background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:12px;padding:7px 10px;outline:none;transition:border-color .1s;width:100%}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--accent);background:var(--surface3)}
+.fi::placeholder{color:var(--text3)}.fs{cursor:pointer}.fs option{background:var(--surface2)}
+.fta{resize:vertical;min-height:65px;line-height:1.5}
+.fv{font-size:12px;font-weight:600;color:var(--text);padding:7px 0}
+.fc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:7px 10px;font-family:var(--font-mono);font-size:11px;color:var(--accent)}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r);font-size:12px;font-weight:600;border:none;transition:all .1s;white-space:nowrap;font-family:var(--font-ui)}
+.bp{background:var(--accent);color:var(--bg)}.bp:hover{background:#00dfa8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,200,150,.3)}
+.bs{background:var(--surface3);color:var(--text);border:1px solid var(--border2)}.bs:hover{border-color:var(--accent);color:var(--accent)}
+.bd{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(224,82,82,.3)}
+.bg{background:transparent;color:var(--text2);border:1px solid var(--border2)}.bg:hover{color:var(--text);background:var(--surface2)}
+.bsm{padding:4px 10px;font-size:10px}.bxs{padding:2px 7px;font-size:9px;border-radius:4px}
+.br{display:flex;gap:7px;align-items:center}.br.right{justify-content:flex-end}.br.btw{justify-content:space-between}
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-family:var(--font-mono);font-size:9px;font-weight:500;padding:2px 7px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap}
+.bd-draft{background:var(--surface3);color:var(--text2);border:1px solid var(--border2)}
+.bd-open{background:var(--accent3-dim);color:var(--accent3);border:1px solid rgba(91,138,240,.25)}
+.bd-conf{background:var(--green-dim);color:var(--green);border:1px solid rgba(61,214,140,.25)}
+.bd-rfq{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(159,122,234,.25)}
+.bd-act{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(0,200,150,.25)}
+.bd-ship{background:var(--accent2-dim);color:var(--accent2);border:1px solid rgba(240,165,0,.25)}
+.bd-inv{background:rgba(100,116,139,.1);color:var(--text2);border:1px solid var(--border2)}
+.bd-danger{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(224,82,82,.25)}
+.bd-closed{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+/* TABLES */
+.dt{width:100%;border-collapse:collapse;font-size:11px}
+.dt th{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:7px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface);position:sticky;top:0;z-index:1}
+.dt td{padding:9px 12px;border-bottom:1px solid rgba(30,45,64,.5);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}.dt tr:hover td{background:rgba(255,255,255,.02)}
+.te{text-align:center;padding:28px;color:var(--text3);font-family:var(--font-mono);font-size:10px}
+.lt{width:100%;border-collapse:collapse;font-size:11px}
+.lt th{font-family:var(--font-mono);font-size:8px;letter-spacing:1px;color:var(--text3);padding:5px 9px;border-bottom:1px solid var(--border);text-align:left;text-transform:uppercase;background:var(--surface2)}
+.lt td{padding:5px 9px;border-bottom:1px solid rgba(30,45,64,.4);vertical-align:middle}
+.lt tr:last-child td{border-bottom:none}
+.lt .fi,.lt .fs{padding:4px 7px;font-size:10px;border-radius:4px}
+.lar{padding:7px 9px;border-top:1px solid var(--border)}
+/* COMMODITY CHIP */
+.cc{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600}
+.cp{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.pcu{background:#e07020}.pal{background:#8899aa}.pzn{background:#20c4d0}.pni{background:#9f7aea}
+.ppb{background:#3dd68c}.psn{background:#f0a500}.pfe{background:#cc4444}.pcoal{background:#4a5568}
+.poil{background:#d4880a}.pagri{background:#48bb78}
+/* MODALS */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity .15s}
+.mo.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rxl);width:620px;max-width:95vw;max-height:88vh;overflow-y:auto;transform:translateY(14px) scale(.98);transition:transform .15s;box-shadow:var(--shadow)}
+.mo.open .modal{transform:translateY(0) scale(1)}
+.modal-lg{width:820px}.modal-xl{width:980px}
+.mh{display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+.mt{font-size:14px;font-weight:700;flex:1}
+.mc{color:var(--text3);font-size:17px;cursor:pointer;line-height:1;padding:2px 4px}.mc:hover{color:var(--text)}
+.mb{padding:20px}
+.mf{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;position:sticky;bottom:0;background:var(--surface)}
+/* TOAST */
+.tc-wrap{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:7px;z-index:2000}
+.toast{background:var(--surface);border:1px solid var(--border2);border-radius:var(--rl);padding:11px 14px;display:flex;align-items:center;gap:9px;min-width:270px;box-shadow:var(--shadow);transform:translateX(120%);transition:transform .22s cubic-bezier(.34,1.56,.64,1);font-size:11px}
+.toast.show{transform:translateX(0)}.toast-icon{font-size:15px;flex-shrink:0}
+.toast-title{font-weight:600;color:var(--text)}.toast-msg{color:var(--text2);font-size:10px;margin-top:1px}
+.toast.success{border-left:3px solid var(--green)}.toast.warning{border-left:3px solid var(--accent2)}
+.toast.error{border-left:3px solid var(--danger)}.toast.info{border-left:3px solid var(--accent3)}
+/* STEPS */
+.sb{display:flex;align-items:center;margin-bottom:18px}
+.si{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;position:relative}
+.si:not(:last-child)::after{content:'';position:absolute;top:13px;left:50%;right:-50%;height:2px;background:var(--border2);z-index:0}
+.si.done:not(:last-child)::after{background:var(--green)}
+.sn{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid var(--border2);background:var(--surface2);position:relative;z-index:1;transition:all .2s;font-family:var(--font-mono)}
+.si.done .sn{background:var(--green-dim);border-color:var(--green);color:var(--green)}
+.si.active .sn{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px rgba(0,200,150,.15)}
+.si.future .sn{opacity:.35}
+.sl{font-family:var(--font-mono);font-size:8px;letter-spacing:.5px;color:var(--text3);text-align:center}
+.si.active .sl{color:var(--accent)}.si.done .sl{color:var(--green)}
+/* BANNERS */
+.ban{border-radius:var(--r);padding:9px 12px;font-size:11px;display:flex;align-items:flex-start;gap:7px;margin-bottom:14px;line-height:1.5}
+.bi{background:var(--accent3-dim);border:1px solid rgba(91,138,240,.2);color:var(--accent3)}
+.bw{background:var(--accent2-dim);border:1px solid rgba(240,165,0,.2);color:var(--accent2)}
+.bs2{background:var(--green-dim);border:1px solid rgba(61,214,140,.2);color:var(--green)}
+.bdan{background:var(--danger-dim);border:1px solid rgba(224,82,82,.2);color:var(--danger)}
+/* STAT CHIPS */
+.sr{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:9px 14px;flex:1;min-width:110px}
+.scl{font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.scv{font-size:17px;font-weight:700;letter-spacing:-.5px}
+.scs{font-family:var(--font-mono);font-size:9px;color:var(--text2);margin-top:2px}
+/* DIVIDERS */
+.div{height:1px;background:var(--border);margin:14px 0}
+.divl{display:flex;align-items:center;gap:8px;margin:14px 0;font-family:var(--font-mono);font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3)}
+.divl::before,.divl::after{content:'';flex:1;height:1px;background:var(--border)}
+/* LAYOUT */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+/* LEG HEADERS */
+.lh{display:flex;align-items:center;gap:9px;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.li{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+.li-b{background:rgba(91,138,240,.15);color:var(--accent3);border:1px solid rgba(91,138,240,.3)}
+.li-s{background:var(--green-dim);color:var(--green);border:1px solid rgba(61,214,140,.3)}
+.lttl{font-size:12px;font-weight:700}
+.lm{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-left:auto}
+/* SCORE BAR */
+.scorew{display:flex;align-items:center;gap:7px}
+.scoreb{flex:1;height:4px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.scoref{height:100%;border-radius:3px;background:var(--accent);transition:width .4s}
+.scorev{font-family:var(--font-mono);font-size:9px;color:var(--text2);width:26px;text-align:right}
+/* CALC TYPE PILLS */
+.ctp{font-family:var(--font-mono);font-size:8px;padding:2px 6px;border-radius:3px;font-weight:500}
+.ct-flat{background:var(--accent-dim);color:var(--accent)}
+.ct-threshold{background:var(--accent2-dim);color:var(--accent2)}
+.ct-tiered{background:var(--purple-dim);color:var(--purple)}
+.ct-formula,.ct-formularef{background:var(--accent3-dim);color:var(--accent3)}
+.ct-rejection{background:var(--danger-dim);color:var(--danger)}
+/* COMPARE GRID */
+.cg{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.cr{display:flex;align-items:stretch;border-bottom:1px solid var(--border)}.cr:last-child{border-bottom:none}
+.cl{width:150px;min-width:150px;padding:9px 12px;background:var(--surface2);border-right:1px solid var(--border);font-family:var(--font-mono);font-size:9px;color:var(--text2);display:flex;align-items:center}
+.cc2{flex:1;padding:9px 12px;border-right:1px solid var(--border);font-size:11px;display:flex;align-items:center}
+.cc2:last-child{border-right:none}.cc2.best{background:var(--accent-dim);color:var(--accent);font-weight:600}
+/* PROCESS FLOW */
+.flow{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:14px 0}
+.flow-step{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;position:relative}
+.flow-step:not(:last-child)::after{content:'→';position:absolute;right:-16px;top:14px;color:var(--text3);font-size:12px;font-weight:700}
+.flow-step+.flow-step{margin-left:32px}
+.fs-box{width:90px;padding:8px 6px;border-radius:var(--r);text-align:center;cursor:pointer;transition:all .15s}
+.fs-box:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.fs-num{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-bottom:2px}
+.fs-name{font-size:10px;font-weight:700;line-height:1.2}
+.fs-sys{font-family:var(--font-mono);font-size:8px;margin-top:3px;letter-spacing:.3px}
+.fs-ctrm{background:var(--accent-dim);border:1px solid rgba(0,200,150,.25);color:var(--accent)}
+.fs-bc{background:var(--accent2-dim);border:1px solid rgba(240,165,0,.25);color:var(--accent2)}
+.fs-both{background:var(--accent3-dim);border:1px solid rgba(91,138,240,.25);color:var(--accent3)}
+.fs-active{box-shadow:0 0 0 2px var(--accent)!important}
+/* LIFECYCLE BAR */
+.lcb{display:flex;gap:0;background:var(--surface2);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.lcs{flex:1;padding:6px 10px;text-align:center;font-family:var(--font-mono);font-size:8px;letter-spacing:.5px;color:var(--text3);border-right:1px solid var(--border);cursor:default}
+.lcs:last-child{border-right:none}.lcs.done{background:var(--green-dim);color:var(--green)}.lcs.cur{background:var(--accent-dim);color:var(--accent);font-weight:700}.lcs.future{opacity:.5}
+/* UTILITY */
+.mono{font-family:var(--font-mono)}.ta{color:var(--accent)}.ta2{color:var(--accent2)}.ta3{color:var(--accent3)}
+.td{color:var(--danger)}.tg{color:var(--green)}.tm{color:var(--text2)}.tdim{color:var(--text3)}
+.fw7{font-weight:700}.fw6{font-weight:600}.f11{font-size:11px}.f12{font-size:12px}.f13{font-size:13px}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb14{margin-bottom:14px}
+.gap7{gap:7px}.gap10{gap:10px}.flex{display:flex}.fxcol{flex-direction:column}.ac{align-items:center}.jb{justify-content:space-between}.f1{flex:1}
+.hidden{display:none!important}
+/* ── NEXT STEP NAVIGATION BAR ─────────────────────────────── */
+.next-step-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:linear-gradient(135deg,var(--surface2),var(--surface3));border:1px solid var(--border2);border-radius:var(--rl);margin-top:16px}
+.next-step-label{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase}
+.next-step-actions{display:flex;gap:8px;align-items:center}
+.btn-next{background:var(--accent);color:var(--bg);padding:8px 18px;border-radius:var(--r);font-size:12px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn-next:hover{background:#00dfa8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,200,150,.3)}
+.btn-prev{background:transparent;color:var(--text2);padding:8px 14px;border-radius:var(--r);font-size:11px;font-weight:600;border:1px solid var(--border2);cursor:pointer;transition:all .1s}
+.btn-prev:hover{border-color:var(--accent);color:var(--accent)}
+.step-indicator{font-family:var(--font-mono);font-size:10px;color:var(--accent);font-weight:700;background:rgba(0,200,150,.1);padding:3px 10px;border-radius:20px;border:1px solid rgba(0,200,150,.2)}
+
+/* ── PRINT LAYOUT ─────────────────────────────────────────── */
+.print-btn{background:rgba(91,138,240,.1);color:var(--accent3);border:1px solid rgba(91,138,240,.25);padding:5px 12px;border-radius:var(--r);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--fu);transition:all .1s}
+.print-btn:hover{background:rgba(91,138,240,.2)}
+.export-btn{background:rgba(61,214,140,.08);color:var(--green);border:1px solid rgba(61,214,140,.2);padding:5px 12px;border-radius:var(--r);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--fu);transition:all .1s}
+.export-btn:hover{background:rgba(61,214,140,.15)}
+@media print{
+  .sb,.topbar,.next-step-bar,.ph-r,.btn,.print-btn,.export-btn,.fts,.lcs,.sr,.ban,.lar,.cb,.mf,.no-print{display:none!important}
+  body{background:#fff!important;color:#000!important;font-family:Arial,sans-serif}
+  .main,.page-content{margin:0!important;padding:0!important;width:100%!important}
+  .card{border:1px solid #ccc!important;background:#fff!important;margin-bottom:12pt!important;break-inside:avoid}
+  .ch{background:#f5f5f5!important;border-bottom:1px solid #ccc!important}
+  .ct{color:#000!important;font-size:11pt!important}
+  .fl{color:#555!important;font-size:8pt!important}
+  .fc{color:#000!important;background:#fff!important;border:1px solid #ddd!important}
+  .fi,.fs,.fta{background:#fff!important;color:#000!important;border:1px solid #ccc!important}
+  .ftc{display:block!important}
+  .dt td,.dt th,.lt td,.lt th{border:1px solid #ccc!important;color:#000!important;background:#fff!important}
+  .dt th,.lt th{background:#f0f0f0!important;font-weight:bold}
+  .badge{border:1px solid #999!important;background:#f5f5f5!important;color:#000!important}
+  .page{display:block!important}
+  .print-header{display:block!important}
+}
+.print-header{display:none}
+@media print{.print-header{display:block;border-bottom:2pt solid #000;padding-bottom:8pt;margin-bottom:12pt}}
+
+/* ── APPROVAL WORKFLOW ────────────────────────────────────── */
+.appr-chain{display:flex;gap:0;align-items:stretch;margin:12px 0}
+.appr-node{flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);position:relative;text-align:center}
+.appr-node:not(:last-child)::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);z-index:2;color:var(--text3);font-weight:700;font-size:14px}
+.appr-node.done{background:rgba(61,214,140,.08);border-color:rgba(61,214,140,.3)}
+.appr-node.current{background:rgba(0,200,150,.1);border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.appr-node.pending{opacity:.5}
+.appr-node-label{font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.appr-node-name{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px}
+.appr-node-status{font-family:var(--font-mono);font-size:9px}
+
+/* ── CLAIMS ──────────────────────────────────────────────── */
+.claim-card{border-left:3px solid var(--danger);background:rgba(224,82,82,.04)}
+.claim-resolved{border-left:3px solid var(--green);background:rgba(61,214,140,.04)}
+.claim-pending{border-left:3px solid var(--accent2);background:rgba(240,165,0,.04)}
+
+/* ── VIRTUAL HEDGE ───────────────────────────────────────── */
+.vh-row{background:rgba(159,122,234,.05);border-left:2px solid var(--purple)}
+
+/* ── MARKET PRICES ───────────────────────────────────────── */
+.mp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:14px}
+.mp-cell{background:var(--surface);padding:10px 12px}
+.mp-cell-label{font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.mp-cell-value{font-family:var(--font-mono);font-size:16px;font-weight:700}
+.mp-cell-sub{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:2px}
+.mp-bid{color:var(--danger)}.mp-ask{color:var(--green)}.mp-prov{color:var(--accent2)}.mp-avg{color:var(--accent)}
+</style>
+
+<style>
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.mt14{margin-top:14px}.mt12{margin-top:12px}.mt8{margin-top:8px}.mb14{margin-bottom:14px}.mb12{margin-bottom:12px}.mb8{margin-bottom:8px}
+.divl{font-family:var(--font-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.fw6{font-weight:600}.fw7{font-weight:700}.f10{font-size:10px}.f11{font-size:11px}
+.ta{color:var(--accent2)}.ta2{color:var(--accent3)}.tg{color:var(--green)}.td{color:var(--danger)}.tdim{color:var(--text3)}
+.mono{font-family:var(--font-mono)}.req{color:var(--danger);font-size:11px}
+.btn-next{background:var(--accent);color:var(--bg);padding:8px 18px;border-radius:var(--r);font-size:12px;font-weight:700;border:none;cursor:pointer}
+.btn-prev{background:transparent;color:var(--text2);padding:8px 14px;border-radius:var(--r);font-size:11px;font-weight:600;border:1px solid var(--border2);cursor:pointer}
+.step-indicator{font-family:var(--font-mono);font-size:10px;color:var(--accent);font-weight:700;background:rgba(0,200,150,.1);padding:3px 10px;border-radius:20px;border:1px solid rgba(0,200,150,.2)}
+.next-step-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rl);margin-top:14px}
+.next-step-actions{display:flex;gap:8px;align-items:center}
+.next-step-label{font-family:var(--font-mono);font-size:9px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase}
+.mp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.mp-cell{background:var(--surface);padding:10px 12px}
+.mp-cell-label{font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.mp-cell-value{font-family:var(--font-mono);font-size:16px;font-weight:700}
+.mp-cell-sub{font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:2px}
+.mp-bid{color:var(--danger)}.mp-ask{color:var(--green)}.mp-prov{color:var(--accent2)}.mp-avg{color:var(--accent)}
+.appr-chain{display:flex;gap:0;align-items:stretch;margin:12px 0}
+.appr-node{flex:1;padding:12px;background:var(--surface2);border:1px solid var(--border);text-align:center;position:relative}
+.appr-node:not(:last-child)::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);z-index:2;color:var(--text3);font-weight:700;font-size:14px}
+.appr-node.done{background:rgba(61,214,140,.08);border-color:rgba(61,214,140,.3)}
+.appr-node.current{background:rgba(0,200,150,.1);border-color:var(--accent)}
+.appr-node.pending{opacity:.5}
+.appr-node-label{font-family:var(--font-mono);font-size:8px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.appr-node-name{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px}
+.appr-node-status{font-family:var(--font-mono);font-size:9px}
+.print-btn{background:rgba(91,138,240,.1);color:var(--accent3);border:1px solid rgba(91,138,240,.25);padding:5px 12px;border-radius:var(--r);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font-ui)}
+.export-btn{background:rgba(61,214,140,.08);color:var(--green);border:1px solid rgba(61,214,140,.2);padding:5px 12px;border-radius:var(--r);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font-ui)}
+@media print{.sb,.topbar,.ph-r,.btn,.print-btn,.export-btn,.fts,.next-step-bar,.sr,.ban,.lar,.cb,.no-print{display:none!important}body{background:#fff!important;color:#000!important}.card{border:1px solid #ccc!important;background:#fff!important}.dt td,.dt th,.lt td,.lt th{border:1px solid #ccc!important;color:#000!important}.page{display:block!important}.ftc{display:block!important}}
+</style>
+
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-mark">
+      <div class="sb-icon">C</div>
+      <div class="sb-name">CTRM Platform</div>
+    </div>
+    <div class="sb-tag">CTRM PLATFORM · V12</div>
+  </div>
+  <nav class="sb-nav">
+
+    <div class="sb-group">Master Data Setup</div>
+    <div class="ni" data-page="md-commodity" onclick="nav('md-commodity',this)">Commodities</div>
+    <div class="ni" data-page="md-counterparty" onclick="nav('md-counterparty',this)">Counterparties</div>
+    <div class="ni" data-page="md-location" onclick="nav('md-location',this)">Locations &amp; Ports</div>
+    <div class="ni" data-page="md-market-prices" onclick="nav('md-market-prices',this)">Market Prices</div>
+    <div class="ni" data-page="md-pricing" onclick="nav('md-pricing',this)">Price Source Master</div>
+    <div class="ni" data-page="md-qp" onclick="nav('md-qp',this)">QP Period Master</div>
+    <div class="ni" data-page="md-payment" onclick="nav('md-payment',this)">Payment Terms</div>
+    <div class="ni" data-page="md-qc" onclick="nav('md-qc',this)">QC Parameters</div>
+    <div class="ni" data-page="md-other" onclick="nav('md-other',this)">Currency / UOM / Tax</div>
+    <div class="ni" data-page="penalties" onclick="nav('penalties',this)">Adjustment Codes</div>
+    <div class="sb-group">← Back to Core</div>
+    <div class="ni" onclick="window.location='/'" style="color:var(--accent2)">⊞ Open CTRM Core →</div>
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-user">
+      <div class="ava">AM</div>
+      <div><div class="un">Adyasha Mallick</div><div class="ur">Solution Architect</div></div>
+    </div>
+  </div>
+</aside>
+<div class="main">
+    <div class="topbar">
+    <div class="tb-bc">
+      <span>CTRM</span>
+      <span style="margin:0 6px;color:var(--text3)">›</span>
+      <span style="color:var(--accent2);font-weight:600">Setup / Master Data</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <a href="/" style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-decoration:none;padding:4px 10px;border:1px solid rgba(0,200,150,.3);border-radius:6px">← CTRM Core</a>
+      <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">
+        <span id="theme-icon">☀️</span><span id="theme-label">Light</span>
+      </button>
+    </div>
+  </div>
+  <div class="pc">
+    <div class="page active" id="page-md-commodity" class="page active">
+      <div class="ph"><div class="ph-l"><div class="pt">Commodity Master</div><div class="ps">Setup · Admin-configurable · Used across deals, contracts, pricing, shipment, exposure and invoicing</div></div>
+        <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-commodity')">＋ Add Commodity</button></div></div>
+      <div class="card"><div class="ch"><div class="ct">Commodities</div><div class="cs">All commodity codes available to traders in dropdowns</div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Group</th><th>Sub-Group</th><th>Default UOM</th><th>Exchange</th><th>Currency</th><th>ERP Item No.</th><th>Active</th><th></th></tr></thead>
+          <tbody id="md-commodity-tbody">
+<tr><td class="mono ta fw6">CU-MILLBERRY</td><td class="f11 fw6">Copper MillBerry (Scrap)</td><td class="f11">BASE-METAL</td><td class="f11">SCRAP</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-010</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">CU-BERRY</td><td class="f11 fw6">Copper Berry (Lower Grade)</td><td class="f11">BASE-METAL</td><td class="f11">SCRAP</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-011</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">CU-CATHODE-A</td><td class="f11 fw6">Copper Cathode Grade A</td><td class="f11">BASE-METAL</td><td class="f11">REFINED</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-001</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">PB-SN-INGOT</td><td class="f11 fw6">Lead-Tin Ingots (PbSnSb)</td><td class="f11">BASE-METAL</td><td class="f11">ALLOY</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-020</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">STEEL-HMS1</td><td class="f11 fw6">Steel Scrap HMS 1&amp;2</td><td class="f11">FERROUS</td><td class="f11">SCRAP</td><td class="mono f10">MT</td><td class="mono f10">CFR</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-006</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">ZN-SHG-995</td><td class="f11 fw6">Zinc SHG 99.995%</td><td class="f11">BASE-METAL</td><td class="f11">REFINED</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-003</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- COUNTERPARTY MASTER -->
+    <div class="page" id="page-md-counterparty">
+      <div class="ph"><div class="ph-l"><div class="pt">Counterparty Master</div><div class="ps">Setup · Vendors, customers, brokers · Required before enquiry, deal, contract, invoice, ERP sync</div></div>
+        <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-cp')">＋ Add Counterparty</button></div></div>
+      <div class="card"><div class="ch"><div class="ct">Counterparties</div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Country</th><th>Currency</th><th>Payment Terms</th><th>Tax Reg No.</th><th>ERP Ref</th><th>KYC</th><th>Active</th><th></th></tr></thead>
+          <tbody id="md-cp-tbody">
+<tr><td class="mono ta fw6">GLEN-AG</td><td class="f11 fw6">Glencore AG</td><td><span class="badge bd-act" style="font-size:7px">VENDOR</span></td><td class="f11">Switzerland</td><td class="mono f10">USD</td><td class="f10">LC-SIGHT-100</td><td class="mono f10 tdim">CHE-123456</td><td class="mono f10 tdim">V-001</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">TATA-MET</td><td class="f11 fw6">Tata Metals Ltd</td><td><span class="badge bd-confirmed" style="font-size:7px">CUSTOMER</span></td><td class="f11">India</td><td class="mono f10">USD</td><td class="f10">TT-90-10</td><td class="mono f10 tdim">IN-MUM-001</td><td class="mono f10 tdim">C-001</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">AURUBIS</td><td class="f11 fw6">Aurubis Beerse NV</td><td><span class="badge bd-confirmed" style="font-size:7px">CUSTOMER</span></td><td class="f11">Belgium</td><td class="mono f10">USD</td><td class="f10">70-30-ADVANCE</td><td class="mono f10 tdim">BE0403075580</td><td class="mono f10 tdim">C-003</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">NOBLE-SG</td><td class="f11 fw6">Noble Resources Pte Ltd</td><td><span class="badge bd-act" style="font-size:7px">VENDOR</span></td><td class="f11">Singapore</td><td class="mono f10">USD</td><td class="f10">LC-SIGHT-100</td><td class="mono f10 tdim">SG-789012</td><td class="mono f10 tdim">V-002</td><td><span class="badge bd-ship">PENDING</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">HANWA-SG</td><td class="f11 fw6">Hanwa Singapore PTE Ltd</td><td><span class="badge" style="background:var(--purple-dim);color:var(--purple);border:1px solid var(--purple-dim);font-size:7px">AGENT</span></td><td class="f11">Singapore</td><td class="mono f10">USD</td><td class="f10">COMMISSION</td><td class="mono f10 tdim">SG-AGT-001</td><td class="mono f10 tdim">A-001</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- LOCATIONS & PORTS MASTER -->
+    <div class="page" id="page-md-location">
+      <div class="ph"><div class="ph-l"><div class="pt">Locations & Ports</div><div class="ps">Setup · Ports of loading/discharge, warehouses, yards, plants · Used in logistics, contracts and allocation</div></div>
+        <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-location')">＋ Add Location</button></div></div>
+      <div class="card"><div class="ch"><div class="ct">Locations</div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Country</th><th>Region</th><th>UN/LOCODE</th><th>ERP Ref</th><th>Active</th><th></th></tr></thead>
+          <tbody id="md-location-tbody">
+<tr><td class="mono ta fw6">DAR-TZ</td><td class="f11 fw6">Dar es Salaam</td><td><span class="badge bd-act" style="font-size:7px">PORT</span></td><td class="f11">Tanzania</td><td class="f11">East Africa</td><td class="mono f10">TZDAR</td><td class="mono f10 tdim">—</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">JNPT-IN</td><td class="f11 fw6">Nhava Sheva (JNPT)</td><td><span class="badge bd-act" style="font-size:7px">PORT</span></td><td class="f11">India</td><td class="f11">West India</td><td class="mono f10">INJNP</td><td class="mono f10 tdim">—</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">JEBEL-UAE</td><td class="f11 fw6">Jebel Ali</td><td><span class="badge bd-act" style="font-size:7px">PORT</span></td><td class="f11">UAE</td><td class="f11">Gulf</td><td class="mono f10">AEJEA</td><td class="mono f10 tdim">—</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">ANT-BE</td><td class="f11 fw6">Antwerp</td><td><span class="badge bd-act" style="font-size:7px">PORT</span></td><td class="f11">Belgium</td><td class="f11">North Europe</td><td class="mono f10">BEANT</td><td class="mono f10 tdim">—</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">YARD-DXB</td><td class="f11 fw6">Main Yard — Dubai (Bay A)</td><td><span class="badge bd-ship" style="font-size:7px">YARD</span></td><td class="f11">UAE</td><td class="f11">Gulf</td><td class="mono f10 tdim">—</td><td class="mono f10 tdim">WH-001</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- PRICE FORMULA MASTER -->
+    <div class="page" id="page-md-market-prices">
+      <div class="ph">
+        <div class="ph-l"><div class="pt">Market Prices</div><div class="ps">Price Quote Master · Forward Curve Master · Exact column structure per spec · Settlement = PRIMARY for MTM · LME 4-price block + single-price exchanges</div></div>
+        <div class="ph-r"><div class="br-row g7">
+          <button class="export-btn" onclick="exportToExcel('pqm-table','Price_Quote_Master')">⬇ Export PQM</button>
+          <button class="export-btn" onclick="exportToExcel('fcm-table','Forward_Curve_Master')">⬇ Export FCM</button>
+          <button class="btn bp" onclick="toast('Prices Loaded','Daily prices loaded from market data feed · Status: Active','success')">Load Today's Prices</button>
+        </div></div>
+      </div>
+
+      <div class="fts">
+        <div class="ft active mpt" data-tab="mp-pqm">Price Quote Master</div>
+        <div class="ft mpt" data-tab="mp-fcm">Forward Curve Master</div>
+        <div class="ft mpt" data-tab="mp-exchanges">Exchanges</div>
+        <div class="ft mpt" data-tab="mp-months">Contract Months</div>
+      </div>
+
+      <!-- ══ PRICE QUOTE MASTER ══ -->
+      <div id="mp-pqm" class="ftc active">
+        <div class="ban bi mb12"><span>ℹ</span><strong>Price Quote Master</strong> — one record per commodity per trading day. Physical MTM uses the Settlement/Official column (N). LME physical contracts use Cash Mid (J) or 3M Mid (M) depending on QP convention. Status: Active = today. Superseded = previous days. Never delete superseded rows — needed for historical MTM reconstruction.</div>
+
+
+        <div class="card mb12">
+          <div class="ch"><div class="ct">Quick Price Entry — Today</div><div class="cs">Enter today's prices · Mid auto-calculates · Save writes to data store</div></div>
+          <div class="cb">
+            <div class="fg">
+              <div class="f"><div class="fl">Commodity</div><select class="fs" id="mp-commodity-sel"><option value="LME_CU">LME Copper (LME_CU)</option><option value="ICE_BR">ICE Brent (ICE_BR)</option><option value="CBT_WH">CBOT Wheat (CBT_WH)</option><option value="CBT_SY">CBOT Soybeans (CBT_SY)</option><option value="PLT_DB">Platts Dubai (PLT_DB)</option></select></div>
+              <div class="f"><div class="fl">Date</div><input type="date" class="fi" id="mp-date-input" value="2026-05-09"></div>
+              <div class="f"><div class="fl">Cash Bid</div><input type="number" class="fi" id="mp-cashbid" placeholder="e.g. 9233.37" oninput="autoCalcMid('cash')"></div>
+              <div class="f"><div class="fl">Cash Ask</div><input type="number" class="fi" id="mp-cashask" placeholder="e.g. 9246.37" oninput="autoCalcMid('cash')"></div>
+              <div class="f"><div class="fl">Cash Mid (auto)</div><input type="number" class="fi" id="mp-cashmid" placeholder="Auto" readonly style="opacity:.7"></div>
+              <div class="f"><div class="fl">3M Bid</div><input type="number" class="fi" id="mp-bid3m" placeholder="e.g. 9244.40" oninput="autoCalcMid('3m')"></div>
+              <div class="f"><div class="fl">3M Ask</div><input type="number" class="fi" id="mp-ask3m" placeholder="e.g. 9258.40" oninput="autoCalcMid('3m')"></div>
+              <div class="f"><div class="fl">3M Mid (auto)</div><input type="number" class="fi" id="mp-mid3m" placeholder="Auto" readonly style="opacity:.7"></div>
+              <div class="f"><div class="fl">Settlement / Official ★ PRIMARY</div><input type="number" class="fi" id="mp-settlement" placeholder="e.g. 9240.00" style="border-color:var(--accent)"></div>
+            </div>
+            <div class="br-row right mt12">
+              <button class="btn bp" onclick="saveMarketPriceFromForm()">Save Price → Data Store</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="fg mb12">
+          <div class="f"><div class="fl">Filter by Commodity</div><select class="fs"><option>All Commodities</option><option>LME_CU — LME Copper</option><option>LME_AL — LME Aluminium</option><option>LME_NI — LME Nickel</option><option>ICE_BR — ICE Brent</option><option>ICE_GO — ICE Gasoil</option><option>CBT_WH — CBOT Wheat</option><option>CBT_SY — CBOT Soybeans</option><option>PLT_DB — Dubai Crude (Platts)</option></select></div>
+          <div class="f"><div class="fl">Filter by Status</div><select class="fs"><option>Active (today)</option><option>Superseded</option><option>All</option></select></div>
+          <div class="f"><div class="fl">Filter by Date</div><input type="date" class="fi" value="2026-05-09"></div>
+        </div>
+
+        <div style="overflow-x:auto">
+        <table class="dt" id="pqm-table" style="min-width:2200px;font-size:10px">
+          <thead>
+            <tr style="background:var(--surface3)">
+              <th colspan="7" style="text-align:center;color:var(--accent3);border-right:2px solid var(--border2)">IDENTITY</th>
+              <th colspan="6" style="text-align:center;color:var(--accent2);border-right:2px solid var(--border2)">LME 4-PRICE BLOCK (metals only)</th>
+              <th colspan="4" style="text-align:center;color:var(--green);border-right:2px solid var(--border2)">SINGLE-PRICE EXCHANGES (ICE / CBOT / Platts)</th>
+              <th colspan="5" style="text-align:center;color:var(--purple);border-right:2px solid var(--border2)">DERIVED (formula)</th>
+              <th colspan="3" style="text-align:center;color:var(--text3)">ADMIN</th>
+            </tr>
+            <tr style="background:var(--surface2);font-size:9px">
+              <th style="color:var(--accent3)">Quote Date</th>
+              <th style="color:var(--accent3)">Commodity Code</th>
+              <th style="color:var(--accent3)">Commodity Name</th>
+              <th style="color:var(--accent3)">Exchange / Source</th>
+              <th style="color:var(--accent3)">Price Type</th>
+              <th style="color:var(--accent3)">Ccy</th>
+              <th style="color:var(--accent3);border-right:2px solid var(--border2)">Unit</th>
+              <th style="color:var(--accent2)">Cash Bid (H)</th>
+              <th style="color:var(--accent2)">Cash Ask (I)</th>
+              <th style="color:var(--accent2)">Cash Mid* (J)<br><span class="tdim" style="font-weight:400">(H+I)/2</span></th>
+              <th style="color:var(--accent2)">3M Bid (K)</th>
+              <th style="color:var(--accent2)">3M Ask (L)</th>
+              <th style="color:var(--accent2);border-right:2px solid var(--border2)">3M Mid* (M)<br><span class="tdim" style="font-weight:400">(K+L)/2</span></th>
+              <th style="color:var(--green);font-weight:800">Settlement / Official (N) ★<br><span style="color:var(--green);font-weight:400;font-size:8px">PRIMARY — all MTM uses this</span></th>
+              <th style="color:var(--green)">Open</th>
+              <th style="color:var(--green)">High</th>
+              <th style="color:var(--green);border-right:2px solid var(--border2)">Low</th>
+              <th style="color:var(--purple)">Cash B/A Spread*</th>
+              <th style="color:var(--purple)">3M B/A Spread*</th>
+              <th style="color:var(--purple)">Cash-3M Contango*<br><span class="tdim" style="font-weight:400">3M Mid − Cash Mid</span></th>
+              <th style="color:var(--purple)">Effectiveness<br>(blank — future)</th>
+              <th style="color:var(--purple);border-right:2px solid var(--border2)">Roll Cost<br>(blank — future)</th>
+              <th style="color:var(--text3)">Source Feed</th>
+              <th style="color:var(--text3)">Load Timestamp</th>
+              <th style="color:var(--text3)">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- LME Copper — 2026-05-12 (today / Active) -->
+            <tr style="background:rgba(0,200,150,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td><td class="f10">LME</td><td class="mono f10">USD</td><td class="mono f10">$/MT</td>
+              <td class="mono">9,227.27</td><td class="mono">9,239.46</td><td class="mono ta2">9,233.37</td>
+              <td class="mono">9,237.34</td><td class="mono">9,251.46</td><td class="mono ta2">9,244.40</td>
+              <td class="mono fw7 tg">9,233.37</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10">12.19</td><td class="mono f10">14.12</td><td class="mono f10 ta">11.03</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">LME datafeed</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- LME Aluminium -->
+            <tr style="background:rgba(0,200,150,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">LME_AL</td><td class="f11">LME Aluminium</td><td class="mono f10">LME</td><td class="f10">LME</td><td class="mono f10">USD</td><td class="mono f10">$/MT</td>
+              <td class="mono">2,377.11</td><td class="mono">2,379.83</td><td class="mono ta2">2,378.47</td>
+              <td class="mono">2,380.83</td><td class="mono">2,385.69</td><td class="mono ta2">2,383.26</td>
+              <td class="mono fw7 tg">2,378.47</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10">2.72</td><td class="mono f10">4.86</td><td class="mono f10 ta">4.79</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">LME datafeed</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- LME Nickel -->
+            <tr style="background:rgba(0,200,150,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">LME_NI</td><td class="f11">LME Nickel</td><td class="mono f10">LME</td><td class="f10">LME</td><td class="mono f10">USD</td><td class="mono f10">$/MT</td>
+              <td class="mono">18,556.59</td><td class="mono">18,578.02</td><td class="mono ta2">18,567.31</td>
+              <td class="mono">18,591.85</td><td class="mono">18,614.62</td><td class="mono ta2">18,603.24</td>
+              <td class="mono fw7 tg">18,567.31</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10">21.43</td><td class="mono f10">22.77</td><td class="mono f10 ta">35.93</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">LME datafeed</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- ICE Brent -->
+            <tr style="background:rgba(91,138,240,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">ICE_BR</td><td class="f11">ICE Brent</td><td class="mono f10">ICE</td><td class="f10">ICE</td><td class="mono f10">USD</td><td class="mono f10">$/BBL</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono fw7 tg">83.56</td><td class="mono f10">83.58</td><td class="mono f10">83.80</td><td class="mono f10">83.40</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">ICE datafeed</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- ICE Gasoil -->
+            <tr style="background:rgba(91,138,240,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">ICE_GO</td><td class="f11">ICE Gasoil</td><td class="mono f10">ICE</td><td class="f10">ICE</td><td class="mono f10">USD</td><td class="mono f10">$/MT</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono fw7 tg">772.37</td><td class="mono f10">771.41</td><td class="mono f10">773.44</td><td class="mono f10">769.84</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">ICE datafeed</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- CBOT Wheat -->
+            <tr style="background:rgba(159,122,234,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">CBT_WH</td><td class="f11">CBOT Wheat</td><td class="mono f10">CBOT</td><td class="f10">CBOT</td><td class="mono f10">USD</td><td class="mono f10">¢/bu</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono fw7 tg">547.58</td><td class="mono f10">547.51</td><td class="mono f10">549.72</td><td class="mono f10">546.32</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">CBOT datafeed</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- CBOT Soybeans -->
+            <tr style="background:rgba(159,122,234,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">CBT_SY</td><td class="f11">CBOT Soybeans</td><td class="mono f10">CBOT</td><td class="f10">CBOT</td><td class="mono f10">USD</td><td class="mono f10">¢/bu</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono fw7 tg">1,388.69</td><td class="mono f10">1,386.46</td><td class="mono f10">1,392.32</td><td class="mono f10">1,383.63</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">CBOT datafeed</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- Platts Dubai -->
+            <tr style="background:rgba(159,122,234,.03)">
+              <td class="mono f10">2026-05-12</td><td class="mono fw6 ta">PLT_DB</td><td class="f11">Dubai Crude</td><td class="mono f10">Platts</td><td class="f10">Platts</td><td class="mono f10">USD</td><td class="mono f10">$/BBL</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono fw7 tg">82.10</td><td class="mono f10">82.02</td><td class="mono f10">82.24</td><td class="mono f10">81.84</td>
+              <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10">Platts eWindow</td><td class="mono f10">2026-05-12 17:30</td><td><span class="badge bd-act">Active</span></td>
+            </tr>
+            <!-- LME Cu — Superseded May 11 -->
+            <tr style="opacity:.5">
+              <td class="mono f10">2026-05-11</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td><td class="f10">LME</td><td class="mono f10">USD</td><td class="mono f10">$/MT</td>
+              <td class="mono">9,248.14</td><td class="mono">9,258.78</td><td class="mono ta2">9,253.46</td>
+              <td class="mono">9,257.81</td><td class="mono">9,270.87</td><td class="mono ta2">9,264.34</td>
+              <td class="mono fw6 tdim">9,253.46</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10">10.64</td><td class="mono f10">13.06</td><td class="mono f10 ta">10.88</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10 tdim">LME datafeed</td><td class="mono f10 tdim">2026-05-11 17:30</td><td><span class="badge bd-draft">Superseded</span></td>
+            </tr>
+            <!-- LME Cu — Superseded May 8 -->
+            <tr style="opacity:.5">
+              <td class="mono f10">2026-05-08</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td><td class="f10">LME</td><td class="mono f10">USD</td><td class="mono f10">$/MT</td>
+              <td class="mono">9,269.45</td><td class="mono">9,284.15</td><td class="mono ta2">9,276.80</td>
+              <td class="mono">9,285.84</td><td class="mono">9,302.30</td><td class="mono ta2">9,294.07</td>
+              <td class="mono fw6 tdim">9,276.80</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+              <td class="mono f10">14.70</td><td class="mono f10">16.46</td><td class="mono f10 ta">17.27</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+              <td class="f10 tdim">LME datafeed</td><td class="mono f10 tdim">2026-05-08 17:30</td><td><span class="badge bd-draft">Superseded</span></td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="lar br-row g7">
+          <button class="btn bg bsm" onclick="toast('Row Added','New price entry added — fill commodity code, date and prices','info')">+ Add Price Entry</button>
+          <span class="tdim f10 mono">★ Settlement (N) is the PRIMARY column used for all MTM calculations · Superseded rows kept for audit — never delete</span>
+        </div>
+      </div>
+
+      <!-- ══ FORWARD CURVE MASTER ══ -->
+      <div id="mp-fcm" class="ftc hidden">
+        <div class="ban bi mb12"><span>ℹ</span><strong>Forward Curve Master</strong> — one record per commodity per curve date per prompt date. Derivatives MTM uses Settlement column (PRIMARY — marked ★). Unpriced physical uses average of Settlement over QP window. LME: daily prompts for 90 business days (~65 rows). ICE/CBOT: monthly contracts. Primary key = (curve_date, commodity_code, prompt_date).</div>
+
+        <div class="fg mb12">
+          <div class="f"><div class="fl">Filter Commodity</div><select class="fs"><option>LME_CU — LME Copper</option><option>LME_AL — LME Aluminium</option><option>LME_NI — LME Nickel</option><option>ICE_BR — ICE Brent</option><option>CBT_WH — CBOT Wheat</option><option>CBT_SY — CBOT Soybeans</option></select></div>
+          <div class="f"><div class="fl">Curve Date</div><input type="date" class="fi" value="2026-05-09"></div>
+          <div class="f"><div class="fl">Prompt Type</div><select class="fs"><option>All</option><option>Daily (LME)</option><option>Monthly (ICE/CBOT)</option></select></div>
+        </div>
+
+        <div style="overflow-x:auto">
+        <table class="dt" id="fcm-table" style="min-width:1600px;font-size:10px">
+          <thead>
+            <tr style="background:var(--surface3)">
+              <th colspan="8" style="text-align:center;color:var(--accent3);border-right:2px solid var(--border2)">IDENTITY & PROMPT</th>
+              <th colspan="4" style="text-align:center;color:var(--green);border-right:2px solid var(--border2)">PRICES (bid / ask / mid / settlement)</th>
+              <th colspan="4" style="text-align:center;color:var(--purple)">DERIVED & ADMIN</th>
+            </tr>
+            <tr style="background:var(--surface2);font-size:9px">
+              <th style="color:var(--accent3)">Curve Date</th>
+              <th style="color:var(--accent3)">Commodity Code</th>
+              <th style="color:var(--accent3)">Commodity Name</th>
+              <th style="color:var(--accent3)">Exchange</th>
+              <th style="color:var(--accent3)">Prompt Date</th>
+              <th style="color:var(--accent3)">Days to Prompt*<br><span class="tdim" style="font-weight:400">formula</span></th>
+              <th style="color:var(--accent3)">Prompt Label</th>
+              <th style="color:var(--accent3);border-right:2px solid var(--border2)">Prompt Type</th>
+              <th style="color:var(--green)">Bid</th>
+              <th style="color:var(--green)">Ask</th>
+              <th style="color:var(--green)">Mid*<br><span class="tdim" style="font-weight:400">(B+A)/2</span></th>
+              <th style="color:var(--green);font-weight:800;border-right:2px solid var(--border2)">Settlement ★ PRIMARY<br><span style="color:var(--green);font-weight:400;font-size:8px">USE FOR ALL MTM</span></th>
+              <th style="color:var(--purple)">Spread to Cash*</th>
+              <th style="color:var(--purple)">Daily Carry*</th>
+              <th style="color:var(--purple)">Interpolated</th>
+              <th style="color:var(--text3)">Source / Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- LME Cu — prompt 11-May-26 (actual from Prashant's file) -->
+            <tr style="background:rgba(0,200,150,.04)">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td>
+              <td class="mono f10 ta2 fw6">2026-05-11</td><td class="mono f10">2</td><td class="f10">LME 11-May-26</td><td class="f10">Daily</td>
+              <td class="mono">9,239.43</td><td class="mono">9,241.63</td><td class="mono ta2">9,240.53</td>
+              <td class="mono fw7 tg">9,240.28</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10">0.00</td><td class="mono f10">N</td><td class="f10 tdim">LME datafeed · Active</td>
+            </tr>
+            <tr>
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td>
+              <td class="mono f10 ta2">2026-05-12</td><td class="mono f10">3</td><td class="f10">LME 12-May-26</td><td class="f10">Daily</td>
+              <td class="mono">9,242.74</td><td class="mono">9,245.35</td><td class="mono ta2">9,244.05</td>
+              <td class="mono fw7 tg">9,244.40</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10">0.00</td><td class="mono f10">N</td><td class="f10 tdim">LME datafeed · Active</td>
+            </tr>
+            <tr>
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td>
+              <td class="mono f10 ta2">2026-05-15</td><td class="mono f10">6</td><td class="f10">LME 15-May-26</td><td class="f10">Daily</td>
+              <td class="mono">9,244.13</td><td class="mono">9,246.05</td><td class="mono ta2">9,245.09</td>
+              <td class="mono fw7 tg">9,245.08</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10">0.00</td><td class="mono f10">N</td><td class="f10 tdim">LME datafeed · Active</td>
+            </tr>
+            <tr>
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td>
+              <td class="mono f10 ta2">2026-06-01</td><td class="mono f10">23</td><td class="f10">LME 01-Jun-26</td><td class="f10">Daily</td>
+              <td class="mono">9,247.35</td><td class="mono">9,251.08</td><td class="mono ta2">9,249.22</td>
+              <td class="mono fw7 tg">9,248.97</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10">0.00</td><td class="mono f10">N</td><td class="f10 tdim">LME datafeed · Active</td>
+            </tr>
+            <!-- LME 15-Jul-26 — ACTIVE HEDGE PROMPT — actual settlement 9,271.71 -->
+            <tr style="background:rgba(0,200,150,.05)">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td>
+              <td class="mono f10 ta2 fw6">2026-07-15</td><td class="mono f10">67</td><td class="f10 fw6">LME 15-Jul-26 ★ hedge prompt</td><td class="f10">Daily</td>
+              <td class="mono">9,270.36</td><td class="mono">9,273.84</td><td class="mono ta2">9,272.10</td>
+              <td class="mono fw7 tg">9,271.71</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10">0.00</td><td class="mono f10">N</td><td class="f10 tdim">LME datafeed · Active</td>
+            </tr>
+            <tr>
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td>
+              <td class="mono f10 ta2">2026-08-07</td><td class="mono f10">90</td><td class="f10">LME 07-Aug-26</td><td class="f10">Daily</td>
+              <td class="mono">9,282.60</td><td class="mono">9,285.12</td><td class="mono ta2">9,283.86</td>
+              <td class="mono fw7 tg">9,283.76</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10">0.00</td><td class="mono f10">N</td><td class="f10 tdim">LME datafeed · Active</td>
+            </tr>
+            <tr style="opacity:.7">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">LME_CU</td><td class="f11">LME Copper</td><td class="mono f10">LME</td>
+              <td class="mono f10 ta2">2026-09-11</td><td class="mono f10">125</td><td class="f10">LME 11-Sep-26</td><td class="f10">Daily</td>
+              <td class="mono">9,301.09</td><td class="mono">9,304.16</td><td class="mono ta2">9,302.63</td>
+              <td class="mono fw6 tdim">9,302.40</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10">0.00</td><td class="mono f10 ta2">Y — interp.</td><td class="f10 tdim">LME datafeed · Active</td>
+            </tr>
+            <!-- ICE Brent monthly — actual from Prashant's file -->
+            <tr style="background:rgba(91,138,240,.03)">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">ICE_BR</td><td class="f11">ICE Brent</td><td class="mono f10">ICE</td>
+              <td class="mono f10 ta2">2026-06-15</td><td class="mono f10">37</td><td class="f10">Jun26</td><td class="f10 ta2">Monthly</td>
+              <td class="mono">82.67</td><td class="mono">82.83</td><td class="mono ta2">82.75</td>
+              <td class="mono fw7 tg">82.75</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td><td class="mono f10">N</td><td class="f10 tdim">ICE datafeed · Active</td>
+            </tr>
+            <tr style="background:rgba(91,138,240,.03)">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">ICE_BR</td><td class="f11">ICE Brent</td><td class="mono f10">ICE</td>
+              <td class="mono f10 ta2">2026-07-15</td><td class="mono f10">67</td><td class="f10">Jul26</td><td class="f10 ta2">Monthly</td>
+              <td class="mono">83.89</td><td class="mono">84.09</td><td class="mono ta2">83.99</td>
+              <td class="mono fw7 tg">83.99</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td><td class="mono f10">N</td><td class="f10 tdim">ICE datafeed · Active</td>
+            </tr>
+            <tr style="background:rgba(91,138,240,.03)">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">ICE_BR</td><td class="f11">ICE Brent</td><td class="mono f10">ICE</td>
+              <td class="mono f10 ta2">2026-08-15</td><td class="mono f10">98</td><td class="f10">Aug26</td><td class="f10 ta2">Monthly</td>
+              <td class="mono">83.92</td><td class="mono">84.02</td><td class="mono ta2">83.97</td>
+              <td class="mono fw7 tg">83.97</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td><td class="mono f10">N</td><td class="f10 tdim">ICE datafeed · Active</td>
+            </tr>
+            <!-- CBOT Wheat monthly — actual from Prashant's file -->
+            <tr style="background:rgba(159,122,234,.03)">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">CBT_WH</td><td class="f11">CBOT Wheat</td><td class="mono f10">CBOT</td>
+              <td class="mono f10 ta2">2026-07-15</td><td class="mono f10">67</td><td class="f10">Jul26</td><td class="f10 ta2">Monthly</td>
+              <td class="mono">553.53</td><td class="mono">553.61</td><td class="mono ta2">553.57</td>
+              <td class="mono fw7 tg">553.57</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td><td class="mono f10">N</td><td class="f10 tdim">CBOT datafeed · Active</td>
+            </tr>
+            <!-- CBOT Soybeans -->
+            <tr style="background:rgba(159,122,234,.03)">
+              <td class="mono f10">2026-05-09</td><td class="mono fw6 ta">CBT_SY</td><td class="f11">CBOT Soybeans</td><td class="mono f10">CBOT</td>
+              <td class="mono f10 ta2">2026-07-15</td><td class="mono f10">67</td><td class="f10">Jul26</td><td class="f10 ta2">Monthly</td>
+              <td class="mono">1,386.92</td><td class="mono">1,387.10</td><td class="mono ta2">1,387.01</td>
+              <td class="mono fw7 tg">1,387.01</td>
+              <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td><td class="mono f10">N</td><td class="f10 tdim">CBOT datafeed · Active</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="lar br-row g7">
+          <button class="btn bg bsm" onclick="toast('Curve Loaded','Forward curve loaded for today · All active prompts updated','info')">Load Full Curve</button>
+          <span class="tdim f10 mono">LME: ~65 daily prompts per commodity per day · ICE/CBOT: monthly · Settlement ★ is used exclusively for derivatives MTM and broker reconciliation</span>
+        </div>
+
+        <!-- Developer notes -->
+        <div class="card mt14">
+          <div class="ch"><div class="ct">Developer Notes — MTM Lookup Logic</div><div class="cs">Per Prashant's spec · Pseudocode for implementation</div></div>
+          <div class="cbf"><table class="lt">
+            <thead><tr><th>Function</th><th>Pseudocode</th><th>Used For</th></tr></thead>
+            <tbody>
+              <tr><td class="f11 fw6">get_settlement(commodity, curve_date, prompt_date)</td><td class="mono f10">row = WHERE commodity=X AND curve_date=Y AND prompt_date=Z<br>IF not found: interpolate between nearest prompt_dates<br>RETURN settlement</td><td class="f10">Futures MTM · QP average calculation</td></tr>
+              <tr><td class="f11 fw6">qp_avg_mtm(commodity, curve_date, qp_start, qp_end, qty, dir_sign)</td><td class="mono f10">dates = business_days(qp_start, qp_end)<br>avg_px = AVG(get_settlement(commodity, curve_date, d) for d in dates)<br>return (avg_px − trade_px) × dir_sign × qty<br>[trade_px=None if fully unpriced]</td><td class="f10">Unpriced physical MTM · Expected MTM on Unpriced rows</td></tr>
+              <tr><td class="f11 fw6">Primary key</td><td class="mono f10">(curve_date, commodity_code, prompt_date)</td><td class="f10">Store full curve every day for historical MTM reconstruction</td></tr>
+              <tr><td class="f11 fw6">Interpolation</td><td class="mono f10">settlement = S1 + (S2-S1) × (d-d1)/(d2-d1)<br>Flag: Interpolated = Y</td><td class="f10">LME prompts beyond 3M where no direct quote exists</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ══ EXCHANGES TAB ══ -->
+      <div id="mp-exchanges" class="ftc hidden">
+        <div class="card"><div class="ch"><div class="ct">Exchanges</div><div class="cs">Exchange definitions · Fixation cutoffs · LME: 11:30 CET · Precious: 10:00 CET</div><button class="btn bg bsm" style="margin-left:auto" onclick="toast('Exchange','New exchange added','info')">+ Add Exchange</button></div>
+        <div class="cbf"><table class="dt">
+          <thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Timezone</th><th>Fixation Cutoff (CET)</th><th>Price Block</th><th>Active</th></tr></thead>
+          <tbody>
+            <tr><td class="mono ta fw6">LME</td><td class="f11 fw6">London Metal Exchange</td><td class="f11">Metals</td><td class="f10">Europe/London</td><td class="mono ta2 fw6">11:30 CET (Cu/Al/Ni/Zn/Pb/Sn)</td><td class="f10">4-price block (Cash Bid/Ask, 3M Bid/Ask) + Settlement</td><td><span class="badge bd-confirmed">YES</span></td></tr>
+            <tr><td class="mono ta fw6">LME-PM</td><td class="f11 fw6">LME Precious Metals</td><td class="f11">Precious</td><td class="f10">Europe/London</td><td class="mono ta2 fw6">10:00 CET (Ag/Au)</td><td class="f10">4-price block + Settlement</td><td><span class="badge bd-confirmed">YES</span></td></tr>
+            <tr><td class="mono ta fw6">ICE</td><td class="f11 fw6">ICE Futures Europe</td><td class="f11">Energy</td><td class="f10">Europe/London</td><td class="f10 tdim">Market hours</td><td class="f10">Single price (Settlement + OHLC)</td><td><span class="badge bd-confirmed">YES</span></td></tr>
+            <tr><td class="mono ta fw6">CBOT</td><td class="f11 fw6">CBOT / CME Group</td><td class="f11">Agri</td><td class="f10">America/Chicago</td><td class="f10 tdim">Market hours</td><td class="f10">Single price (Settlement + OHLC)</td><td><span class="badge bd-confirmed">YES</span></td></tr>
+            <tr><td class="mono ta fw6">PLATTS</td><td class="f11 fw6">S&P Global Platts</td><td class="f11">Reporting Agency</td><td class="f10">UTC</td><td class="f10 tdim">Published daily</td><td class="f10">Single assessed price + OHLC</td><td><span class="badge bd-confirmed">YES</span></td></tr>
+            <tr><td class="mono ta fw6">ARGUS</td><td class="f11 fw6">Argus Media</td><td class="f11">Reporting Agency</td><td class="f10">UTC</td><td class="f10 tdim">Published daily</td><td class="f10">Single assessed price</td><td><span class="badge bd-confirmed">YES</span></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- ══ CONTRACT MONTHS TAB ══ -->
+      <div id="mp-months" class="ftc hidden">
+        <div class="ban bi mb12"><span>ℹ</span>Contract months map monthly futures codes to their prompt/expiry dates. When recording a hedge, the prompt date comes from here. Jul 2026 (LME-CU-JUL26) = 2026-07-15 = active hedge prompt for FIX123/FIX456.</div>
+        <div class="card"><div class="ch"><div class="ct">Contract Months Reference</div><div class="cs">Prompt dates for futures positions · Linked to Forward Curve Master and Hedge Card</div><button class="export-btn bsm" onclick="exportToExcel('contract-months-tbl','Contract_Months')">⬇ Export</button></div>
+        <div class="cbf"><table class="dt" id="contract-months-tbl">
+          <thead><tr><th>Month Code</th><th>Exchange</th><th>Commodity</th><th>Display Name</th><th>Prompt / Expiry Date</th><th>Fixation Cutoff (CET)</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="mono ta fw6">LME-CU-MAY26</td><td class="mono f10">LME</td><td class="f11">Copper</td><td class="f11">LME Copper May 2026</td><td class="mono ta2">2026-05-20</td><td class="mono f10 ta2">11:30</td><td><span class="badge bd-ship">NEAR</span></td></tr>
+            <tr><td class="mono ta fw6">LME-CU-JUN26</td><td class="mono f10">LME</td><td class="f11">Copper</td><td class="f11">LME Copper June 2026</td><td class="mono ta2">2026-06-17</td><td class="mono f10 ta2">11:30</td><td><span class="badge bd-ship">NEAR</span></td></tr>
+            <tr style="background:rgba(0,200,150,.05)"><td class="mono ta fw6">LME-CU-JUL26</td><td class="mono f10">LME</td><td class="f11">Copper</td><td class="f11">LME Copper July 2026 ★</td><td class="mono ta2 fw7">2026-07-15</td><td class="mono f10 ta2">11:30</td><td><span class="badge bd-act">ACTIVE HEDGE</span></td></tr>
+            <tr><td class="mono ta fw6">LME-CU-AUG26</td><td class="mono f10">LME</td><td class="f11">Copper</td><td class="f11">LME Copper August 2026</td><td class="mono ta2">2026-08-20</td><td class="mono f10 ta2">11:30</td><td><span class="badge bd-draft">FORWARD</span></td></tr>
+            <tr><td class="mono ta fw6">LME-PB-JUL26</td><td class="mono f10">LME</td><td class="f11">Lead</td><td class="f11">LME Lead July 2026</td><td class="mono ta2">2026-07-15</td><td class="mono f10 ta2">11:30</td><td><span class="badge bd-draft">FORWARD</span></td></tr>
+            <tr><td class="mono ta fw6">ICE-BR-JUN26</td><td class="mono f10">ICE</td><td class="f11">Brent Crude</td><td class="f11">ICE Brent June 2026</td><td class="mono ta2">2026-06-30</td><td class="f10 tdim">Market hours</td><td><span class="badge bd-ship">NEAR</span></td></tr>
+            <tr><td class="mono ta fw6">ICE-BR-JUL26</td><td class="mono f10">ICE</td><td class="f11">Brent Crude</td><td class="f11">ICE Brent July 2026</td><td class="mono ta2">2026-07-31</td><td class="f10 tdim">Market hours</td><td><span class="badge bd-draft">FORWARD</span></td></tr>
+            <tr><td class="mono ta fw6">CBT-WH-JUL26</td><td class="mono f10">CBOT</td><td class="f11">Wheat</td><td class="f11">CBOT Wheat July 2026</td><td class="mono ta2">2026-07-14</td><td class="f10 tdim">Market hours</td><td><span class="badge bd-draft">FORWARD</span></td></tr>
+          </tbody>
+        </table></div></div>
+        <div class="lar"><button class="btn bg bsm" onclick="toast('Month','New contract month added','info')">+ Add Month</button></div>
+      </div>
+    </div>
+
+
+
+    <div class="page" id="page-md-pricing">
+      <div class="ph"><div class="ph-l"><div class="pt">Price Formula Master</div><div class="ps">Setup · Formula headers + components · Required before any pricing can run on a contract</div></div>
+        <div class="ph-r"><button class="btn bp" onclick="toast('Formula','Add new price formula','info')">＋ Add Formula</button></div></div>
+      <div class="card"><div class="ch"><div class="ct">Price Formulas</div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Formula Code</th><th>Name</th><th>Pricing Type</th><th>Base Source</th><th>Price Field</th><th>Currency</th><th>Template</th><th>Active</th><th></th></tr></thead>
+          <tbody id="md-formula-tbody">
+<tr><td class="mono ta fw6">LME-CU-QP-M1</td><td class="f11 fw6">LME Copper QP M+1 Average</td><td class="f11">average</td><td class="f11">LME</td><td class="f11">lowest_of_4</td><td class="mono f10">USD</td><td><span class="badge bd-confirmed">YES</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">LME-CU-HIGHEST4</td><td class="f11 fw6">LME Copper Highest of 4</td><td class="f11">average</td><td class="f11">LME</td><td class="f11">highest_of_4</td><td class="mono f10">USD</td><td><span class="badge bd-confirmed">YES</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">LME-PB-OFFICIAL</td><td class="f11 fw6">LME Lead Official Settlement</td><td class="f11">official</td><td class="f11">LME</td><td class="f11">lmeo</td><td class="mono f10">USD</td><td><span class="badge bd-confirmed">YES</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">LME-SN-OFFICIAL</td><td class="f11 fw6">LME Tin Official Settlement</td><td class="f11">official</td><td class="f11">LME</td><td class="f11">lmeo</td><td class="mono f10">USD</td><td><span class="badge bd-confirmed">YES</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+      <div class="card mt16"><div class="ch"><div class="ct">Formula Components — LME-CU-QP-M1</div><div class="cs">Drag to reorder · Sequence determines calculation order</div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Seq</th><th>Component Name</th><th>Type</th><th>Operator</th><th>Value Type</th><th>Default Value</th><th>Unit</th><th>Mandatory</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="mono f10">10</td><td class="f11">LME Official Settlement</td><td><span class="badge bd-act" style="font-size:7px">BASE</span></td><td class="mono f10">BASE</td><td class="f10">market_linked</td><td class="mono f10">LME Cash</td><td class="f10">USD/MT</td><td><span class="badge bd-act">YES</span></td><td></td></tr>
+            <tr><td class="mono f10">20</td><td class="f11">Brand Premium</td><td><span class="badge bd-confirmed" style="font-size:7px">PREMIUM</span></td><td class="mono f10">+</td><td class="f10">fixed</td><td><input type="number" class="fi" style="width:60px;font-size:10px" value="60"></td><td class="f10">USD/MT</td><td><span class="badge bd-draft">NO</span></td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
+            <tr><td class="mono f10">30</td><td class="f11">Freight Deduction CFR</td><td><span class="badge bd-ship" style="font-size:7px">FREIGHT</span></td><td class="mono f10">−</td><td class="f10">fixed</td><td><input type="number" class="fi" style="width:60px;font-size:10px" value="22"></td><td class="f10">USD/MT</td><td><span class="badge bd-draft">NO</span></td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
+          </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="toast('Component','Add new component to this formula','info')">+ Add Component</button></div>
+        </div></div>
+    </div>
+
+    <!-- QP PERIOD MASTER -->
+    <div class="page" id="page-md-qp">
+      <div class="ph"><div class="ph-l"><div class="pt">QP Period Master</div><div class="ps">Setup · All QP window rules stored as data · No code changes needed to add new windows · Anchor events link to logistics dates</div></div>
+        <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-qp')">＋ Add QP Period</button></div></div>
+      <div class="ban bi"><span>ℹ</span>Each QP period is a data row — anchor event links to a logistics or assay date (BL_DATE, ETD, ETA, ARRIVAL_DATE, ASSAY_RECEIPT_DATE). Start/end rules + offsets derive the actual pricing window per contract. Admin configures, no developer involvement.</div>
+      <div class="card"><div class="ch"><div class="ct">QP Period Definitions</div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Basis</th><th>Rule Type</th><th>Anchor Event</th><th>Start Rule</th><th>Start Offset</th><th>End Rule</th><th>End Offset</th><th>Window Days</th><th>Missing Price Rule</th><th>Active</th><th></th></tr></thead>
+          <tbody id="md-qp-tbody">
+<tr><td class="mono ta fw6">LME-M1</td><td class="f11 fw6">LME M+1 Average</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">NEXT-MONTH-START</td><td class="mono f10">0</td><td class="f10">NEXT-MONTH-END</td><td class="mono f10">0</td><td class="mono f10">22 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">LME-M</td><td class="f11 fw6">LME Current Month Average</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">MONTH-START</td><td class="mono f10">0</td><td class="f10">MONTH-END</td><td class="mono f10">0</td><td class="mono f10">22 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">BL-PLUS10</td><td class="f11 fw6">BL + 10 Calendar Days</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">SAME-DAY</td><td class="mono f10">0</td><td class="f10">OFFSET-CD</td><td class="mono f10">+10</td><td class="mono f10">10 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">ASSAY-5WD</td><td class="f11 fw6">5 WD After Assay Receipt</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">ASSAY_RECEIPT_DATE</td><td class="f10">SAME-DAY</td><td class="mono f10">0</td><td class="f10">OFFSET-BD</td><td class="mono f10">+5</td><td class="mono f10">5 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">PLATTS-3DAY</td><td class="f11 fw6">Platts 3-Day Average (BL)</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">OFFSET-BD</td><td class="mono f10">−1</td><td class="f10">OFFSET-BD</td><td class="mono f10">+1</td><td class="mono f10">3 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+      <div class="card mt16"><div class="ch"><div class="ct">Add / Edit QP Period</div></div>
+        <div class="cb"><div class="fg">
+          <div class="f"><div class="fl">QP Code <span class="req">*</span></div><input type="text" class="fi" placeholder="e.g. LME-M1"></div>
+          <div class="f"><div class="fl">Name</div><input type="text" class="fi" placeholder="e.g. LME M+1 Average"></div>
+          <div class="f"><div class="fl">Pricing Basis</div><select class="fs"><option>average</option><option>daily_fixation</option><option>selected_date</option></select></div>
+          <div class="f"><div class="fl">Date Rule Type</div><select class="fs"><option>event_based</option><option>fixed_range</option><option>manual</option></select></div>
+          <div class="f"><div class="fl">Anchor Event <span class="req">*</span></div><select class="fs"><option>BL_DATE</option><option>ETD</option><option>ETA</option><option>ARRIVAL_DATE</option><option>ASSAY_RECEIPT_DATE</option><option>DOCS_RECEIPT</option><option>FIXED_DATE</option></select></div>
+          <div class="f"><div class="fl">Anchor Offset Days</div><input type="number" class="fi" value="0" placeholder="e.g. +10 = 10 days after anchor"></div>
+          <div class="f"><div class="fl">Window Start Rule</div><select class="fs"><option>NEXT-MONTH-START</option><option>MONTH-START</option><option>SAME-DAY</option><option>NEXT-BD</option><option>OFFSET-CD</option><option>OFFSET-BD</option></select></div>
+          <div class="f"><div class="fl">Start Offset Value</div><input type="number" class="fi" value="0"></div>
+          <div class="f"><div class="fl">Window End Rule</div><select class="fs"><option>NEXT-MONTH-END</option><option>MONTH-END</option><option>SAME-DAY</option><option>OFFSET-CD</option><option>OFFSET-BD</option><option>ANCHOR-PLUS-N</option></select></div>
+          <div class="f"><div class="fl">End Offset Value</div><input type="number" class="fi" value="0"></div>
+          <div class="f"><div class="fl">Business Days Only</div><select class="fs"><option>YES</option><option>NO</option></select></div>
+          <div class="f"><div class="fl">Holiday Calendar</div><select class="fs"><option>LME-CAL</option><option>CME-CAL</option><option>PLATTS-CAL</option><option>CUSTOM</option></select></div>
+          <div class="f"><div class="fl">Missing Price Rule</div><select class="fs"><option>USE-LAST-AVAILABLE</option><option>EXCLUDE-DAY</option><option>BLOCK-CALCULATION</option><option>USE-MANUAL-ENTRY</option></select></div>
+          <div class="f"><div class="fl">Provisional Basis</div><select class="fs"><option>RUNNING-AVERAGE</option><option>LAST-KNOWN-PRICE</option><option>MANUAL-RATE</option></select></div>
+        </div>
+        <div class="br-row right mt12"><button class="btn bp" onclick="saveQPPeriod()">Save QP Period</button></div>
+        </div></div>
+    </div>
+
+    <!-- PAYMENT TERMS MASTER -->
+    <div class="page" id="page-md-payment">
+      <div class="ph"><div class="ph-l"><div class="pt">Payment Terms Master</div><div class="ps">Setup · Header + milestone lines · Trigger events link to logistics dates (ETD, ETA, BL_DATE, DOCS_RECEIPT)</div></div>
+        <div class="ph-r"><button class="btn bp" onclick="toast('Payment Terms','Add header then define milestone lines','info')">＋ Add Terms</button></div></div>
+      <div class="tc">
+        <div class="card"><div class="ch"><div class="ct">Payment Terms Headers</div></div>
+          <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Lines</th><th>Active</th><th></th></tr></thead>
+            <tbody id="md-pt-tbody">
+<tr><td class="mono ta fw6">LC-SIGHT-100</td><td class="f11 fw6">LC at Sight — 100%</td><td class="f11">LC</td><td class="mono f10">1</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">TT-90-10</td><td class="f11 fw6">TT 90% Provisional + 10% Final</td><td class="f11">T/T</td><td class="mono f10">2</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">TT-70-30</td><td class="f11 fw6">TT 70% Advance + 30% Final (Aurubis)</td><td class="f11">T/T</td><td class="mono f10">2</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">TT-50-50</td><td class="f11 fw6">TT 50% Provisional + 50% Balance</td><td class="f11">T/T</td><td class="mono f10">2</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">CAD-DOCS</td><td class="f11 fw6">Cash Against Documents</td><td class="f11">CAD</td><td class="mono f10">1</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+        <div class="card"><div class="ch"><div class="ct">Milestone Lines — LC-SIGHT-100</div><div class="cs">Trigger events match logistics dates</div></div>
+          <div class="cbf"><table class="dt"><thead><tr><th>Seq</th><th>Trigger Event</th><th>Offset Days</th><th>% Amount</th><th>Calc Basis</th><th>Notes</th><th></th></tr></thead>
+            <tbody id="md-pt-lines-tbody">
+              <tr><td class="mono f10">1</td>
+                <td><select class="fs" style="font-size:10px"><option>AGAINST-BL</option><option>ETD</option><option>ETA</option><option>DOCS_RECEIPT</option><option>ADVANCE</option><option>FIXED_DATE</option></select></td>
+                <td><input type="number" class="fi" style="width:50px;font-size:10px" value="0"></td>
+                <td><input type="number" class="fi" style="width:55px;font-size:10px" value="100"></td>
+                <td><select class="fs" style="font-size:10px"><option>invoice_amount</option><option>net_amount</option><option>gross_amount</option></select></td>
+                <td><input type="text" class="fi" style="font-size:10px" placeholder="Notes"></td>
+                <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>
+              </tr>
+            </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="addPTLine()">+ Add Line</button></div>
+        </div></div>
+    </div>
+
+    <!-- QC PARAMETER MASTER -->
+    <div class="page" id="page-md-qc">
+      <div class="ph"><div class="ph-l"><div class="pt">QC Parameter Master</div><div class="ps">Setup · Reusable assay/quality parameter definitions · Used in contract QC terms and shipment assay entry</div></div>
+        <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-qc')">＋ Add Parameter</button></div></div>
+      <div class="card"><div class="ch"><div class="ct">QC Parameters</div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Unit</th><th>Default Min</th><th>Default Max</th><th>Default Penalty Rule</th><th>Active</th><th></th></tr></thead>
+          <tbody id="md-qc-tbody">
+<tr><td class="mono ta fw6">CU</td><td class="f11 fw6">Copper Content</td><td><span class="badge bd-act" style="font-size:7px">PAYABLE</span></td><td class="mono f10">%</td><td class="mono f10">—</td><td class="mono f10">—</td><td class="f10 tdim">Standard deductions apply</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">PB</td><td class="f11 fw6">Lead Content</td><td><span class="badge bd-act" style="font-size:7px">PAYABLE</span></td><td class="mono f10">%</td><td class="mono f10">—</td><td class="mono f10">—</td><td class="f10 tdim">Payable at LMEO</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">SN</td><td class="f11 fw6">Tin Content</td><td><span class="badge bd-act" style="font-size:7px">PAYABLE</span></td><td class="mono f10">%</td><td class="mono f10">—</td><td class="mono f10">—</td><td class="f10 tdim">Payable at LMEO · Escalator applies per contract</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">MOISTURE</td><td class="f11 fw6">Moisture Content</td><td><span class="badge bd-danger" style="font-size:7px">PENALTY</span></td><td class="mono f10">%</td><td class="mono f10">0</td><td class="mono f10">8.0</td><td class="f10">Above max: penalty charge or rejection</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">AS</td><td class="f11 fw6">Arsenic</td><td><span class="badge bd-danger" style="font-size:7px">PENALTY</span></td><td class="mono f10">%</td><td class="mono f10">0</td><td class="mono f10">0.1</td><td class="f10">Above 0%: each 0.1% deducts 0.2% payable Sn (Sample 3)</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">SB</td><td class="f11 fw6">Antimony</td><td><span class="badge bd-danger" style="font-size:7px">PENALTY</span></td><td class="mono f10">%</td><td class="mono f10">0</td><td class="mono f10">4.0</td><td class="f10">Below 4%: no penalty. Above 4%: each 0.1% Sb deducts 0.1% payable Sn</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
+<tr><td class="mono ta fw6">FE</td><td class="f11 fw6">Iron Content</td><td><span class="badge bd-ship" style="font-size:7px">INFO</span></td><td class="mono f10">%</td><td class="mono f10">—</td><td class="mono f10">0.5</td><td class="f10 tdim">Informational — may trigger rejection</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- EXCHANGE MASTER -->
+    <div class="page" id="page-md-other">
+      <div class="ph"><div class="ph-l"><div class="pt">Currency · UOM · Tax Codes</div><div class="ps">Setup · Foundation masters · Required before any pricing, invoicing or ERP posting</div></div></div>
+      <div class="three-col">
+        <div class="card"><div class="ch"><div class="ct">Currencies</div><div class="ca" onclick="toast('Currency','Add new currency','info')">+ Add</div></div>
+          <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Symbol</th><th>Decimals</th><th>Base</th></tr></thead>
+            <tbody id="md-curr-tbody">
+<tr><td class="mono ta fw6">USD</td><td class="f11">US Dollar</td><td class="mono f10">$</td><td class="mono f10">2</td><td><span class="badge bd-act">BASE</span></td></tr>
+<tr><td class="mono ta fw6">EUR</td><td class="f11">Euro</td><td class="mono f10">€</td><td class="mono f10">2</td><td><span class="badge bd-draft">NO</span></td></tr>
+<tr><td class="mono ta fw6">GBP</td><td class="f11">Pound Sterling</td><td class="mono f10">£</td><td class="mono f10">2</td><td><span class="badge bd-draft">NO</span></td></tr>
+<tr><td class="mono ta fw6">AED</td><td class="f11">UAE Dirham</td><td class="mono f10">د.إ</td><td class="mono f10">2</td><td><span class="badge bd-draft">NO</span></td></tr>
+<tr><td class="mono ta fw6">INR</td><td class="f11">Indian Rupee</td><td class="mono f10">₹</td><td class="mono f10">2</td><td><span class="badge bd-draft">NO</span></td></tr></tbody></table></div></div>
+        <div class="card"><div class="ch"><div class="ct">Units of Measure</div><div class="ca" onclick="toast('UOM','Add new UOM','info')">+ Add</div></div>
+          <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Conversion</th></tr></thead>
+            <tbody id="md-uom-tbody">
+<tr><td class="mono ta fw6">MT</td><td class="f11">Metric Tonne</td><td class="f11">Weight</td><td class="mono f10">1.000 MT</td></tr>
+<tr><td class="mono ta fw6">DMT</td><td class="f11">Dry Metric Tonne</td><td class="f11">Weight</td><td class="mono f10">—</td></tr>
+<tr><td class="mono ta fw6">KG</td><td class="f11">Kilogram</td><td class="f11">Weight</td><td class="mono f10">0.001 MT</td></tr>
+<tr><td class="mono ta fw6">LT</td><td class="f11">Long Tonne (Imperial)</td><td class="f11">Weight</td><td class="mono f10">1.01605 MT</td></tr>
+<tr><td class="mono ta fw6">BBL</td><td class="f11">Barrel (Oil)</td><td class="f11">Volume</td><td class="mono f10">—</td></tr></tbody></table></div></div>
+        <div class="card"><div class="ch"><div class="ct">Tax Codes</div><div class="ca" onclick="toast('Tax','Add new tax code','info')">+ Add</div></div>
+          <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Description</th><th>Rate %</th><th>Jurisdiction</th><th>Applies To</th></tr></thead>
+            <tbody id="md-tax-tbody">
+<tr><td class="mono ta fw6">UAE-VAT-5</td><td class="f11">UAE VAT 5%</td><td class="mono f10 ta">5%</td><td class="f11">UAE</td><td class="f11">Local sales</td></tr>
+<tr><td class="mono ta fw6">ZERO-RATED</td><td class="f11">Zero Rated Export</td><td class="mono f10 ta">0%</td><td class="f11">UAE</td><td class="f11">Export / international trade</td></tr>
+<tr><td class="mono ta fw6">EXEMPT</td><td class="f11">Tax Exempt</td><td class="mono f10 ta">0%</td><td class="f11">All</td><td class="f11">Inter-company / exempt transactions</td></tr></tbody></table></div></div>
+      </div>
+    </div>
+
+    <!-- ══ PRICING ENGINE ══ -->
+    <!-- ══ PRICING ENGINE v8 ══ -->
+    <div class="page" id="page-penalties">
+      <div class="ph">
+        <div class="ph-left"><div class="pt">Penalty Engine</div><div class="ps">Setup-based · Fully flexible · Parameters from Commodity Master + Adjustment Code Master</div></div>
+      </div>
+      <div class="sr">
+        <div class="sc" style="border-left:3px solid var(--accent)"><div class="scl">Type 1 · FLAT-RATE</div><div class="scv f13 ta">Rate × Qty</div><div class="scs">Always applies</div></div>
+        <div class="sc" style="border-left:3px solid var(--accent2)"><div class="scl">Type 2 · THRESHOLD</div><div class="scv f13 ta2">(A−T) × R × Q</div><div class="scs">Above/below threshold</div></div>
+        <div class="sc" style="border-left:3px solid var(--purple)"><div class="scl">Type 3 · TIERED</div><div class="scv f13" style="color:var(--purple)">Bracket Lookup</div><div class="scs">Escalating brackets</div></div>
+        <div class="sc" style="border-left:3px solid var(--accent3)"><div class="scl">Type 4 · FORMULA-REF</div><div class="scv f13 ta3">Expression</div><div class="scs">TC/RC, CV adj., custom</div></div>
+        <div class="sc" style="border-left:3px solid var(--danger)"><div class="scl">Type 5 · REJECTION</div><div class="scv f13 td">Reject Workflow</div><div class="scs">No calc — stops invoice</div></div>
+      </div>
+      <div class="two-col">
+        <!-- FLEXIBLE CALCULATOR -->
+        <div class="card">
+          <div class="ch"><div class="ct">Live Penalty Calculator</div><div class="cs">Parameters are flexible — edit elements to match certificate</div></div>
+          <div class="cb">
+            <div class="ban bi mb14"><span>ℹ</span>This calculator mirrors the assay entry page. Parameters are not hardcoded — they are driven by the Adjustment Code Master and the penalty lines configured on the deal. Change inputs to see recalculation.</div>
+            <div class="fg mb14">
+              <div class="f"><div class="fl">Gross Wet Weight (MT)</div><input type="number" id="c-wet" class="fi" value="502.4" oninput="calcPen()"></div>
+              <div class="f"><div class="fl">LME Price (USD/MT)</div><input type="number" id="c-lme" class="fi" value="9420" oninput="calcPen()"></div>
+              <div class="f"><div class="fl">TC (USD/dmt)</div><input type="number" id="c-tc" class="fi" value="180" oninput="calcPen()"></div>
+            </div>
+            <div class="divl">Assay Parameters (add / remove any element)</div>
+            <table class="lt" id="calc-params-table">
+              <thead><tr><th>Element</th><th>Actual %</th><th>Calc Type</th><th>Threshold</th><th>Operator</th><th>Rate (USD)</th><th>Unit</th><th>Rej. Limit</th><th></th></tr></thead>
+              <tbody id="calc-params-body">
+                <tr id="cp-cu"><td class="mono f11">Cu (payable)</td><td><input type="number" class="fi" style="width:65px;font-size:10px" id="c-cu" value="28.5" oninput="calcPen()"></td><td><span class="ctp ct-formula">FORMULA</span></td><td class="f11">1% deduction</td><td class="f11">—</td><td class="f11 mono">LME</td><td class="f11">% × dmt</td><td class="f11 tdim">—</td><td></td></tr>
+                <tr id="cp-moist"><td class="mono f11">Moisture</td><td><input type="number" class="fi" style="width:65px;font-size:10px" id="c-moist" value="9.2" oninput="calcPen()"></td><td><span class="ctp ct-tiered">TIERED</span></td><td class="f11">8%</td><td class="f11">ABOVE</td><td class="f11 mono">$2–$4/MT/1%</td><td class="f11">per wet MT</td><td class="f11 td">12% = REJECT</td><td><button class="btn bxs bg" onclick="openTierModal('moist')">Tiers</button></td></tr>
+                <tr id="cp-pb"><td class="mono f11">Pb</td><td><input type="number" class="fi" style="width:65px;font-size:10px" id="c-pb" value="0.8" oninput="calcPen()"></td><td><span class="ctp ct-threshold">THRESHOLD</span></td><td><input type="number" class="fi" style="width:55px;font-size:10px" id="c-pb-thresh" value="0.5" oninput="calcPen()"></td><td><select class="fs" style="font-size:10px;width:70px" onchange="calcPen()"><option>ABOVE</option><option>BELOW</option></select></td><td><input type="number" class="fi" style="width:55px;font-size:10px" id="c-pb-rate" value="8" oninput="calcPen()"></td><td class="f11">USD/MT/0.1%</td><td class="f11 tdim">—</td><td><button class="btn bxs bd" onclick="removeCalcParam('cp-pb');calcPen()">✕</button></td></tr>
+                <tr id="cp-as"><td class="mono f11">As</td><td><input type="number" class="fi" style="width:65px;font-size:10px" id="c-as" value="0.05" oninput="calcPen()"></td><td><span class="ctp ct-threshold">THRESHOLD</span></td><td><input type="number" class="fi" style="width:55px;font-size:10px" id="c-as-thresh" value="0.1" oninput="calcPen()"></td><td><select class="fs" style="font-size:10px;width:70px" onchange="calcPen()"><option>ABOVE</option><option>BELOW</option></select></td><td><input type="number" class="fi" style="width:55px;font-size:10px" id="c-as-rate" value="10" oninput="calcPen()"></td><td class="f11">USD/MT/0.01%</td><td class="f11 tdim">—</td><td><button class="btn bxs bd" onclick="removeCalcParam('cp-as');calcPen()">✕</button></td></tr>
+              </tbody>
+            </table>
+            <div class="lar br gap7">
+              <button class="btn bg bsm" onclick="openModal('modal-add-calc-param')">+ Add Element</button>
+              <button class="btn bs bsm" onclick="openTierModal('moist')">Edit Moisture Tiers</button>
+            </div>
+            <div id="calc-result" class="mt14"></div>
+          </div>
+        </div>
+        <!-- ADJUSTMENT CODE REFERENCE -->
+        <div class="card">
+          <div class="ch"><div class="ct">Adjustment Code Master Reference</div><div class="cs">All configured codes — reusable across templates and deals</div></div>
+          <div class="cbf">
+            <table class="dt">
+              <thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Calc Type</th><th>Default</th><th>Sign</th><th>Applies To</th></tr></thead>
+              <tbody id="adj-master-body"><tr><td class="mono ta fw6">COMM-AGENT</td><td class="f11 fw6">Agent Commission</td><td class="f11">OUTBOUND</td><td class="f11">% of invoice value</td><td class="mono f10">1.5%</td><td class="f10">USD</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr><tr><td class="mono ta fw6">FREIGHT-CFR</td><td class="f11 fw6">CFR Freight Deduction</td><td class="f11">INBOUND</td><td class="f11">Fixed amount per MT</td><td class="mono f10">22.50</td><td class="f10">USD/MT</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr><tr><td class="mono ta fw6">BRAND-PREM</td><td class="f11 fw6">Brand Premium</td><td class="f11">INBOUND</td><td class="f11">Fixed amount per MT</td><td class="mono f10">60.00</td><td class="f10">USD/MT</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Commodity-specific reference -->
+      <div class="card mt16">
+        <div class="ch"><div class="ct">Commodity-Specific Penalty Logic</div><div class="cs">Reference · All driven from Commodity Master assay element configuration</div></div>
+        <div class="cbf"><table class="dt">
+          <thead><tr><th>Commodity Group</th><th>Typical Elements</th><th>Payable Calc</th><th>Common Calc Types</th><th>Typical Rejection Triggers</th></tr></thead>
+          <tbody>
+            <tr><td class="fw6"><span class="cc"><span class="cp pcu"></span>Base Metals Conc.</span></td><td class="f11">Cu/Zn/Pb assay, Moisture, Pb, As, Bi, Cd, F, Fe</td><td class="f11">Dry wt × payable grade × LME − TC − RC</td><td><span class="ctp ct-formula" style="margin-right:3px">FORMULA</span><span class="ctp ct-threshold">THRESHOLD</span></td><td class="f11 td">As &gt;0.5%, Bi &gt;0.3%, Radioactivity</td></tr>
+            <tr><td class="fw6"><span class="cc"><span class="cp pfe"></span>Ferrous / Scrap</span></td><td class="f11">Fe%, Contamination%, Moisture, Size, Density</td><td class="f11">Gross wt × contracted price ± quality adj.</td><td><span class="ctp ct-tiered" style="margin-right:3px">TIERED</span><span class="ctp ct-threshold">THRESHOLD</span></td><td class="f11 td">Radioactivity, excess non-ferrous contamination</td></tr>
+            <tr><td class="fw6"><span class="cc"><span class="cp pcoal"></span>Bulk Coal</span></td><td class="f11">CV (NAR), Ash%, Sulphur%, TM%, HGI, Size</td><td class="f11">CV adj. formula: (actual CV / reference CV) × ref price</td><td><span class="ctp ct-formula" style="margin-right:3px">FORMULA</span><span class="ctp ct-rejection">REJECTION</span></td><td class="f11 td">CV &lt;4800 NAR, Sulphur &gt;1.5%</td></tr>
+            <tr><td class="fw6"><span class="cc"><span class="cp pagri"></span>Agri / Soft</span></td><td class="f11">Protein%, Test Wt, Moisture, Dockage, USDA Grade</td><td class="f11">USDA grade basis ± adjustments per spec</td><td><span class="ctp ct-threshold" style="margin-right:3px">THRESHOLD</span><span class="ctp ct-rejection">REJECTION</span></td><td class="f11 td">Mycotoxin (aflatoxin, DON above limits)</td></tr>
+            <tr><td class="fw6"><span class="cc"><span class="cp poil"></span>Energy Crude</span></td><td class="f11">API Gravity, Sulphur%, BS&amp;W, RVP, Pour Point</td><td class="f11">API differential pricing vs benchmark crude</td><td><span class="ctp ct-threshold" style="margin-right:3px">THRESHOLD</span><span class="ctp ct-formula">FORMULA</span></td><td class="f11 td">H2S above safe handling limit</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ══ PURCHASE CONTRACTS ══ -->
+    <!-- ══ PURCHASE CONTRACTS ══ -->
+  </div>
+</div>
+</div>
+<div id="toast-container"></div>
+
+<script>
+// ── CORE JS — nav, tabs, toast, theme, calcs only. NO content generation. ──
+
+function nav(pageId,navEl){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+pageId);
+  if(pg){pg.classList.add('active');pg.scrollTop=0;}
+  const el=navEl||document.querySelector(`.ni[data-page="${pageId}"]`);
+  if(el)el.classList.add('active');
+  const labels={
+    enquiry:'Enquiries',quotation:'Quotation / RFQ',deals:'Deal Confirmation',
+    'purchase-contracts':'Purchase Contracts','sales-contracts':'Sales Contracts',
+    'purchase-orders':'Purchase Orders','sales-orders':'Sales Orders',
+    'qpwindow':'QP & Rollover Window',logistics:'Logistics',
+    'shipment-transit':'In Transit','provisional-receipt':'Provisional Receipt',
+    shipment:'Assay & QC',grn:'Adjustment Screen',
+    pricing:'Pricing Engine',allocation:'Allocation',hedge:'Hedge Card',exposure:'Exposure & MTM',
+    'provisional-invoice':'Provisional Invoice','final-invoice':'Final Invoice',
+    approvals:'Approval Workflow'
+  };
+  const bc=document.getElementById('bc-cur');
+  if(bc)bc.textContent=labels[pageId]||pageId;
+}
+
+function wireTabs(cls){
+  document.querySelectorAll('.ft.'+cls).forEach(tab=>{
+    tab.onclick=function(){
+      const id=this.dataset.tab;
+      document.querySelectorAll('.ft.'+cls).forEach(t=>t.classList.remove('active'));
+      this.classList.add('active');
+      // find sibling ftc elements - look at parent's siblings
+      const parent=this.closest('.card,.page');
+      if(parent){
+        parent.querySelectorAll('.ftc').forEach(c=>{
+          c.classList.toggle('hidden',c.id!==id);
+          c.classList.toggle('active',c.id===id);
+        });
+      }
+    };
+  });
+}
+
+function toast(title,msg,type='success'){
+  const icons={success:'✓',warning:'⚠',error:'✕',info:'ℹ'};
+  const c=document.getElementById('toast-container');
+  if(!c)return;
+  const el=document.createElement('div');el.className=`toast ${type}`;
+  el.innerHTML=`<div class="toast-icon">${icons[type]||'ℹ'}</div><div><div class="toast-title">${title}</div>${msg?`<div class="toast-msg">${msg}</div>`:''}</div>`;
+  c.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),400);},4000);
+}
+
+function toggleTheme(){
+  const isLight=document.body.classList.toggle('light-mode');
+  const icon=document.getElementById('theme-icon');
+  const label=document.getElementById('theme-label');
+  if(icon)icon.textContent=isLight?'🌙':'☀️';
+  if(label)label.textContent=isLight?'Dark':'Light';
+  try{localStorage.setItem('ctrm-theme',isLight?'light':'dark');}catch(e){}
+}
+
+function exportToExcel(tableId,filename){
+  const table=document.getElementById(tableId);
+  if(!table){toast('Export','Table not found','warning');return;}
+  let csv='';
+  table.querySelectorAll('tr').forEach(row=>{
+    const cells=Array.from(row.querySelectorAll('th,td')).map(c=>`"${c.innerText.replace(/"/g,'""').trim()}"`);
+    csv+=cells.join(',')+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=(filename||'export')+'.csv';document.body.appendChild(a);a.click();a.remove();
+  toast('Exported',filename+' downloaded as CSV','success');
+}
+
+function printPage(title){
+  if(title)document.title=title;
+  window.print();
+}
+
+function recalcPricing(){
+  const v=(id)=>parseFloat(document.getElementById(id)?.value)||0;
+  const bid3m=v('ps-3mbid')||9998, ask3m=v('ps-3mask')||10000;
+  const cbid=v('ps-cashbid')||9848, cask=v('ps-cashask')||9850;
+  const lowest=Math.min(bid3m,ask3m,cbid,cask);
+  const highest=Math.max(bid3m,ask3m,cbid,cask);
+  const lEl=document.getElementById('ps-lowest');
+  const hEl=document.getElementById('ps-highest');
+  if(lEl)lEl.textContent=lowest.toLocaleString();
+  if(hEl)hEl.textContent=highest.toLocaleString();
+  const pct=v('formula-pct')||91;
+  const refSel=document.getElementById('price-ref-sel')?.value||'lowest4';
+  const ref=refSel==='highest4'?highest:refSel==='3mbid'?bid3m:refSel==='3mask'?ask3m:lowest;
+  const prov=(pct/100)*ref;
+  const rEl=document.getElementById('ref-price-display');
+  const pEl=document.getElementById('prov-price-display');
+  if(rEl)rEl.textContent=ref.toLocaleString(undefined,{minimumFractionDigits:2});
+  if(pEl)pEl.textContent='USD '+prov.toFixed(2)+' / MT';
+}
+
+function calcSnAdj(input,specAvg,rate,qty,devId,adjId){
+  const actual=parseFloat(input.value)||0;
+  const dev=actual-specAvg;
+  const adj=dev*rate*qty;
+  const devEl=document.getElementById(devId);
+  const adjEl=document.getElementById(adjId);
+  if(devEl)devEl.textContent=(dev>=0?'+':'')+dev.toFixed(2)+'%';
+  if(adjEl)adjEl.textContent=adj===0?'No adj.':(adj>0?'+':'')+Math.round(adj).toLocaleString();
+}
+
+function calcDerivativeQty(){
+  const phys=parseFloat(document.getElementById('req-phys-qty')?.value)||0;
+  const beta=parseFloat(document.getElementById('req-beta')?.value)||0.91;
+  const el=document.getElementById('req-deriv-display');
+  if(el)el.textContent=(phys*beta).toFixed(4)+' MT';
+}
+
+function openHedgeReqForm(){
+  const el=document.getElementById('hedge-req-form');
+  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+function closeHedgeReqForm(){
+  const el=document.getElementById('hedge-req-form');
+  if(el)el.style.display='none';
+}
+
+function approveItem(ref){
+  toast('Approved',ref+' approved ✓ · Next approver notified','success');
+}
+
+function openPCDetail(){
+  const el=document.getElementById('pc-detail-card');
+  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
+  wireTabs('pct');
+}
+function openSCDetail(){
+  const el=document.getElementById('sc-detail-card');
+  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
+  wireTabs('sct');
+}
+function openPODetail(){
+  const el=document.getElementById('po-detail-card');
+  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
+  wireTabs('pot');
+}
+function openSODetail(){
+  const el=document.getElementById('so-detail-card');
+  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
+  wireTabs('sot');
+}
+
+// Wire everything on load - MINIMAL, no content generation
+document.addEventListener('DOMContentLoaded',function(){
+  try{const saved=localStorage.getItem('ctrm-theme');if(saved==='light'){document.body.classList.add('light-mode');const i=document.getElementById('theme-icon');const l=document.getElementById('theme-label');if(i)i.textContent='🌙';if(l)l.textContent='Dark';}}catch(e){}
+  // Wire all tab groups
+  ['enq-tab','qt-tab','pct','sct','pot','sot','lgt','stt','prt','grnt','expt','pivt','fivt','mpt','asyt'].forEach(wireTabs);
+  // Set enquiry active
+  nav('enquiry');
+});
+</script>
+
+
+<script>
+// Setup file shares CTRM data stores with core file via localStorage
+// In production these would be API calls to the database
+// For now: write to localStorage, core file reads on load
+
+function saveMarketPriceFromForm() {
+  const commodity = document.getElementById('mp-commodity-sel')?.value || 'LME_CU';
+  const date = document.getElementById('mp-date-input')?.value || '2026-05-09';
+  const cashBid = parseFloat(document.getElementById('mp-cashbid')?.value) || 0;
+  const cashAsk = parseFloat(document.getElementById('mp-cashask')?.value) || 0;
+  const bid3m = parseFloat(document.getElementById('mp-bid3m')?.value) || 0;
+  const ask3m = parseFloat(document.getElementById('mp-ask3m')?.value) || 0;
+  const settlement = parseFloat(document.getElementById('mp-settlement')?.value) || 0;
+
+  // Auto-calculate mid values
+  const cashMid = (cashBid + cashAsk) / 2;
+  const mid3m = (bid3m + ask3m) / 2;
+
+  // Update mid display fields
+  const cm = document.getElementById('mp-cashmid'); if(cm) cm.value = cashMid.toFixed(2);
+  const m3 = document.getElementById('mp-mid3m'); if(m3) m3.value = mid3m.toFixed(2);
+
+  // Save to localStorage for cross-file sharing
+  try {
+    const stored = JSON.parse(localStorage.getItem('ctrm_market_data') || '{}');
+    if (!stored[commodity]) stored[commodity] = {};
+    stored[commodity][date] = { cashBid, cashAsk, cashMid, bid3m, ask3m, mid3m, settlement };
+    localStorage.setItem('ctrm_market_data', JSON.stringify(stored));
+    // Show toast
+    showSetupToast('Price Saved', commodity + ' · ' + date + ' · Settlement: ' + settlement, 'success');
+    // Update the displayed table row
+    updatePQMTableRow(commodity, date, { cashBid, cashAsk, cashMid, bid3m, ask3m, mid3m, settlement });
+  } catch(e) {
+    showSetupToast('Save Error', 'localStorage unavailable', 'warning');
+  }
+}
+
+function updatePQMTableRow(commodity, date, prices) {
+  // Find or create row in PQM table for this commodity+date
+  const tbody = document.querySelector('#pqm-table tbody');
+  if (!tbody) return;
+  const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  // Create new Active row at top
+  const tr = document.createElement('tr');
+  tr.style.background = 'rgba(0,200,150,.05)';
+  tr.innerHTML = `<td class="mono f10">${date}</td><td class="mono fw6 ta">${commodity}</td>
+    <td class="f11">${commodity.replace('_',' ')}</td><td class="mono f10">Manual</td>
+    <td class="f10">Manual</td><td class="mono f10">USD</td><td class="mono f10">$/MT</td>
+    <td class="mono">${fmt(prices.cashBid)}</td><td class="mono">${fmt(prices.cashAsk)}</td>
+    <td class="mono ta2">${fmt(prices.cashMid)}</td>
+    <td class="mono">${fmt(prices.bid3m)}</td><td class="mono">${fmt(prices.ask3m)}</td>
+    <td class="mono ta2">${fmt(prices.mid3m)}</td>
+    <td class="mono fw7 tg">${fmt(prices.settlement)}</td>
+    <td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td><td class="mono f10 tdim">n/a</td>
+    <td class="mono f10">${fmt(prices.cashAsk - prices.cashBid)}</td>
+    <td class="mono f10">${fmt(prices.ask3m - prices.bid3m)}</td>
+    <td class="mono f10 ta">${fmt(prices.mid3m - prices.cashMid)}</td>
+    <td class="mono f10 tdim">—</td><td class="mono f10 tdim">—</td>
+    <td class="f10">Manual entry</td><td class="mono f10">Just now</td>
+    <td><span class="badge bd-act">Active</span></td>`;
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+function autoCalcMid(type) {
+  const bid = parseFloat(document.getElementById('mp-' + (type==='cash'?'cashbid':'bid3m'))?.value) || 0;
+  const ask = parseFloat(document.getElementById('mp-' + (type==='cash'?'cashask':'ask3m'))?.value) || 0;
+  const midEl = document.getElementById('mp-' + (type==='cash'?'cashmid':'mid3m'));
+  if (midEl && bid && ask) midEl.value = ((bid + ask) / 2).toFixed(2);
+}
+
+function saveForwardCurveRow(btn) {
+  const row = btn.closest('tr');
+  if (!row) return;
+  const cells = row.querySelectorAll('td');
+  const settlement = parseFloat(row.querySelector('input[type=number]')?.value) || 0;
+  const promptDate = cells[4]?.textContent?.trim();
+  const commodity = document.querySelector('#mp-fcm select')?.value || 'LME_CU';
+  if (settlement && promptDate) {
+    showSetupToast('Forward Curve', 'Settlement ' + settlement + ' saved for ' + promptDate, 'success');
+    // Mark cell
+    const midCell = row.querySelector('td:nth-child(8)');
+    if (midCell) midCell.style.color = 'var(--green)';
+  }
+}
+
+function showSetupToast(title, msg, type) {
+  const icons = { success:'✓', warning:'⚠', info:'ℹ' };
+  let c = document.getElementById('toast-container');
+  if (!c) { c = document.createElement('div'); c.id='toast-container'; document.body.appendChild(c); }
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = '<div class="toast-icon">' + (icons[type]||'ℹ') + '</div><div><div class="toast-title">' + title + '</div>' + (msg ? '<div class="toast-msg">' + msg + '</div>' : '') + '</div>';
+  c.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 4000);
+}
+
+function nav(pageId, navEl) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  const pg = document.getElementById('page-' + pageId);
+  if (pg) { pg.classList.add('active'); pg.scrollTop = 0; }
+  if (navEl) navEl.classList.add('active');
+  const bc = document.getElementById('bc-cur');
+  if (bc) bc.textContent = pageId.replace(/-/g,' ').replace('md ','');
+}
+
+function wireTabs(cls) {
+  document.querySelectorAll('.ft.' + cls).forEach(tab => {
+    tab.onclick = function() {
+      const id = this.dataset.tab;
+      document.querySelectorAll('.ft.' + cls).forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      const parent = this.closest('.card,.page');
+      if (parent) {
+        parent.querySelectorAll('.ftc').forEach(c => {
+          c.classList.toggle('hidden', c.id !== id);
+          c.classList.toggle('active', c.id === id);
+        });
+      }
+    };
+  });
+}
+
+function exportToExcel(tableId, filename) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  let csv = '';
+  table.querySelectorAll('tr').forEach(row => {
+    const cells = Array.from(row.querySelectorAll('th,td')).map(c => '"' + c.innerText.replace(/"/g,'""').trim() + '"');
+    csv += cells.join(',') + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (filename || 'export') + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  showSetupToast('Exported', filename + ' downloaded', 'success');
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  const icon = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (icon) icon.textContent = isLight ? '🌙' : '☀️';
+  if (label) label.textContent = isLight ? 'Dark' : 'Light';
+  try { localStorage.setItem('ctrm-theme', isLight ? 'light' : 'dark'); } catch(e) {}
+}
+
+function openModal(id) { const el = document.getElementById(id); if(el) { el.classList.add('open'); document.body.style.overflow='hidden'; } }
+function closeModal(id) { const el = document.getElementById(id); if(el) { el.classList.remove('open'); document.body.style.overflow=''; } }
+function toast(t,m,type) { showSetupToast(t,m,type); }
+
+document.addEventListener('DOMContentLoaded', function() {
+  try { const saved = localStorage.getItem('ctrm-theme'); if(saved==='light') { document.body.classList.add('light-mode'); const i=document.getElementById('theme-icon'); const l=document.getElementById('theme-label'); if(i)i.textContent='🌙'; if(l)l.textContent='Dark'; }} catch(e) {}
+  ['mpt'].forEach(wireTabs);
+  nav('md-commodity');
+});
+
+function openTierModal(tier) {
+  showSetupToast('Approval Tier', 'Edit tier ' + tier + ' thresholds', 'info');
+}
+function addPTLine() {
+  const tb = document.querySelector('#pt-milestones tbody');
+  if (!tb) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td><input type="number" class="fi" style="width:40px;font-size:10px" placeholder="#"></td>'
+    + '<td><input type="text" class="fi" style="font-size:10px" placeholder="Milestone"></td>'
+    + '<td><input type="number" class="fi" style="width:50px;font-size:10px" placeholder="%"></td>'
+    + '<td><select class="fs" style="font-size:10px"><option>BL_DATE</option><option>ETA</option><option>ASSAY_RECEIPT</option><option>FINAL_INVOICE</option></select></td>'
+    + '<td><input type="number" class="fi" style="width:45px;font-size:10px" placeholder="Days"></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+  tb.appendChild(tr);
+}
+function saveQPPeriod() {
+  showSetupToast('QP Period Saved', 'QP period rule saved to master', 'success');
+}
+function removeCalcParam(btn) {
+  const row = btn.closest('tr');
+  if (row) row.remove();
+}
+
+</script>
+
+</body>
+</html>
