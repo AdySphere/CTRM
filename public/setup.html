@@ -1214,10 +1214,10 @@ function openSODetail(){
 // Wire everything on load - MINIMAL, no content generation
 document.addEventListener('DOMContentLoaded',function(){
   try{const saved=localStorage.getItem('ctrm-theme');if(saved==='light'){document.body.classList.add('light-mode');const i=document.getElementById('theme-icon');const l=document.getElementById('theme-label');if(i)i.textContent='🌙';if(l)l.textContent='Dark';}}catch(e){}
-  // Wire all tab groups
-  ['enq-tab','qt-tab','pct','sct','pot','sot','lgt','stt','prt','grnt','expt','pivt','fivt','mpt','asyt'].forEach(wireTabs);
-  // Set enquiry active
-  nav('enquiry');
+  // Wire setup tab groups
+  ['mpt'].forEach(wireTabs);
+  // Show first page
+  nav('md-commodity');
 });
 </script>
 
