@@ -7,12 +7,10 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ── MIDDLEWARE ────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
 
-// ── API ROUTES FIRST — before static files ────────────────────────
 const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter } = require('./routes/deals');
 const { invoiceRouter, masterRouter } = require('./routes/invoices');
 
@@ -29,7 +27,6 @@ app.use('/api/exposure',        require('./routes/exposure'));
 app.use('/api/invoices',        invoiceRouter);
 app.use('/api/master',          masterRouter);
 
-// ── HEALTH CHECK ─────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   const { query } = require('./db');
   try {
@@ -40,12 +37,10 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// ── STATIC FILES + FRONTEND — after API routes ────────────────────
 app.use(express.static(path.join(__dirname, '../public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, '../public/setup.html')));
 
-// ── ERROR HANDLER ─────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: err.message || 'Internal server error' });
