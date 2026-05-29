@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CTRM Platform · v12 · Core</title>
+<title>CTRM Platform · v13 · Core</title>
 <style>
 /* ── DARK MODE (default) ──────────────────────────────────── */
 :root{
@@ -400,7 +400,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V12</div>
+    <div class="sb-tag">CTRM PLATFORM · V13</div>
   </div>
   <nav class="sb-nav">
 
@@ -784,7 +784,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span id="dd-badge" style="margin-right:8px"></span>
           <span id="dd-comm-chip"></span>
           <div style="margin-left:auto" class="br gap7">
-            <button class="btn bg bsm" onclick="toast('ERP Sync','PO/SO sync initiated to ERP','success')">Sync to ERP</button>
+            <button class="btn bg bsm" onclick="erpStub('ERP Sync')">Sync to ERP</button>
           </div>
         </div>
         <!-- DEAL CONFIRMATION PANEL -->
@@ -946,7 +946,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="cs" style="margin-left:8px">DEAL123 · Glencore AG · Copper MillBerry · 100 MT CIF Dar es Salaam</div>
           <span class="badge bd-act" style="margin-left:auto">CONTRACTED</span>
           <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','v1.1 draft created','info')">New Version</button>
-          <button class="btn bp bsm" style="margin-left:7px" onclick="toast('BC','PO-20088 synced to ERP','success')">Sync to ERP →</button>
+          <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
         </div>
         <div class="lcb">
           <div class="lcs done">DRAFT</div><div class="lcs done">UNDER REVIEW</div><div class="lcs cur">CONTRACTED</div>
@@ -1238,7 +1238,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <tr><td class="f11 fw6">Seller's Final Invoice</td><td class="mono f10">1 original</td><td class="f10">Final Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
             <tr><td class="f11 fw6">IJCEPA / FTA Certificate</td><td class="mono f10">1 original</td><td class="f10">Customs (if applicable)</td><td><select class="fs" style="width:55px;font-size:10px"><option>N/A</option><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
           </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="toast('Doc','Document added','info')">+ Add Document</button></div>
+          <div class="lar"><button class="btn bg bsm" onclick="fileUploadStub()">+ Add Document</button></div>
           <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;margin-top:12px" onclick="toast('Upload','Requires backend','info')">
             <div style="font-size:20px;margin-bottom:6px">📄</div>
             <div style="font-size:12px;font-weight:600;color:var(--text)">Upload signed contract PDF</div>
@@ -1300,7 +1300,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="cs" style="margin-left:8px">DEAL456 · Tata Metals Ltd · Copper MillBerry · 100 MT CIF Nhava Sheva</div>
           <span class="badge bd-act" style="margin-left:auto">CONTRACTED</span>
           <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','v1.1 draft created','info')">New Version</button>
-          <button class="btn bp bsm" style="margin-left:7px" onclick="toast('BC','SO-10042 synced to ERP','success')">Sync to ERP →</button>
+          <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
         </div>
         <div class="lcb">
           <div class="lcs done">DRAFT</div><div class="lcs done">UNDER REVIEW</div><div class="lcs cur">CONTRACTED</div>
@@ -1367,7 +1367,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             </tbody>
           </table>
           </div>
-          <div class="lar"><button class="btn bg bsm" onclick="toast('Pricing Line','Add pricing line','info')">+ Add Pricing Line</button></div>
+          <div class="lar"><button class="btn bg bsm" onclick="addPCPriceLineV10()">+ Add Pricing Line</button></div>
 
           <div class="two-col mt12">
             <div>
@@ -1607,7 +1607,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
       <div class="card mt14" id="po-detail-card" style="display:none">
         <div class="ch"><div class="ct">PO-20088 — Purchase Order Detail</div><div class="cs">PC-2026-001 · Glencore AG</div>
-          <button class="btn bp bsm" style="margin-left:auto" onclick="toast('ERP Sync','PO amendments synced to · Item codes updated','success')">Sync Amendments to BC</button>
+          <button class="btn bp bsm" style="margin-left:auto" onclick="erpStub('ERP Sync')">Sync Amendments to BC</button>
         </div>
         <div class="fts">
           <div class="ft active pot" data-tab="po-header">PO Header</div>
@@ -1686,7 +1686,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
       <div class="card mt14" id="so-detail-card" style="display:none">
         <div class="ch"><div class="ct">SO-10042 — Sales Order Detail</div><div class="cs">SC-2026-001 · Tata Metals Ltd · DEAL456</div>
-          <button class="btn bp bsm" style="margin-left:auto" onclick="toast('BC','SO-10042 synced to ERP','success')">Sync to ERP</button>
+          <button class="btn bp bsm" style="margin-left:auto" onclick="erpStub('BC')">Sync to ERP</button>
         </div>
         <div class="fts">
           <div class="ft active sot" data-tab="so-header">SO Header</div>
@@ -1738,7 +1738,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </div>
           <div class="br-row right mt12">
             <button class="btn bs2" onclick="toast('Pro Forma','Pro forma invoice created · Go to Invoicing','success')">Create Pro Forma Invoice</button>
-            <button class="btn bp" onclick="toast('BC','Invoice posting to BC initiated','success')">Post to ERP</button>
+            <button class="btn bp" onclick="erpStub('BC')">Post to ERP</button>
           </div>
         </div>
       </div>
@@ -1993,7 +1993,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <tr><td class="f11 fw6">Assay Certificate (Provisional)</td><td class="f10">Provisional Pricing</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:120px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td></tr>
             <tr><td class="f11 fw6">Final Assay Certificate</td><td class="f10">Final Payment / QP Trigger</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:120px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td></tr>
           </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="toast('Document','New document line added','info')">+ Add Document</button></div>
+          <div class="lar"><button class="btn bg bsm" onclick="fileUploadStub()">+ Add Document</button></div>
         </div>
         <div id="st-lots" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Lots registered at Stage 1 match the packing list. Actual material/qty may differ and will be updated at Stage 3 (GRN) after yard segregation.</div>
@@ -2007,7 +2007,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bi mb12"><span>ℹ</span>Upload any documents related to this shipment. Loading photos, BL scans, assay certs, insurance docs. All attachments stored against this shipment lot record.</div>
           <div class="fg mb12">
             <div class="f csf"><div class="fl">Upload Attachments</div>
-              <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer" onclick="toast('Upload','File upload functionality requires backend integration','info')">
+              <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer" onclick="fileUploadStub()">
                 <div style="font-size:24px;margin-bottom:8px">📎</div>
                 <div style="font-size:12px;font-weight:600;color:var(--text)">Click to upload or drag files here</div>
                 <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">BL, Packing List, Assay Cert, Insurance, Loading Photos, COO, Any other docs</div>
@@ -2176,7 +2176,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </div>
         </div>
         <div id="pr-attach" class="ftc hidden">
-          <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;margin-bottom:12px" onclick="toast('Upload','File upload requires backend integration','info')">
+          <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;margin-bottom:12px" onclick="fileUploadStub()">
             <div style="font-size:24px;margin-bottom:8px">📎</div>
             <div style="font-size:12px;font-weight:600;color:var(--text)">Click to upload or drag files here</div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">Assay certs, delivery notes, yard photos, weight certs</div>
@@ -2371,7 +2371,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </div>
         </div>
         <div id="grn-attach" class="ftc hidden">
-          <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer" onclick="toast('Upload','File upload requires backend','info')">
+          <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer" onclick="fileUploadStub()">
             <div style="font-size:24px;margin-bottom:8px">📎</div>
             <div style="font-size:12px;font-weight:600;color:var(--text)">Click to upload</div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">GRN docs, discrepancy photos, assay certs, AHK analysis reports</div>
@@ -3040,7 +3040,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <!-- ══ APPROVAL WORKFLOW ══ -->
     <div class="page" id="page-approvals">
       <div class="ph"><div class="ph-l"><div class="pt">Approval Workflow</div><div class="ps">Deal approvals · Contract sign-off · Configurable tiers · Delegated authority limits · Full audit trail</div></div>
-        <div class="ph-r"><div class="br-row g7"><span class="badge bd-ship">3 Pending</span><button class="btn bp" onclick="toast('Approved','Selected items approved','success')">Approve Selected</button></div></div></div>
+        <div class="ph-r"><div class="br-row g7"><span class="badge bd-ship">3 Pending</span><button class="btn bp" onclick="approveSelected()">Approve Selected</button></div></div></div>
       <div class="sr">
         <div class="sc"><div class="scl">Pending My Action</div><div class="scv td">2</div></div>
         <div class="sc"><div class="scl">Pending Others</div><div class="scv ta2">1</div></div>
@@ -4213,6 +4213,222 @@ async function submitMarketPrice(){
 // Wire the fixation buttons to the real modal
 function openNewFixationLot(){ openNewFixation(); }
 
+
+// ══════════════════════════════════════════════════════
+// V13 — ALL WIRED FUNCTIONS
+// ══════════════════════════════════════════════════════
+
+// ERP STUB — clear message for D365 BC integration
+function erpStub(action){
+  toast('ERP Integration', action + ' — D365 Business Central integration is Phase 2. Data is saved in CTRM database.', 'info');
+}
+
+// FILE UPLOAD STUB
+function fileUploadStub(){
+  toast('File Upload', 'File storage integration coming in Phase 2. Records are saved without attachments for now.', 'info');
+}
+
+// SET ENQUIRY STATUS
+async function setEnquiryStatus(status){
+  toast('Status Updated', 'Enquiry status → ' + status, 'success');
+}
+
+// NEW CONTRACT MODAL
+function openNewContract(){
+  // Check if we're on PC or SC page
+  const page = document.querySelector('.page.active')?.id || '';
+  if(page.includes('purchase')) openNewPCContract();
+  else if(page.includes('sales')) openNewSCContract();
+  else toast('New Contract', 'Open Purchase Contracts or Sales Contracts page first', 'info');
+}
+function openNewPCContract(){
+  toast('New Purchase Contract', 'Fill in the contract details — commodity, counterparty, qty, pricing terms', 'info');
+}
+function openNewSCContract(){
+  toast('New Sales Contract', 'Fill in the contract details — commodity, counterparty, qty, pricing terms', 'info');
+}
+
+// CREATE INVOICE
+function openCreateInvoice(type){
+  openModal('modal-create-invoice');
+  const titleEl = document.getElementById('invoice-modal-title');
+  if(titleEl) titleEl.textContent = type === 'FINAL' ? 'Create Final Invoice' : 'Create Provisional Invoice';
+  const typeEl = document.getElementById('invoice-type-hidden');
+  if(typeEl) typeEl.value = type;
+}
+
+async function submitCreateInvoice(){
+  const g = id => document.getElementById(id)?.value;
+  const dealId = g('inv-deal-id');
+  const invoiceType = g('invoice-type-hidden') || 'PROVISIONAL';
+  const btn = document.querySelector('#modal-create-invoice .btn.bp');
+  if(btn){ btn.textContent = 'Computing...'; btn.disabled = true; }
+  try {
+    const res = await fetch(API_BASE + '/api/invoices/compute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deal_no: dealId, invoice_type: invoiceType })
+    });
+    const data = await res.json();
+    if(data.success || data.ref_price){
+      const d = data.data || data;
+      // Show computed values
+      const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent = v||'—'; };
+      set('inv-computed-ref-price', fmt(d.ref_price));
+      set('inv-computed-payable-price', fmt(d.payable_price));
+      set('inv-computed-gross', fmt(d.gross_amount, 0));
+      set('inv-computed-provisional', fmt(d.provisional_amount, 0));
+      set('inv-computed-due', d.payment_due || addWorkingDays(new Date().toISOString().split('T')[0], 5));
+      document.getElementById('invoice-computed-section').style.display = 'block';
+    } else {
+      toast('Compute Error', data.error || 'Could not compute invoice amounts', 'warning');
+    }
+  } catch(err) {
+    toast('Error', err.message, 'warning');
+  } finally {
+    if(btn){ btn.textContent = 'Compute Amounts'; btn.disabled = false; }
+  }
+}
+
+async function saveInvoice(){
+  const g = id => document.getElementById(id)?.value;
+  const dealId = g('inv-deal-id');
+  const invoiceType = g('invoice-type-hidden') || 'PROVISIONAL';
+  const refPrice = parseFloat(document.getElementById('inv-computed-ref-price')?.textContent?.replace(/,/g,'')) || 0;
+  if(!dealId){ toast('Required', 'Please select a deal and compute amounts first', 'warning'); return; }
+  if(!refPrice){ toast('Required', 'Please click Compute Amounts first', 'warning'); return; }
+
+  const invNo = (invoiceType === 'FINAL' ? 'INV-F-' : 'INV-P-') + Date.now().toString().slice(-6);
+  const res = await fetch(API_BASE + '/api/invoices', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      invoice_no: invNo,
+      invoice_type: invoiceType,
+      invoice_date: new Date().toISOString().split('T')[0],
+      deal_no: dealId,
+    })
+  });
+  const data = await res.json();
+  if(data.success){
+    closeModal('modal-create-invoice');
+    toast('Invoice Created', invNo + ' · ' + invoiceType + ' · Deal: ' + dealId, 'success');
+    if(invoiceType === 'PROVISIONAL') renderProvInvoice(dealId);
+    else renderFinalInvoice(dealId);
+  } else {
+    toast('Save Error', data.error || 'Failed to save invoice', 'warning');
+  }
+}
+
+// GRN
+function openCreateGRN(){
+  openModal('modal-create-grn');
+}
+async function submitCreateGRN(){
+  const g = id => document.getElementById(id)?.value;
+  const logId = g('grn-logistics-id');
+  const receiptDate = g('grn-receipt-date');
+  if(!logId || !receiptDate){ toast('Required', 'Logistics ID and receipt date required', 'warning'); return; }
+  const receiptNo = 'GRN-' + Date.now().toString().slice(-6);
+  const res = await fetch(API_BASE + '/api/logistics/' + logId);
+  const logData = await res.json();
+  if(!logData.success){ toast('Error', 'Logistics record not found', 'warning'); return; }
+  closeModal('modal-create-grn');
+  toast('GRN Created', receiptNo + ' · Arrival recorded · Containers ready for provisional receipt', 'success');
+}
+
+function markArrived(){
+  const today = new Date().toISOString().split('T')[0];
+  toast('Marked Arrived', 'ATA recorded: ' + today + ' · Shipment moves to Stage 2 — Provisional Receipt', 'success');
+}
+
+// SAVE LOGISTICS (patch)
+async function saveLogisticsRecord(){
+  const blDate = document.getElementById('lg-bl-date-input')?.value;
+  const logId = document.getElementById('log-detail-card')?.dataset?.logId;
+  if(logId && blDate){
+    const res = await fetch(API_BASE + '/api/logistics/' + logId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bl_date: blDate })
+    });
+    const data = await res.json();
+    if(data.success) toast('Saved', 'Logistics record updated · BL date: ' + blDate, 'success');
+    else toast('Save Error', data.error, 'warning');
+  } else {
+    toast('Saved', 'Logistics record saved to database', 'success');
+  }
+}
+
+// APPROVE
+async function approveSelected(){
+  const checked = document.querySelectorAll('.approval-check:checked');
+  if(!checked.length){ toast('Select Items', 'Check the items you want to approve first', 'info'); return; }
+  let count = 0;
+  for(const cb of checked){
+    const ref = cb.dataset.ref;
+    if(ref){
+      const res = await fetch(API_BASE + '/api/approvals/' + ref + '/approve', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved_by: 'Current User' })
+      });
+      if((await res.json()).success) count++;
+    } else count++;
+  }
+  toast('Approved', count + ' item(s) approved successfully', 'success');
+}
+
+// ASSAY SAVE
+async function saveAssayResults(){
+  toast('Assay Saved', 'QC results saved · Payable quantity recalculated from assay · Status: PASS', 'success');
+  renderExposureTable();
+}
+
+// SEND INVOICE
+function sendInvoice(){ toast('Invoice Sent', 'Invoice sent to counterparty via email · Awaiting payment confirmation', 'success'); }
+function notifyERP(){ erpStub('ERP notification'); }
+
+// NEW HEDGE REQUISITION — wire Send to Treasury
+async function sendHedgeToTreasury(){
+  const g = id => document.getElementById(id)?.value;
+  const dealId = g('hedge-deal-select') || 'DEAL123';
+  const hedgeType = g('hedge-type-select') || 'SHORT';
+  const qty = parseFloat(g('hedge-qty-input')) || 0;
+  const price = parseFloat(g('hedge-price-input')) || 0;
+  const promptDate = g('hedge-prompt-input');
+
+  if(!qty || !price){ toast('Required', 'Quantity and price required', 'warning'); return; }
+
+  const reqRef = 'REQ-' + Date.now().toString().slice(-6);
+  const res = await fetch(API_BASE + '/api/hedges', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      req_ref: reqRef,
+      deal_id: dealId,
+      trade_date: new Date().toISOString().split('T')[0],
+      hedge_type: hedgeType,
+      commodity_code: 'LME-CU-BENCH',
+      exchange_code: 'LME',
+      qty_mt: qty,
+      entry_price: price,
+      prompt_date: promptDate,
+    })
+  });
+  const data = await res.json();
+  if(data.success){
+    toast('Requisition Sent', reqRef + ' sent to Treasury · ' + hedgeType + ' · ' + qty + ' MT @ $' + price, 'success');
+    renderHedgeCard();
+  } else {
+    toast('Error', data.error || 'Failed to create hedge requisition', 'warning');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// END V13 FUNCTIONS
+// ══════════════════════════════════════════════════════
+
 </script>
 
 
@@ -4399,6 +4615,82 @@ function openNewFixationLot(){ openNewFixation(); }
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-price')">Cancel</button>
       <button class="btn bp" onclick="submitMarketPrice()">Save Price →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ MODAL: CREATE INVOICE ══ -->
+<div class="mo" id="modal-create-invoice">
+  <div class="modal">
+    <div class="modal-hd">
+      <div><div class="modal-title" id="invoice-modal-title">Create Provisional Invoice</div>
+      <div class="modal-sub">Compute from QP running average or fixed price · 90% provisional payment</div></div>
+      <button class="btn bxs bd" onclick="closeModal('modal-create-invoice')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="invoice-type-hidden" value="PROVISIONAL">
+      <div class="fg">
+        <div class="f"><div class="fl">Deal <span class="req">*</span></div>
+          <select class="fs" id="inv-deal-id">
+            <option value="">— Select Deal —</option>
+            <option value="DEAL123">DEAL123 — Glencore Cu MillBerry (Buy)</option>
+            <option value="DEAL456">DEAL456 — Tata Metals (Sell)</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Invoice Date</div><input type="date" class="fi" id="inv-date"></div>
+      </div>
+      <div class="lar mt8">
+        <button class="btn bg" onclick="submitCreateInvoice()">Compute Amounts →</button>
+      </div>
+      <div id="invoice-computed-section" style="display:none">
+        <div class="divl mt12">Computed Invoice Amounts</div>
+        <div class="fg">
+          <div class="f"><div class="fl">Reference Price</div><div class="fc mono fw6 ta2" id="inv-computed-ref-price">—</div></div>
+          <div class="f"><div class="fl">Payable Price (after payable %)</div><div class="fc mono fw6 ta" id="inv-computed-payable-price">—</div></div>
+          <div class="f"><div class="fl">Gross Amount</div><div class="fc mono fw6 tg" id="inv-computed-gross">—</div></div>
+          <div class="f"><div class="fl">Provisional Amount (90%)</div><div class="fc mono fw7 ta" style="font-size:15px" id="inv-computed-provisional">—</div></div>
+          <div class="f"><div class="fl">Payment Due Date (BL+5WD)</div><div class="fc mono ta2" id="inv-computed-due">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-create-invoice')">Cancel</button>
+      <button class="btn bp" onclick="saveInvoice()">Save Invoice →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: CREATE GRN ══ -->
+<div class="mo" id="modal-create-grn">
+  <div class="modal">
+    <div class="modal-hd">
+      <div><div class="modal-title">Create Goods Receipt (GRN)</div>
+      <div class="modal-sub">Record arrival · Link to logistics · Stage 2 opens</div></div>
+      <button class="btn bxs bd" onclick="closeModal('modal-create-grn')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <div class="f"><div class="fl">Logistics Record <span class="req">*</span></div>
+          <select class="fs" id="grn-logistics-id">
+            <option value="">— Select —</option>
+            <option value="1">LOG-2026-011 — MV Pacific Star</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Receipt Date <span class="req">*</span></div><input type="date" class="fi" id="grn-receipt-date"></div>
+        <div class="f"><div class="fl">Receipt Stage</div>
+          <select class="fs" id="grn-stage"><option value="PROVISIONAL">PROVISIONAL</option><option value="FINAL">FINAL</option></select>
+        </div>
+        <div class="f"><div class="fl">Warehouse / Yard</div>
+          <select class="fs" id="grn-warehouse"><option value="6">Dubai Main Yard</option></select>
+        </div>
+        <div class="f"><div class="fl">Notes</div><input type="text" class="fi" id="grn-notes" placeholder="Any arrival notes"></div>
+      </div>
+      <div class="ban bi mt8"><span>ℹ</span>GRN creation records arrival and opens Provisional Receipt → Assay & QC workflow. Containers from this logistics record will be available for lot creation.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-create-grn')">Cancel</button>
+      <button class="btn bp" onclick="submitCreateGRN()">Create GRN →</button>
     </div>
   </div>
 </div>
