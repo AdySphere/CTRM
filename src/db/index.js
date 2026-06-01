@@ -1,5 +1,9 @@
 const { Pool } = require('pg');
+const dns = require('dns');
 require('dotenv').config();
+
+// Force IPv4 DNS resolution
+dns.setDefaultResultOrder('ipv4first');
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'db.qsxhfypwmntbirknoeit.supabase.co',
@@ -8,7 +12,6 @@ const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD,
   ssl: { rejectUnauthorized: false },
-  family: 4,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
@@ -29,4 +32,3 @@ async function query(text, params) {
 }
 
 module.exports = { pool, query };
-// IPv4 fix Mon Jun  1 21:18:41 +04 2026
