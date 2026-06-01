@@ -2,26 +2,25 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  host: process.env.DB_HOST || 'db.qsxhfypwmntbirknoeit.supabase.co',
+  port: parseInt(process.env.DB_PORT) || 5432,
+  database: process.env.DB_NAME || 'postgres',
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD,
+  ssl: { rejectUnauthorized: false },
+  family: 4,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
 });
 
 pool.on('error', (err) => {
-  console.error('Unexpected DB pool error:', err);
+  console.error('Unexpected DB pool error:', err.message);
 });
 
-// Simple query helper
 async function query(text, params) {
-  const start = Date.now();
   try {
     const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    if (process.env.NODE_ENV === 'development') {
-      console.log('query', { text: text.substring(0, 60), duration, rows: res.rowCount });
-    }
     return res;
   } catch (err) {
     console.error('DB query error:', { text: text.substring(0, 60), err: err.message });
