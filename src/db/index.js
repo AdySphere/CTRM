@@ -29,3 +29,4 @@ async function query(text, params) {
 }
 
 module.exports = { pool, query };
+// IPv4 fix Mon Jun  1 21:18:41 +04 2026
