@@ -171,7 +171,31 @@ async function setupDatabase() {
   console.log('✓ enquiries');
 
   await query(`
-    CREATE TABLE IF NOT EXISTS deals (
+    CREATE TABLE IF NOT EXISTS quotations (
+      id              SERIAL PRIMARY KEY,
+      quotation_no    VARCHAR(20) UNIQUE NOT NULL,
+      enquiry_id      INT REFERENCES enquiries(id),
+      quotation_date  DATE NOT NULL,
+      commodity_code  VARCHAR(20) REFERENCES commodities(code),
+      customer_id     INT REFERENCES counterparties(id),
+      qty_mt          DECIMAL(12,3),
+      incoterms       VARCHAR(10),
+      port_of_discharge VARCHAR(100),
+      delivery_from   DATE,
+      delivery_to     DATE,
+      validity_date   DATE,
+      pricing_template VARCHAR(50),
+      provisional_price DECIMAL(14,4),
+      provisional_value DECIMAL(16,2),
+      quoted_by       VARCHAR(50),
+      status          VARCHAR(20) DEFAULT 'OPEN',  -- OPEN, ACCEPTED, DECLINED, EXPIRED, CONVERTED
+      deal_id         INT REFERENCES deals(id),
+      notes           TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      updated_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  console.log('✓ quotations');
       id              SERIAL PRIMARY KEY,
       deal_no         VARCHAR(20) UNIQUE NOT NULL,
       deal_date       TIMESTAMPTZ NOT NULL,

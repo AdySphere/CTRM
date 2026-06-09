@@ -406,7 +406,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
     <div class="sb-group">Commercial</div>
     <div class="ni" data-page="enquiry" onclick="nav('enquiry',this);afterNav('enquiry')">Enquiries<span class="nb">4</span></div>
-    <div class="ni" data-page="quotation" onclick="nav('quotation',this);afterNav('quotation')">Quotation / RFQ<span class="nb">2</span></div>
+    <div class="ni" data-page="quotation" onclick="nav('quotation',this);afterNav('quotation')">Quotation<span class="nb" id="quot-nav-badge">2</span></div>
     <div class="ni" data-page="deals" onclick="nav('deals',this);afterNav('deals')">Deal Confirmation<span class="nb">3</span></div>
     <div class="sb-group">Contracts</div>
     <div class="ni" data-page="purchase-contracts" onclick="nav('purchase-contracts',this);afterNav('purchase-contracts')">Purchase Contracts<span class="nb">2</span></div>
@@ -672,23 +672,27 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-right"><button class="btn bp" onclick="openNewQuotation()">＋ New Quotation</button></div>
       </div>
       <div class="sr">
-        <div class="sc"><div class="scl">Total Quotations</div><div class="scv">2</div></div>
-        <div class="sc"><div class="scl">Pending</div><div class="scv ta3">1</div></div>
-        <div class="sc"><div class="scl">Accepted</div><div class="scv tg">1</div></div>
-        <div class="sc"><div class="scl">Auto-Declined</div><div class="scv tdim">0</div></div>
+        <div class="sc"><div class="scl">Total Quotations</div><div class="scv" id="qt-stat-total">—</div></div>
+        <div class="sc"><div class="scl">Pending</div><div class="scv ta3" id="qt-stat-open">—</div></div>
+        <div class="sc"><div class="scl">Accepted</div><div class="scv tg" id="qt-stat-accepted">—</div></div>
+        <div class="sc"><div class="scl">Auto-Declined</div><div class="scv tdim" id="qt-stat-declined">0</div></div>
       </div>
       <div class="card">
         <div class="ch"><div class="ct">Quotation List</div><div class="cs">Accept a quotation to confirm the deal and trigger ERP sync</div></div>
         <div class="cbf">
           <table class="dt">
-            <thead><tr><th>Quotation No.</th><th>Enquiry No.</th><th>Commodity</th><th>Qty</th><th>Customer</th><th>Pricing Template</th><th>Provisional Price</th><th>Prov. Value</th><th>Status</th><th></th></tr></thead>
-            <tbody id="quot-list"><tr><td class="mono ta fw6">QT-2026-001</td><td class="mono f10">2026-03-19</td><td class="mono">ENQ-2026-039</td><td class="f11 fw6">Copper MillBerry · 100 MT</td><td class="mono ta">9,480</td><td class="mono f10">2026-04-19</td><td><span class="badge bd-ship">CONVERTED</span></td><td><button class="btn bxs bg">Open</button></td></tr><tr><td class="mono ta fw6">QT-2026-002</td><td class="mono f10">2026-04-02</td><td class="mono">ENQ-2026-040</td><td class="f11 fw6">Steel HMS · 700 MT</td><td class="mono ta tdim">TBD</td><td class="mono f10">2026-05-02</td><td><span class="badge bd-draft">OPEN</span></td><td><button class="btn bxs bg">Open</button></td></tr></tbody>
+            <thead><tr><th>Quotation No.</th><th>Enquiry No.</th><th>Commodity</th><th>Qty (MT)</th><th>Customer</th><th>Pricing Template</th><th>Prov. Price</th><th>Prov. Value</th><th>Status</th><th></th></tr></thead>
+            <tbody id="quot-list"><tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading quotations...</td></tr></tbody>
           </table>
         </div>
       </div>
-      <!-- Quotation detail card -->
-      <div class="card mt16" id="quot-detail-card">
-        <div class="ch"><div class="ct">Quotation Detail — QT-2026-001</div><div class="cs">Source: ENQ-2026-039</div><span class="badge bd-conf" style="margin-left:auto">ACCEPTED</span></div>
+      <!-- Quotation detail card — populated dynamically -->
+      <div class="card mt16" id="quot-detail-card" style="display:none">
+        <div class="ch">
+          <div class="ct" id="qd-title">Quotation Detail</div>
+          <div class="cs" id="qd-source">—</div>
+          <span class="badge" id="qd-status-badge" style="margin-left:auto">—</span>
+        </div>
         <div class="fts">
           <div class="ft active qt-tab" data-tab="qt-general">General</div>
           <div class="ft qt-tab" data-tab="qt-pricing">Pricing & Template</div>
@@ -697,60 +701,64 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="qt-general" class="ftc active">
           <div class="fg">
-            <div class="f"><div class="fl">Quotation No.</div><div class="fc">QT-2026-001</div></div>
-            <div class="f"><div class="fl">Source Enquiry</div><div class="fc ta">ENQ-2026-039</div></div>
-            <div class="f"><div class="fl">Customer</div><div class="fc">Tata Metals Ltd (C-001)</div></div>
-            <div class="f"><div class="fl">Commodity</div><div class="fc">CU-CATHODE-A — Copper Cathode Grade A</div></div>
-            <div class="f"><div class="fl">Quantity</div><div class="fc mono">500 MT</div></div>
-            <div class="f"><div class="fl">Incoterms / Port</div><div class="fc">CIF · Nhava Sheva</div></div>
-            <div class="f"><div class="fl">Delivery Window</div><div class="fc mono">2026-04-15 → 2026-05-15</div></div>
-            <div class="f"><div class="fl">Status</div><div class="fc tg">ACCEPTED</div></div>
-            <div class="f"><div class="fl">Validity</div><div class="fc mono">2026-04-20</div></div>
-            <div class="f"><div class="fl">Quoted By</div><div class="fc">A. Mallick</div></div>
+            <div class="f"><div class="fl">Quotation No.</div><div class="fc" id="qd-no">—</div></div>
+            <div class="f"><div class="fl">Source Enquiry</div><div class="fc ta" id="qd-enq">—</div></div>
+            <div class="f"><div class="fl">Customer</div><div class="fc" id="qd-customer">—</div></div>
+            <div class="f"><div class="fl">Commodity</div><div class="fc" id="qd-commodity">—</div></div>
+            <div class="f"><div class="fl">Quantity</div><div class="fc mono" id="qd-qty">—</div></div>
+            <div class="f"><div class="fl">Incoterms / Port</div><div class="fc" id="qd-inco">—</div></div>
+            <div class="f"><div class="fl">Delivery Window</div><div class="fc mono" id="qd-delivery">—</div></div>
+            <div class="f"><div class="fl">Status</div><div class="fc tg" id="qd-status">—</div></div>
+            <div class="f"><div class="fl">Validity</div><div class="fc mono" id="qd-validity">—</div></div>
+            <div class="f"><div class="fl">Quoted By</div><div class="fc" id="qd-quotedby">—</div></div>
           </div>
         </div>
         <div id="qt-pricing" class="ftc hidden">
           <div class="fg">
-            <div class="f cs2"><div class="fl">Pricing Template <span class="req">*</span></div><select class="fs sel-template"></select></div>
-            <div class="f"><div class="fl">Price Source</div><div class="fc">LME Official Settlement</div></div>
-            <div class="f"><div class="fl">QP Window</div><div class="fc">M+1 — Next month after BL date</div></div>
-            <div class="f"><div class="fl">Window Anchor</div><div class="fc">BL Date</div></div>
+            <div class="f cs2"><div class="fl">Pricing Template <span class="req">*</span></div>
+              <select class="fs" id="qd-template-sel" onchange="onQdTemplateChange(this.value)">
+                <option value="">— Select Template —</option>
+                <option value="LME-CU-QP-M1">LME-CU-QP-M1 · LME Copper M+1</option>
+                <option value="LME-CU-QP-M">LME-CU-QP-M · LME Copper Current Month</option>
+                <option value="PLATTS-STEEL-CFR">PLATTS-STEEL-CFR · Platts CFR Turkey</option>
+                <option value="FIXED-PRICE">FIXED-PRICE · Fixed Price</option>
+              </select>
+            </div>
+            <div class="f"><div class="fl">Price Source</div><div class="fc" id="qd-price-source">—</div></div>
+            <div class="f"><div class="fl">QP Window</div><div class="fc" id="qd-qp-window">—</div></div>
             <div class="f"><div class="fl">Aggregation</div><div class="fc">AVERAGE (business days only)</div></div>
-            <div class="f"><div class="fl">Missing Price Rule</div><div class="fc">USE-LAST-AVAILABLE</div></div>
-            <div class="f"><div class="fl">FX Rate Source</div><div class="fc">ECB Daily</div></div>
-            <div class="f"><div class="fl">FX Rate Timing</div><div class="fc">BL-DATE</div></div>
-            <div class="f"><div class="fl">Current LME Price (provisional)</div><div class="fc ta">USD 9,420/MT</div></div>
-            <div class="f"><div class="fl">Provisional Price After Adj.</div><div class="fc ta">USD 9,480/MT</div></div>
-            <div class="f"><div class="fl">Provisional Total Value</div><div class="fc tg fw7">USD 4,740,000</div></div>
+            <div class="f"><div class="fl">Current LME Price (provisional)</div><div class="fc ta" id="qd-lme-price">USD —/MT</div></div>
+            <div class="f"><div class="fl">Provisional Price</div><input type="number" class="fi" id="qd-prov-price" placeholder="USD/MT" step="0.01" oninput="recalcProvValue()"></div>
+            <div class="f"><div class="fl">Provisional Total Value</div><div class="fc tg fw7" id="qd-prov-value">USD —</div></div>
           </div>
         </div>
         <div id="qt-adjlines" class="ftc hidden">
-          <div class="ban bi mb14"><span>◆</span>Adjustment lines defaulted from pricing template. Trader can add, remove, or override values. Mandatory lines cannot be removed.</div>
+          <div class="ban bi mb14"><span>◆</span>Adjustment lines defaulted from pricing template. Trader can add, remove, or override values.</div>
           <table class="lt">
-            <thead><tr><th>#</th><th>Adj. Code</th><th>Description</th><th>Calc Type</th><th>Value</th><th>Unit</th><th>Sequence</th><th>Mandatory</th><th>Applied At</th><th></th></tr></thead>
-            <tbody>
-              <tr><td class="mono f11">1</td><td class="mono f11 ta2">PREM-BRAND</td><td class="f11">Brand Premium</td><td><span class="ctp ct-flat">FLAT-RATE</span></td><td><input type="number" class="fi" style="width:65px;font-size:10px" value="60"></td><td class="f11">USD/MT</td><td class="mono f11">10</td><td><span class="badge bd-act">YES</span></td><td class="f11">PRE-INVOICE</td><td><button class="btn bxs bg">−</button></td></tr>
-              <tr><td class="mono f11">2</td><td class="mono f11 ta2">FREIGHT-CFR</td><td class="f11">Freight Deduction CFR</td><td><span class="ctp ct-flat">FLAT-RATE</span></td><td><input type="number" class="fi" style="width:65px;font-size:10px" value="22"></td><td class="f11">USD/MT</td><td class="mono f11">20</td><td><span class="badge bd-draft">NO</span></td><td class="f11">PRE-PRICE</td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
+            <thead><tr><th>#</th><th>Adj. Code</th><th>Description</th><th>Calc Type</th><th>Value</th><th>Unit</th><th>Applied At</th><th></th></tr></thead>
+            <tbody id="adj-lines-tbody">
+              <tr><td class="mono f11">1</td><td class="mono f11 ta2">PREM-BRAND</td><td class="f11">Brand Premium</td><td><span class="ctp ct-flat">FLAT-RATE</span></td><td><input type="number" class="fi" style="width:65px;font-size:10px" value="60"></td><td class="f11">USD/MT</td><td class="f11">PRE-INVOICE</td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
+              <tr><td class="mono f11">2</td><td class="mono f11 ta2">FREIGHT-CFR</td><td class="f11">Freight Deduction CFR</td><td><span class="ctp ct-flat">FLAT-RATE</span></td><td><input type="number" class="fi" style="width:65px;font-size:10px" value="22"></td><td class="f11">USD/MT</td><td class="f11">PRE-PRICE</td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
             </tbody>
           </table>
-          <div class="lar br gap7">
+          <div class="lar br gap7 mt8">
             <button class="btn bg bsm" onclick="addAdjLine()">+ Add Adjustment</button>
           </div>
         </div>
         <div id="qt-sellpen" class="ftc hidden">
-          <div class="ban bdan mb14"><span>⚠</span><strong>Sell-side penalties</strong> — applied by customer to you for late, short, or off-spec delivery. These reduce your revenue. Configure from Adjustment Code Master — parameters are commodity-specific.</div>
+          <div class="ban bdan mb14"><span>⚠</span><strong>Sell-side penalties</strong> — applied by customer for late, short, or off-spec delivery. These reduce revenue.</div>
           <table class="lt">
-            <thead><tr><th>#</th><th>Adj. Code</th><th>Calc Type</th><th>Element/Trigger</th><th>Threshold Op.</th><th>Threshold Val.</th><th>Rate</th><th>Unit</th><th>Max Cap</th><th>Direction</th><th></th></tr></thead>
-          <tbody id="sell-pen-body"><tr><td colspan="11" class="te">No penalty lines — add from Adjustment Code Master below</td></tr></tbody>
+            <thead><tr><th>#</th><th>Adj. Code</th><th>Calc Type</th><th>Trigger</th><th>Rate</th><th>Unit</th><th>Direction</th><th></th></tr></thead>
+            <tbody id="sell-pen-body"><tr><td colspan="8" class="te">No penalty lines — click Add to configure</td></tr></tbody>
           </table>
-          <div class="lar br gap7">
-            <button class="btn bg bsm" onclick="addPenLineAdv('sell-pen-body','SELL')">+ Add Penalty / Bonus</button>
-            <button class="btn bs bsm" onclick="loadTemplateAdj('sell-pen-body','SELL')">Load from Template</button>
+          <div class="lar br gap7 mt8">
+            <button class="btn bg bsm" onclick="addPenLineAdv()">+ Add Penalty / Bonus</button>
+            <button class="btn bs bsm" onclick="loadTemplateAdj()">Load from Template</button>
           </div>
         </div>
-        <div class="cb br btw">
-          <button class="btn bg">Save Quotation</button>
-          <button class="btn bp" onclick="acceptQuotation()">Accept → Confirm Deal</button>
+        <div class="cb br btw" id="qd-actions">
+          <button class="btn bg" onclick="saveQuotation()">Save Quotation</button>
+          <button class="btn bp" id="btn-accept-quot" onclick="acceptQuotation()">Accept → Confirm Deal</button>
         </div>
       </div>
     </div>
@@ -3738,18 +3746,312 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── ALL MISSING FUNCTIONS — v11 COMPLETE ─────────────────────
 
-// Quotation functions
-function createQuotation(){
-  toast('Quotation Created','QT-2026-003 created from enquiry · Pricing template now required','success');
-  setTimeout(()=>nav('quotation',document.querySelector('[data-page=quotation]')),600);
-}
-function openNewQuotation(){ openModal('modal-new-log'); toast('Quotation','New quotation form — fill pricing template','info'); }
-function acceptQuotation(ref){ toast('Quotation Accepted',ref+' accepted · Deal Confirmation next','success'); }
+// ── QUOTATION FUNCTIONS ───────────────────────────────────────
 
-// Deal confirmation
-function saveDealConfirmation(){ toast('Deal Confirmed','DEAL-2026-005 confirmed · PC and SC created automatically','success'); }
-function openBuyLegDetail(){ toast('Buy Leg','Opening buy leg detail','info'); }
-function openAddBuyLeg(){ toast('Add Buy Leg','Add counterpart buy leg to this deal','info'); }
+// Active quotation state
+let _activeQuotId = null;
+
+async function loadQuotationList() {
+  const tbody = document.getElementById('quot-list');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading...</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/quotations');
+    const json = await res.json();
+    const data = Array.isArray(json.data) ? json.data : [];
+
+    // Update stat chips
+    const setChip = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setChip('qt-stat-total', data.length);
+    setChip('qt-stat-open', data.filter(q => q.status === 'OPEN').length);
+    setChip('qt-stat-accepted', data.filter(q => q.status === 'CONVERTED' || q.status === 'ACCEPTED').length);
+    setChip('qt-stat-declined', data.filter(q => q.status === 'DECLINED' || q.status === 'EXPIRED').length);
+    const nav = document.getElementById('quot-nav-badge');
+    if (nav) nav.textContent = data.length;
+
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">No quotations yet · Click + New Quotation to create one</td></tr>';
+      return;
+    }
+
+    const statusBadge = s => {
+      const m = { CONVERTED:'bd-confirmed', ACCEPTED:'bd-confirmed', OPEN:'bd-draft', DECLINED:'bd-danger', EXPIRED:'bd-draft' };
+      return `<span class="badge ${m[s]||'bd-draft'}">${s}</span>`;
+    };
+
+    tbody.innerHTML = data.map(q => `<tr onclick="openQuotationDetail('${q.quotation_no}')" style="cursor:pointer">
+      <td class="mono ta fw6" style="color:var(--accent)">${q.quotation_no}</td>
+      <td class="mono f10">${q.enquiry_no || '—'}</td>
+      <td class="f11 fw6">${q.commodity_name || q.commodity_code || '—'}</td>
+      <td class="mono">${q.qty_mt ? parseFloat(q.qty_mt).toLocaleString() + ' MT' : '—'}</td>
+      <td class="f11">${q.customer_name || 'TBD'}</td>
+      <td class="mono f10">${q.pricing_template || '—'}</td>
+      <td class="mono ta">${q.provisional_price ? 'USD ' + parseFloat(q.provisional_price).toLocaleString() : '—'}</td>
+      <td class="mono ta">${q.provisional_value ? 'USD ' + parseFloat(q.provisional_value).toLocaleString() : '—'}</td>
+      <td>${statusBadge(q.status)}</td>
+      <td><button class="btn bxs bg" onclick="event.stopPropagation();openQuotationDetail('${q.quotation_no}')">Open</button></td>
+    </tr>`).join('');
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--danger);font-family:var(--font-mono);font-size:11px">Error: ${err.message}</td></tr>`;
+  }
+}
+
+async function openQuotationDetail(quotNo) {
+  _activeQuotId = quotNo;
+  const card = document.getElementById('quot-detail-card');
+  if (!card) return;
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  wireTabs('qt-tab');
+
+  try {
+    const res = await fetch(API_BASE + '/api/quotations/' + quotNo);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error);
+    const q = json.data;
+
+    // Header
+    document.getElementById('qd-title').textContent = 'Quotation Detail — ' + q.quotation_no;
+    document.getElementById('qd-source').textContent = q.enquiry_no ? 'Source: ' + q.enquiry_no : 'Standalone quotation';
+    const badge = document.getElementById('qd-status-badge');
+    const badgeMap = { CONVERTED:'bd-confirmed', ACCEPTED:'bd-confirmed', OPEN:'bd-draft', DECLINED:'bd-danger' };
+    badge.className = 'badge ' + (badgeMap[q.status] || 'bd-draft');
+    badge.textContent = q.status;
+
+    // General tab
+    document.getElementById('qd-no').textContent = q.quotation_no;
+    document.getElementById('qd-enq').textContent = q.enquiry_no || '—';
+    document.getElementById('qd-customer').textContent = q.customer_name || '—';
+    document.getElementById('qd-commodity').textContent = (q.commodity_code || '') + (q.commodity_name ? ' — ' + q.commodity_name : '');
+    document.getElementById('qd-qty').textContent = q.qty_mt ? parseFloat(q.qty_mt).toLocaleString() + ' MT' : '—';
+    document.getElementById('qd-inco').textContent = [q.incoterms, q.port_of_discharge].filter(Boolean).join(' · ') || '—';
+    document.getElementById('qd-delivery').textContent = q.delivery_from && q.delivery_to ? q.delivery_from + ' → ' + q.delivery_to : '—';
+    document.getElementById('qd-status').textContent = q.status;
+    document.getElementById('qd-validity').textContent = q.validity_date || '—';
+    document.getElementById('qd-quotedby').textContent = q.quoted_by || '—';
+
+    // Pricing tab
+    const tmplSel = document.getElementById('qd-template-sel');
+    if (tmplSel) { tmplSel.value = q.pricing_template || ''; onQdTemplateChange(q.pricing_template || ''); }
+    const pp = document.getElementById('qd-prov-price');
+    if (pp) pp.value = q.provisional_price || '';
+    recalcProvValue();
+
+    // Show/hide accept button
+    const btn = document.getElementById('btn-accept-quot');
+    if (btn) {
+      btn.style.display = (q.status === 'OPEN') ? '' : 'none';
+    }
+  } catch (err) {
+    toast('Error', 'Could not load quotation: ' + err.message, 'warning');
+  }
+}
+
+function recalcProvValue() {
+  const price = parseFloat(document.getElementById('qd-prov-price')?.value) || 0;
+  const qtyText = document.getElementById('qd-qty')?.textContent || '0';
+  const qty = parseFloat(qtyText.replace(/[^0-9.]/g, '')) || 0;
+  const val = document.getElementById('qd-prov-value');
+  if (val) val.textContent = price && qty ? 'USD ' + (price * qty).toLocaleString(undefined, {maximumFractionDigits:0}) : 'USD —';
+}
+
+function onQdTemplateChange(tmpl) {
+  const srcEl = document.getElementById('qd-price-source');
+  const qpEl = document.getElementById('qd-qp-window');
+  const lmeEl = document.getElementById('qd-lme-price');
+  const templates = {
+    'LME-CU-QP-M1':      { src:'LME Official Settlement', qp:'M+1 — Next month after BL date', lme:'USD 9,240/MT' },
+    'LME-CU-QP-M':       { src:'LME Official Settlement', qp:'M — Current month average', lme:'USD 9,240/MT' },
+    'PLATTS-STEEL-CFR':  { src:'Platts TSI CFR Turkey', qp:'Month of shipment', lme:'USD 440/MT' },
+    'FIXED-PRICE':        { src:'Fixed (no index)', qp:'N/A', lme:'—' },
+  };
+  const t = templates[tmpl] || { src:'—', qp:'—', lme:'—' };
+  if (srcEl) srcEl.textContent = t.src;
+  if (qpEl) qpEl.textContent = t.qp;
+  if (lmeEl) lmeEl.textContent = t.lme;
+}
+
+async function saveQuotation() {
+  if (!_activeQuotId) return;
+  const price = parseFloat(document.getElementById('qd-prov-price')?.value) || null;
+  const template = document.getElementById('qd-template-sel')?.value || null;
+  const qtyText = document.getElementById('qd-qty')?.textContent || '';
+  const qty = parseFloat(qtyText.replace(/[^0-9.]/g, '')) || null;
+  const value = price && qty ? price * qty : null;
+  try {
+    const res = await fetch(API_BASE + '/api/quotations/' + _activeQuotId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pricing_template: template, provisional_price: price, provisional_value: value, updated_at: new Date().toISOString() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      toast('Saved', 'Quotation ' + _activeQuotId + ' saved', 'success');
+      await loadQuotationList();
+    } else {
+      toast('Error', data.error || 'Save failed', 'warning');
+    }
+  } catch (err) { toast('Error', err.message, 'warning'); }
+}
+
+async function acceptQuotation() {
+  if (!_activeQuotId) return;
+  const btn = document.getElementById('btn-accept-quot');
+  if (btn) { btn.textContent = 'Processing...'; btn.disabled = true; }
+  try {
+    const res = await fetch(API_BASE + '/api/quotations/' + _activeQuotId + '/accept', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (data.success) {
+      const dealNo = data.data?.deal?.deal_no;
+      toast('Deal Created', 'Quotation accepted · ' + (dealNo || 'New deal') + ' created → go to Deal Confirmation', 'success');
+      await loadQuotationList();
+      await openQuotationDetail(_activeQuotId);
+    } else {
+      toast('Error', data.error || 'Accept failed', 'warning');
+    }
+  } catch (err) { toast('Error', err.message, 'warning'); }
+  finally { if (btn) { btn.textContent = 'Accept → Confirm Deal'; btn.disabled = false; } }
+}
+
+async function openNewQuotation() {
+  openModal('modal-new-quotation');
+  // Load dropdowns
+  const [enqRes, cpRes, cmRes] = await Promise.all([
+    fetch(API_BASE + '/api/enquiries').then(r=>r.json()),
+    fetch(API_BASE + '/api/master/counterparties').then(r=>r.json()).catch(()=>({data:[]})),
+    fetch(API_BASE + '/api/master/commodities').then(r=>r.json()).catch(()=>({data:[]})),
+  ]);
+  const enqSel = document.getElementById('nq-enquiry-sel');
+  const cpSel = document.getElementById('nq-customer-sel');
+  const cmSel = document.getElementById('nq-commodity-sel');
+  if (enqSel && enqRes.data) {
+    enqSel.innerHTML = '<option value="">— None (standalone quotation) —</option>' +
+      enqRes.data.filter(e => e.status !== 'CONVERTED').map(e =>
+        `<option value="${e.id}" data-cid="${e.customer_id||''}" data-comm="${e.commodity_code||''}" data-qty="${e.qty_mt||''}">` +
+        `${e.enquiry_no} · ${e.commodity_name||e.commodity_code||'—'} · ${e.qty_mt||'—'} MT · ${e.customer_name||'—'}</option>`
+      ).join('');
+  }
+  if (cpSel && cpRes.data) {
+    cpSel.innerHTML = '<option value="">— Select Customer —</option>' +
+      cpRes.data.filter(c => c.type === 'CUSTOMER').map(c =>
+        `<option value="${c.id}">${c.name} (${c.code})</option>`).join('');
+  }
+  if (cmSel && cmRes.data) {
+    cmSel.innerHTML = '<option value="">— Select Commodity —</option>' +
+      cmRes.data.map(c => `<option value="${c.code}">${c.code} — ${c.name}</option>`).join('');
+  }
+}
+
+function onNqEnquiryChange() {
+  const sel = document.getElementById('nq-enquiry-sel');
+  const opt = sel?.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  // Pre-fill fields from enquiry
+  const cpSel = document.getElementById('nq-customer-sel');
+  const cmSel = document.getElementById('nq-commodity-sel');
+  const qtyEl = document.getElementById('nq-qty');
+  if (cpSel && opt.dataset.cid) cpSel.value = opt.dataset.cid;
+  if (cmSel && opt.dataset.comm) cmSel.value = opt.dataset.comm;
+  if (qtyEl && opt.dataset.qty) qtyEl.value = opt.dataset.qty;
+}
+
+async function submitNewQuotation() {
+  const g = id => document.getElementById(id)?.value;
+  const payload = {
+    enquiry_id: g('nq-enquiry-sel') || null,
+    commodity_code: g('nq-commodity-sel'),
+    customer_id: g('nq-customer-sel') || null,
+    qty_mt: parseFloat(g('nq-qty')) || null,
+    incoterms: g('nq-incoterms') || null,
+    port_of_discharge: g('nq-pod') || null,
+    delivery_from: g('nq-delivery-from') || null,
+    delivery_to: g('nq-delivery-to') || null,
+    validity_date: g('nq-validity') || null,
+    pricing_template: g('nq-template') || null,
+    provisional_price: parseFloat(g('nq-prov-price')) || null,
+  };
+  if (!payload.commodity_code) { toast('Required', 'Please select a commodity', 'warning'); return; }
+  const btn = document.querySelector('#modal-new-quotation .btn.bp');
+  if (btn) { btn.textContent = 'Creating...'; btn.disabled = true; }
+  try {
+    const res = await fetch(API_BASE + '/api/quotations', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-new-quotation');
+      toast('Quotation Created', data.data.quotation_no + ' created', 'success');
+      await loadQuotationList();
+      await openQuotationDetail(data.data.quotation_no);
+    } else {
+      toast('Error', data.error || 'Create failed', 'warning');
+    }
+  } catch (err) { toast('Error', err.message, 'warning'); }
+  finally { if (btn) { btn.textContent = 'Create Quotation →'; btn.disabled = false; } }
+}
+
+// createQuotation() called from enquiry detail — pre-fill with active enquiry
+function createQuotation() {
+  openNewQuotation();
+  // brief delay to let dropdowns load then try to pre-select the current enquiry
+  setTimeout(() => {
+    const enqNo = document.getElementById('enqd-no')?.textContent;
+    if (!enqNo) return;
+    const sel = document.getElementById('nq-enquiry-sel');
+    if (!sel) return;
+    for (const opt of sel.options) {
+      if (opt.text.startsWith(enqNo)) { sel.value = opt.value; onNqEnquiryChange(); break; }
+    }
+  }, 600);
+}
+
+function addAdjLine() {
+  const tbody = document.getElementById('adj-lines-tbody');
+  if (!tbody) { toast('Adj Lines', 'Open a quotation and go to Adjustment Lines tab', 'info'); return; }
+  const rows = tbody.querySelectorAll('tr');
+  const n = rows.length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="mono f11">${n}</td>
+    <td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="ADJ-CODE"></td>
+    <td><input type="text" class="fi" style="width:100px;font-size:10px" placeholder="Description"></td>
+    <td><select class="fs" style="font-size:10px"><option>FLAT-RATE</option><option>PCT-OF-PRICE</option><option>FORMULA</option></select></td>
+    <td><input type="number" class="fi" style="width:65px;font-size:10px" placeholder="0.00"></td>
+    <td><select class="fs" style="font-size:10px"><option>USD/MT</option><option>%</option><option>USD</option></select></td>
+    <td><select class="fs" style="font-size:10px"><option>PRE-INVOICE</option><option>PRE-PRICE</option><option>POST-SETTLEMENT</option></select></td>
+    <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function addPenLineAdv() {
+  const tbody = document.getElementById('sell-pen-body');
+  if (!tbody) return;
+  if (tbody.querySelector('.te')) tbody.innerHTML = '';
+  const n = tbody.querySelectorAll('tr').length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td class="mono f11">${n}</td>
+    <td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="PEN-CODE"></td>
+    <td><select class="fs" style="font-size:10px"><option>FLAT-RATE</option><option>PCT-OF-VALUE</option><option>PER-DAY</option></select></td>
+    <td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="Trigger condition"></td>
+    <td><input type="number" class="fi" style="width:65px;font-size:10px" placeholder="Rate"></td>
+    <td><select class="fs" style="font-size:10px"><option>USD/MT/day</option><option>USD/MT</option><option>%</option></select></td>
+    <td><span class="badge bd-danger" style="font-size:8px">OUT</span></td>
+    <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function loadTemplateAdj() {
+  // Load standard penalty lines from template
+  const tbody = document.getElementById('sell-pen-body');
+  if (!tbody) return;
+  tbody.innerHTML = `
+    <tr><td class="mono f11">1</td><td class="mono f11 ta2">PEN-LATE-DEL</td><td><span class="ctp ct-flat">PER-DAY</span></td><td class="f11">Days Late Delivery</td><td><input type="number" class="fi" style="width:55px;font-size:10px" value="5"></td><td class="f11">USD/MT/day</td><td><span class="badge bd-danger" style="font-size:8px">OUT</span></td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
+    <tr><td class="mono f11">2</td><td class="mono f11 ta2">PEN-SHORT-DEL</td><td><span class="ctp ct-flat">PCT-OF-VALUE</span></td><td class="f11">Short Delivery &gt; 3%</td><td><input type="number" class="fi" style="width:55px;font-size:10px" value="2"></td><td class="f11">%</td><td><span class="badge bd-danger" style="font-size:8px">OUT</span></td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>`;
+  toast('Template Loaded', '2 standard penalty lines loaded from contract template', 'success');
+}
+
+// Quotation functions (end)
 
 // Purchase contract functions
 function addPCMatLine(){
@@ -4505,6 +4807,7 @@ async function loadQPDealOptions() {
 function afterNav(pageId) {
   setTimeout(() => {
     if (pageId === 'enquiry') loadEnquiryList();
+    else if (pageId === 'quotation') loadQuotationList();
     else if (pageId === 'purchase-contracts') loadContractList('PC');
     else if (pageId === 'sales-contracts') loadContractList('SC');
     else if (pageId === 'logistics') loadLogisticsList();
@@ -4755,6 +5058,75 @@ async function loadAllocationTable() {
     </div>
     <div class="modal-ft">
       <button class="btn bp" onclick="closeModal('modal-lot-detail')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: NEW QUOTATION ══ -->
+<div class="mo" id="modal-new-quotation">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-hd">
+      <div><div class="modal-title">New Quotation</div><div class="modal-sub">Create a price quotation · Links to an enquiry if selected</div></div>
+      <button class="btn bxs bd" onclick="closeModal('modal-new-quotation')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="divl">Enquiry & Customer</div>
+      <div class="fg">
+        <div class="f"><div class="fl">Source Enquiry</div>
+          <select class="fs" id="nq-enquiry-sel" onchange="onNqEnquiryChange()">
+            <option value="">— None (standalone quotation) —</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Customer <span class="req">*</span></div>
+          <select class="fs" id="nq-customer-sel">
+            <option value="">— Select Customer —</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
+          <select class="fs" id="nq-commodity-sel">
+            <option value="">— Select Commodity —</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
+          <input type="number" class="fi" id="nq-qty" placeholder="e.g. 100" step="0.001">
+        </div>
+      </div>
+      <div class="divl mt12">Commercial Terms</div>
+      <div class="fg">
+        <div class="f"><div class="fl">Incoterms</div>
+          <select class="fs" id="nq-incoterms">
+            <option value="">—</option><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option><option>EXW</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Port of Discharge</div>
+          <input type="text" class="fi" id="nq-pod" placeholder="e.g. Nhava Sheva">
+        </div>
+        <div class="f"><div class="fl">Delivery From</div>
+          <input type="date" class="fi" id="nq-delivery-from">
+        </div>
+        <div class="f"><div class="fl">Delivery To</div>
+          <input type="date" class="fi" id="nq-delivery-to">
+        </div>
+        <div class="f"><div class="fl">Validity Date</div>
+          <input type="date" class="fi" id="nq-validity">
+        </div>
+        <div class="f"><div class="fl">Pricing Template</div>
+          <select class="fs" id="nq-template">
+            <option value="">— TBD —</option>
+            <option value="LME-CU-QP-M1">LME-CU-QP-M1 · LME Copper M+1</option>
+            <option value="LME-CU-QP-M">LME-CU-QP-M · LME Copper Current Month</option>
+            <option value="PLATTS-STEEL-CFR">PLATTS-STEEL-CFR · Platts CFR Turkey</option>
+            <option value="FIXED-PRICE">FIXED-PRICE · Fixed Price</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Provisional Price (USD/MT)</div>
+          <input type="number" class="fi" id="nq-prov-price" placeholder="Optional — indicative" step="0.01">
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-quotation')">Cancel</button>
+      <button class="btn bp" onclick="submitNewQuotation()">Create Quotation →</button>
     </div>
   </div>
 </div>

@@ -314,3 +314,181 @@ ordersRouter.post('/', async (req, res) => {
 });
 
 module.exports.ordersRouter = ordersRouter;
+
+// ── ENQUIRIES ─────────────────────────────────────────────────────
+const enquiriesRouter = require('express').Router();
+
+enquiriesRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT e.*,
+        s.name as supplier_name, s.code as supplier_code,
+        c.name as customer_name, c.code as customer_code,
+        cm.name as commodity_name,
+        (SELECT COUNT(*) FROM quotations q WHERE q.enquiry_id = e.id) as quotation_count
+      FROM enquiries e
+      LEFT JOIN counterparties s ON s.id = e.supplier_id
+      LEFT JOIN counterparties c ON c.id = e.customer_id
+      LEFT JOIN commodities cm ON cm.code = e.commodity_code
+      ORDER BY e.enquiry_date DESC
+    `);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+enquiriesRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
+      supplier_id, customer_id, incoterms, status, created_by, notes } = req.body;
+    const result = await query(`
+      INSERT INTO enquiries (enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
+        supplier_id, customer_id, incoterms, status, created_by, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9,'OPEN'),$10,$11) RETURNING *
+    `, [enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
+        supplier_id||null, customer_id||null, incoterms, status, created_by, notes]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+enquiriesRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const fields = req.body;
+    const sets = Object.keys(fields).map((k, i) => `${k}=$${i+2}`).join(',');
+    const result = await query(`UPDATE enquiries SET ${sets} WHERE id=$1 RETURNING *`,
+      [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.enquiriesRouter = enquiriesRouter;
+
+// ── QUOTATIONS ────────────────────────────────────────────────────
+const quotationsRouter = require('express').Router();
+
+quotationsRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT q.*,
+        c.name as customer_name,
+        cm.name as commodity_name,
+        e.enquiry_no,
+        d.deal_no
+      FROM quotations q
+      LEFT JOIN counterparties c ON c.id = q.customer_id
+      LEFT JOIN commodities cm ON cm.code = q.commodity_code
+      LEFT JOIN enquiries e ON e.id = q.enquiry_id
+      LEFT JOIN deals d ON d.id = q.deal_id
+      ORDER BY q.quotation_date DESC
+    `);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+quotationsRouter.get('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT q.*,
+        c.name as customer_name, c.code as customer_code,
+        cm.name as commodity_name,
+        e.enquiry_no, e.deal_type, e.supplier_id,
+        d.deal_no
+      FROM quotations q
+      LEFT JOIN counterparties c ON c.id = q.customer_id
+      LEFT JOIN commodities cm ON cm.code = q.commodity_code
+      LEFT JOIN enquiries e ON e.id = q.enquiry_id
+      LEFT JOIN deals d ON d.id = q.deal_id
+      WHERE q.id=$1 OR q.quotation_no=$1
+    `, [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+quotationsRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { enquiry_id, quotation_date, commodity_code, customer_id, qty_mt,
+      incoterms, port_of_discharge, delivery_from, delivery_to, validity_date,
+      pricing_template, provisional_price, provisional_value, quoted_by, notes } = req.body;
+
+    // Auto-generate quotation_no
+    const countRes = await query(`SELECT COUNT(*) FROM quotations`);
+    const nextNo = 'QT-' + new Date().getFullYear() + '-' + String(parseInt(countRes.rows[0].count) + 1).padStart(3, '0');
+
+    const result = await query(`
+      INSERT INTO quotations (quotation_no, enquiry_id, quotation_date, commodity_code,
+        customer_id, qty_mt, incoterms, port_of_discharge, delivery_from, delivery_to,
+        validity_date, pricing_template, provisional_price, provisional_value, quoted_by, status, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'OPEN',$16) RETURNING *
+    `, [nextNo, enquiry_id||null, quotation_date||new Date().toISOString().split('T')[0],
+        commodity_code, customer_id||null, qty_mt, incoterms, port_of_discharge,
+        delivery_from, delivery_to, validity_date, pricing_template,
+        provisional_price, provisional_value, quoted_by||'A. Mallick', notes]);
+
+    // Mark enquiry as QUOTED if linked
+    if (enquiry_id) {
+      await query(`UPDATE enquiries SET status='QUOTED' WHERE id=$1 AND status='OPEN'`, [enquiry_id]);
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Accept quotation → creates a deal
+quotationsRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const fields = req.body;
+    const sets = Object.keys(fields).map((k, i) => `${k}=$${i+2}`).join(', ');
+    const result = await query(
+      `UPDATE quotations SET ${sets}, updated_at=NOW() WHERE id=$1 OR quotation_no=$1 RETURNING *`,
+      [req.params.id, ...Object.values(fields)]
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+quotationsRouter.post('/:id/accept', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const qtRes = await query(`
+      SELECT q.*, e.supplier_id, e.deal_type
+      FROM quotations q LEFT JOIN enquiries e ON e.id=q.enquiry_id
+      WHERE q.id=$1 OR q.quotation_no=$1
+    `, [req.params.id]);
+    if (!qtRes.rows.length) return res.status(404).json({ error: 'Quotation not found' });
+    const qt = qtRes.rows[0];
+    if (qt.status === 'CONVERTED') return res.status(400).json({ error: 'Already converted to a deal' });
+
+    // Auto-generate deal number
+    const dealCount = await query(`SELECT COUNT(*) FROM deals`);
+    const dealNo = 'DEAL' + String(parseInt(dealCount.rows[0].count) + 1).padStart(3, '0');
+
+    const dealRes = await query(`
+      INSERT INTO deals (deal_no, deal_date, enquiry_id, commodity_code, deal_type,
+        qty_mt, supplier_id, customer_id, confirmed, confirmed_at, status)
+      VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7, TRUE, NOW(), 'CONFIRMED') RETURNING *
+    `, [dealNo, qt.enquiry_id, qt.commodity_code, qt.deal_type || 'BACK-TO-BACK',
+        qt.qty_mt, qt.supplier_id||null, qt.customer_id]);
+
+    const deal = dealRes.rows[0];
+
+    // Update quotation status
+    await query(`UPDATE quotations SET status='CONVERTED', deal_id=$1, updated_at=NOW() WHERE id=$2`,
+      [deal.id, qt.id]);
+
+    // Mark enquiry as CONVERTED
+    if (qt.enquiry_id) {
+      await query(`UPDATE enquiries SET status='CONVERTED' WHERE id=$1`, [qt.enquiry_id]);
+    }
+
+    res.json({ success: true, data: { quotation: qt, deal } });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.quotationsRouter = quotationsRouter;

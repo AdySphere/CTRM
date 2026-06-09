@@ -7,19 +7,19 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ── MIDDLEWARE ────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
 
-// ── API ROUTES FIRST — before static files ────────────────────────
-const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter } = require('./routes/deals');
+const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter } = require('./routes/deals');
 const { invoiceRouter, masterRouter } = require('./routes/invoices');
 
 app.use('/api/market-prices',   require('./routes/marketPrices'));
 app.use('/api/forward-curve',   require('./routes/forwardCurve'));
 app.use('/api/contracts',       require('./routes/contracts'));
 app.use('/api/deals',           dealsRouter);
+app.use('/api/enquiries',       enquiriesRouter);
+app.use('/api/quotations',      quotationsRouter);
 app.use('/api/logistics',       logRouter);
 app.use('/api/containers',      conRouter);
 app.use('/api/fixations',       fixRouter);
@@ -28,8 +28,8 @@ app.use('/api/allocations',     allocRouter);
 app.use('/api/exposure',        require('./routes/exposure'));
 app.use('/api/invoices',        invoiceRouter);
 app.use('/api/master',          masterRouter);
+app.use('/api/orders',          ordersRouter);
 
-// ── HEALTH CHECK ─────────────────────────────────────────────────
 app.get('/api/health', async (req, res) => {
   const { query } = require('./db');
   try {
@@ -40,12 +40,10 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// ── STATIC FILES + FRONTEND — after API routes ────────────────────
 app.use(express.static(path.join(__dirname, '../public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, '../public/setup.html')));
 
-// ── ERROR HANDLER ─────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: err.message || 'Internal server error' });

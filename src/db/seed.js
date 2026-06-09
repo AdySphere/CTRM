@@ -105,6 +105,54 @@ async function seed() {
   `);
   console.log('✓ forward_curve seeded');
 
+  // ── ENQUIRIES ────────────────────────────────────────────────────
+  const enqRes = await query(`
+    INSERT INTO enquiries (enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
+      supplier_id, customer_id, incoterms, status, created_by)
+    VALUES
+      ('ENQ-2026-039', '2026-03-19', 'CU-MILLBERRY', 'BACK-TO-BACK', 100,
+        (SELECT id FROM counterparties WHERE code='GLEN-AG'),
+        (SELECT id FROM counterparties WHERE code='TATA-MET'),
+        'CIF', 'CONVERTED', 'A. Mallick'),
+      ('ENQ-2026-040', '2026-04-02', 'STEEL-HMS1', 'BACK-TO-BACK', 700,
+        NULL,
+        (SELECT id FROM counterparties WHERE code='AURUBIS'),
+        'CFR', 'QUOTED', 'A. Mallick'),
+      ('ENQ-2026-041', '2026-04-15', 'CU-CATHODE-A', 'OPEN-SELL', 250,
+        NULL,
+        (SELECT id FROM counterparties WHERE code='BP-TRAD'),
+        'FOB', 'OPEN', 'A. Mallick'),
+      ('ENQ-2026-042', '2026-05-01', 'PB-SN-INGOT', 'BACK-TO-BACK', 50,
+        (SELECT id FROM counterparties WHERE code='NOBLE-SG'),
+        (SELECT id FROM counterparties WHERE code='AURUBIS'),
+        'CIF', 'OPEN', 'A. Mallick')
+    ON CONFLICT (enquiry_no) DO NOTHING
+    RETURNING id, enquiry_no;
+  `);
+  console.log('✓ enquiries seeded:', enqRes.rows.map(r => r.enquiry_no).join(', '));
+
+  // ── QUOTATIONS ────────────────────────────────────────────────────
+  await query(`
+    INSERT INTO quotations (quotation_no, enquiry_id, quotation_date, commodity_code,
+      customer_id, qty_mt, incoterms, port_of_discharge, delivery_from, delivery_to,
+      validity_date, pricing_template, provisional_price, provisional_value, quoted_by, status)
+    VALUES
+      ('QT-2026-001',
+        (SELECT id FROM enquiries WHERE enquiry_no='ENQ-2026-039'),
+        '2026-03-22', 'CU-MILLBERRY',
+        (SELECT id FROM counterparties WHERE code='TATA-MET'),
+        100, 'CIF', 'Nhava Sheva', '2026-04-15', '2026-05-15',
+        '2026-04-20', 'LME-CU-QP-M1', 9480.00, 948000.00, 'A. Mallick', 'CONVERTED'),
+      ('QT-2026-002',
+        (SELECT id FROM enquiries WHERE enquiry_no='ENQ-2026-040'),
+        '2026-04-05', 'STEEL-HMS1',
+        (SELECT id FROM counterparties WHERE code='AURUBIS'),
+        700, 'CFR', 'Antwerp', '2026-05-01', '2026-06-15',
+        '2026-05-02', NULL, NULL, NULL, 'A. Mallick', 'OPEN')
+    ON CONFLICT (quotation_no) DO NOTHING;
+  `);
+  console.log('✓ quotations seeded (QT-2026-001, QT-2026-002)');
+
   // ── DEALS ────────────────────────────────────────────────────────
   const dealRes = await query(`
     INSERT INTO deals (deal_no, deal_date, commodity_code, deal_type, qty_mt,
