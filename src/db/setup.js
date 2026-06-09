@@ -196,6 +196,9 @@ async function setupDatabase() {
     );
   `);
   console.log('✓ quotations');
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS deals (
       id              SERIAL PRIMARY KEY,
       deal_no         VARCHAR(20) UNIQUE NOT NULL,
       deal_date       TIMESTAMPTZ NOT NULL,
