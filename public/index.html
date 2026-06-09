@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>CTRM Platform · v14 · Core</title>
+<title>CTRM Platform · v15 · Core</title>
 <style>
 /* ── DARK MODE (default) ──────────────────────────────────── */
 :root{
@@ -400,7 +400,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V14</div>
+    <div class="sb-tag">CTRM PLATFORM · V15</div>
   </div>
   <nav class="sb-nav">
 
@@ -2407,80 +2407,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <th>Fixation Lot</th>
               <th>Status</th>
             </tr></thead>
-            <tbody>
-              <tr>
-                <td class="mono fw6">KMTC121</td>
-                <td class="mono f10 ta">SH1</td>
-                <td class="mono f10">PC-2026-001</td>
-                <td class="f11">Copper MillBerry</td>
-                <td class="mono">24.00</td>
-                <td class="mono f10 tdim">2.20</td>
-                <td class="mono fw6 tg">21.80</td>
-                <td class="mono f10">9.2%</td>
-                <td class="mono ta2">19.79</td>
-                <td class="mono fw6 ta">18.01</td>
-                <td><select class="fs" style="font-size:10px"><option>SC-2026-001 (Tata Metals)</option><option>SC-2026-002</option><option>Unallocated</option></select></td>
-                <td class="mono f10 ta2">SO-10042</td>
-                <td class="mono f10">100%</td>
-                <td><span class="badge bd-confirmed">PRICED</span></td>
-                <td class="mono f10 ta">FIX123</td>
-                <td><span class="badge bd-confirmed">ALLOCATED</span></td>
-              </tr>
-              <tr>
-                <td class="mono fw6">KMTC122</td>
-                <td class="mono f10 ta">SH2</td>
-                <td class="mono f10">PC-2026-001</td>
-                <td class="f11">Copper MillBerry</td>
-                <td class="mono">25.00</td>
-                <td class="mono f10 tdim">2.20</td>
-                <td class="mono fw6 tg">22.80</td>
-                <td class="mono f10">8.8%</td>
-                <td class="mono ta2">20.79</td>
-                <td class="mono fw6 ta">18.92</td>
-                <td><select class="fs" style="font-size:10px"><option>SC-2026-001 (Tata Metals)</option><option>SC-2026-002</option><option>Unallocated</option></select></td>
-                <td class="mono f10 ta2">SO-10042</td>
-                <td class="mono f10">100%</td>
-                <td><span class="badge bd-confirmed">PRICED</span></td>
-                <td class="mono f10 ta">FIX123</td>
-                <td><span class="badge bd-confirmed">ALLOCATED</span></td>
-              </tr>
-              <tr>
-                <td class="mono fw6">KMTC123</td>
-                <td class="mono f10 ta">SH3</td>
-                <td class="mono f10">PC-2026-001</td>
-                <td class="f11">Copper MillBerry</td>
-                <td class="mono">26.00</td>
-                <td class="mono f10 tdim">2.20</td>
-                <td class="mono fw6 tg">23.80</td>
-                <td class="mono f10">9.5%</td>
-                <td class="mono ta2">21.54</td>
-                <td class="mono fw6 ta">19.60</td>
-                <td><select class="fs" style="font-size:10px"><option>SC-2026-001 (Tata Metals)</option><option>SC-2026-002</option><option>Unallocated</option></select></td>
-                <td class="mono f10 ta2">SO-10042</td>
-                <td class="mono f10">100%</td>
-                <td><span class="badge bd-ship">UNPRICED</span></td>
-                <td class="mono f10 tdim">—</td>
-                <td><span class="badge bd-ship">ALLOCATED</span></td>
-              </tr>
-              <tr style="background:rgba(240,165,0,.04)">
-                <td class="mono fw6 td">MAER232</td>
-                <td class="mono f10 ta">SH4</td>
-                <td class="mono f10">PC-2026-001</td>
-                <td class="f11 ta2">Copper Berry</td>
-                <td class="mono">27.50</td>
-                <td class="mono f10 tdim">2.20</td>
-                <td class="mono fw6 ta2">25.30</td>
-                <td class="mono f10">8.5%</td>
-                <td class="mono ta2">23.15</td>
-                <td class="mono fw6 ta2">18.52</td>
-                <td><select class="fs" style="font-size:10px"><option>Unallocated — Berry grade, not for SC-2026-001</option><option>SC-2026-003 (if sourced)</option></select></td>
-                <td class="mono f10 tdim">—</td>
-                <td class="mono f10 tdim">—</td>
-                <td><span class="badge bd-ship">UNPRICED</span></td>
-                <td class="mono f10 tdim">—</td>
-                <td><span class="badge bd-draft">UNALLOCATED</span></td>
-              </tr>
-            </tbody>
+            <tbody id="alloc-list-tbody"><tr><td colspan="16" style="text-align:center;padding:16px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading allocations...</td></tr></tbody>
             <tfoot>
               <tr style="background:var(--surface2)">
                 <td colspan="4" class="mono f10 fw7" style="text-align:right;padding:8px 12px">Totals</td>
@@ -3694,62 +3621,10 @@ async function openLogDetail(id) {
 }
 
 // ── ALLOCATION — POST to /api/allocations ────────────────────
-async function createAllocation() {
-  const get = id => document.getElementById(id)?.value;
-  const data = await api('/api/allocations', {
-    method: 'POST',
-    body: JSON.stringify({
-      container_id: parseInt(get('alloc-container-id')),
-      buy_contract_id: parseInt(get('alloc-buy-contract')),
-      sell_contract_id: parseInt(get('alloc-sell-contract')),
-      fixation_lot_ref: get('alloc-fixation-ref'),
-    }),
-  });
-  if (data) {
-    closeModal('modal-new-alloc');
-    loadAllocationTable();
-    toast('Allocation Created', 'Container allocated · Payable weight computed from database', 'success');
-  }
-}
+// createAllocation replaced by submitAllocation
 
-// ── LOAD ALLOCATION TABLE ────────────────────────────────────
-async function loadAllocationTable() {
-  const data = await api('/api/allocations');
-  if (!data) return;
-  const tbody = document.getElementById('container-alloc-table')?.querySelector('tbody');
-  if (!tbody) return;
-  tbody.innerHTML = data.map(a => `
-    <tr>
-      <td class="mono fw6">${a.container_no}</td>
-      <td class="mono f10 ta">—</td>
-      <td class="mono f10">${a.buy_contract_no||'—'}</td>
-      <td class="f11">${a.material_code||'Copper'}</td>
-      <td class="mono">${fmt(a.gross_weight_mt,3)}</td>
-      <td class="mono f10 tdim">${fmt(a.tare_mt,3)}</td>
-      <td class="mono fw6 tg">${fmt(a.net_weight_mt,3)}</td>
-      <td class="mono f10">${a.moisture_pct||'—'}%</td>
-      <td class="mono ta2">${fmt(a.dry_weight_mt,3)}</td>
-      <td class="mono fw6 ta">${fmt(a.payable_weight_mt,3)}</td>
-      <td class="f10">${a.sell_contract_no||'—'}</td>
-      <td class="mono f10">—</td>
-      <td class="mono f10">${a.allocation_pct}%</td>
-      <td><span class="badge ${a.priced_status==='PRICED'?'bd-confirmed':'bd-ship'}">${a.priced_status}</span></td>
-      <td class="mono f10 tdim">${a.fixation_lot_ref||'—'}</td>
-      <td><span class="badge bd-confirmed">${a.status}</span></td>
-    </tr>
-  `).join('');
-}
 
-// ── LOAD DROPDOWN OPTIONS FROM API ───────────────────────────
-async function loadContractDropdowns() {
-  const contracts = await api('/api/contracts');
-  if (!contracts) return;
-  const opts = contracts.map(c => `<option value="${c.id}">${c.contract_no} — ${c.counterparty_name}</option>`).join('');
-  ['alloc-buy-contract','alloc-sell-contract','new-log-contract'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = '<option value="">— Select —</option>' + opts;
-  });
-}
+// ── LOAD DROPDOWN// ── LOAD DROPDOWN OPTIONS FROM API ───────────────────────────
 
 // ── MASTER RUN MTM ────────────────────────────────────────────
 async function runMTM() {
@@ -4008,6 +3883,12 @@ function calcQPFromBL(val){
 }
 
 function addContainerRow(){
+  openModal('modal-new-alloc');
+  loadContractDropdowns();
+  // Load available containers
+  loadContainerOptions();
+}
+function addContainerRow_old(){
   const tb=document.getElementById('container-tbody');
   if(!tb)return;
   const tr=document.createElement('tr');
@@ -4488,8 +4369,8 @@ async function loadEnquiryList() {
   tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading...</td></tr>';
   try {
     const res = await fetch(API_BASE + '/api/deals');
-    if (!res.ok) throw new Error('API returned ' + res.status);
     const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || 'API returned ' + res.status);
     const deals = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
     if (!deals.length) {
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">No enquiries yet · Click + New Enquiry to create one</td></tr>';
@@ -4646,6 +4527,138 @@ function afterNav(pageId) {
 // END V13 FUNCTIONS
 // ══════════════════════════════════════════════════════
 
+
+// ── ALLOCATION FUNCTIONS ─────────────────────────────────────
+async function loadContainerOptions() {
+  const sel = document.getElementById('alloc-container-select');
+  if (!sel) return;
+  const res = await fetch(API_BASE + '/api/containers');
+  const data = await res.json();
+  const containers = Array.isArray(data.data) ? data.data : [];
+  sel.innerHTML = '<option value="">— Select Container —</option>' +
+    containers.map(c => `<option value="${c.id}" 
+      data-gross="${c.gross_weight_mt}" 
+      data-tare="${c.tare_mt}" 
+      data-net="${c.net_weight_mt}" 
+      data-dry="${c.dry_weight_mt}"
+      data-moisture="${c.moisture_pct}">${c.container_no} · ${c.material_code||''} · ${c.gross_weight_mt} MT gross</option>`
+    ).join('');
+}
+
+function onContainerSelect() {
+  const sel = document.getElementById('alloc-container-select');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt.value) {
+    document.getElementById('alloc-container-details').style.display = 'none';
+    return;
+  }
+  document.getElementById('alloc-container-details').style.display = 'block';
+  document.getElementById('alloc-gross').textContent = opt.dataset.gross || '—';
+  document.getElementById('alloc-tare').textContent = opt.dataset.tare || '—';
+  document.getElementById('alloc-net').textContent = opt.dataset.net || '—';
+  document.getElementById('alloc-moisture').textContent = (opt.dataset.moisture || '—') + '%';
+  document.getElementById('alloc-dry').textContent = opt.dataset.dry || '—';
+}
+
+async function loadContractDropdowns() {
+  const [pcs, scs, fixes] = await Promise.all([
+    fetch(API_BASE + '/api/contracts?type=PC').then(r=>r.json()),
+    fetch(API_BASE + '/api/contracts?type=SC').then(r=>r.json()),
+    fetch(API_BASE + '/api/fixations').then(r=>r.json()),
+  ]);
+  const pcData = Array.isArray(pcs.data) ? pcs.data : [];
+  const scData = Array.isArray(scs.data) ? scs.data : [];
+  const fixData = Array.isArray(fixes.data) ? fixes.data : [];
+
+  const buySel = document.getElementById('alloc-buy-contract-sel');
+  const sellSel = document.getElementById('alloc-sell-contract-sel');
+  const fixSel = document.getElementById('alloc-fixation-sel');
+
+  if (buySel) buySel.innerHTML = '<option value="">— Select —</option>' +
+    pcData.map(c => `<option value="${c.id}">${c.contract_no} · ${c.counterparty_name}</option>`).join('');
+  if (sellSel) sellSel.innerHTML = '<option value="">— Select —</option>' +
+    scData.map(c => `<option value="${c.id}">${c.contract_no} · ${c.counterparty_name}</option>`).join('');
+  if (fixSel) fixSel.innerHTML = '<option value="">— Unpriced (no fixation) —</option>' +
+    fixData.map(f => `<option value="${f.lot_ref}">${f.lot_ref} · ${f.deal_id} · $${parseFloat(f.fixed_price).toLocaleString()} · ${f.fixed_qty_mt} MT</option>`).join('');
+}
+
+async function submitAllocation() {
+  const g = id => document.getElementById(id)?.value;
+  const containerId = parseInt(g('alloc-container-select'));
+  const sellContractId = parseInt(g('alloc-sell-contract-sel'));
+  const buyContractId = parseInt(g('alloc-buy-contract-sel')) || null;
+  const fixationRef = g('alloc-fixation-sel') || null;
+  const allocPct = parseFloat(g('alloc-pct')) || 100;
+
+  if (!containerId) { toast('Required', 'Please select a container', 'warning'); return; }
+  if (!sellContractId) { toast('Required', 'Please select a sales contract', 'warning'); return; }
+
+  const btn = document.querySelector('#modal-new-alloc .btn.bp');
+  if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/allocations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        container_id: containerId,
+        buy_contract_id: buyContractId,
+        sell_contract_id: sellContractId,
+        fixation_lot_ref: fixationRef,
+        allocation_pct: allocPct,
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-new-alloc');
+      toast('Allocated', 'Container allocated · Payable weight computed from database', 'success');
+      await loadAllocationTable();
+    } else {
+      toast('Error', data.error || 'Failed to save allocation', 'warning');
+    }
+  } catch(err) {
+    toast('Error', err.message, 'warning');
+  } finally {
+    if (btn) { btn.textContent = 'Allocate Container →'; btn.disabled = false; }
+  }
+}
+
+async function loadAllocationTable() {
+  const tbody = document.getElementById('alloc-list-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:12px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading...</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/allocations');
+    const json = await res.json();
+    const data = Array.isArray(json.data) ? json.data : [];
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:16px;color:var(--text3);font-family:var(--font-mono);font-size:11px">No allocations yet · Click + Add Container to allocate</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(a => '<tr>'
+      + '<td class="mono fw6">' + (a.container_no||'—') + '</td>'
+      + '<td class="mono f10 ta">—</td>'
+      + '<td class="mono f10">' + (a.buy_contract_no||'—') + '</td>'
+      + '<td class="f11">Copper MillBerry</td>'
+      + '<td class="mono">' + fmt(a.gross_weight_mt,3) + '</td>'
+      + '<td class="mono f10 tdim">' + fmt(a.tare_mt,3) + '</td>'
+      + '<td class="mono fw6 tg">' + fmt(a.net_weight_mt,3) + '</td>'
+      + '<td class="mono f10">' + (a.moisture_pct||'—') + '%</td>'
+      + '<td class="mono ta2">' + fmt(a.dry_weight_mt,3) + '</td>'
+      + '<td class="mono fw6 ta">' + fmt(a.payable_weight_mt,3) + '</td>'
+      + '<td class="f10">' + (a.sell_contract_no||'—') + '</td>'
+      + '<td class="f10">—</td>'
+      + '<td class="mono f10">' + (a.allocation_pct||100) + '%</td>'
+      + '<td><span class="badge ' + (a.priced_status==='PRICED'?'bd-confirmed':'bd-ship') + '">' + (a.priced_status||'UNPRICED') + '</span></td>'
+      + '<td class="mono f10 tdim">' + (a.fixation_lot_ref||'—') + '</td>'
+      + '<td><span class="badge bd-confirmed">' + (a.status||'ALLOCATED') + '</span></td>'
+      + '</tr>'
+    ).join('');
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;padding:12px;color:var(--danger);font-family:var(--font-mono);font-size:11px">Error: ' + err.message + '</td></tr>';
+  }
+}
+
 </script>
 
 
@@ -4735,7 +4748,7 @@ function afterNav(pageId) {
     </div>
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-alloc')">Cancel</button>
-      <button class="btn bp" onclick="createAllocation()">Create Allocation →</button>
+      <button class="btn bp" onclick="submitAllocation()">Create Allocation →</button>
     </div>
   </div>
 </div>
@@ -4908,6 +4921,63 @@ function afterNav(pageId) {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-create-grn')">Cancel</button>
       <button class="btn bp" onclick="submitCreateGRN()">Create GRN →</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ MODAL: ALLOCATE CONTAINER ══ -->
+<div class="mo" id="modal-new-alloc">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-hd">
+      <div><div class="modal-title">Allocate Container to Sales Contract</div>
+      <div class="modal-sub">Links a physical container to a sales contract · Net/dry weight auto-computed</div></div>
+      <button class="btn bxs bd" onclick="closeModal('modal-new-alloc')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="divl">Select Container</div>
+      <div class="fg">
+        <div class="f"><div class="fl">Container <span class="req">*</span></div>
+          <select class="fs" id="alloc-container-select" onchange="onContainerSelect()">
+            <option value="">— Select Container —</option>
+          </select>
+        </div>
+      </div>
+      <div id="alloc-container-details" style="display:none;margin-top:10px">
+        <div class="fg">
+          <div class="f"><div class="fl">Gross Weight (MT)</div><div class="fc mono ta2" id="alloc-gross">—</div></div>
+          <div class="f"><div class="fl">Tare (MT)</div><div class="fc mono f10 tdim" id="alloc-tare">—</div></div>
+          <div class="f"><div class="fl">Net Weight (MT)</div><div class="fc mono fw6 tg" id="alloc-net">—</div></div>
+          <div class="f"><div class="fl">Moisture %</div><div class="fc mono f10" id="alloc-moisture">—</div></div>
+          <div class="f"><div class="fl">Dry Weight (MT)</div><div class="fc mono fw6 ta2" id="alloc-dry">—</div></div>
+        </div>
+      </div>
+      <div class="divl mt12">Allocation</div>
+      <div class="fg">
+        <div class="f"><div class="fl">Buy Contract</div>
+          <select class="fs" id="alloc-buy-contract-sel">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Sales Contract <span class="req">*</span></div>
+          <select class="fs" id="alloc-sell-contract-sel">
+            <option value="">— Select —</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Fixation Lot Ref</div>
+          <select class="fs" id="alloc-fixation-sel">
+            <option value="">— Unpriced (no fixation) —</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Allocation %</div>
+          <input type="number" class="fi" id="alloc-pct" value="100" min="1" max="100" step="1">
+        </div>
+      </div>
+      <div class="ban bi mt8"><span>ℹ</span>Payable weight is auto-computed from net weight. PRICED status is set if a fixation lot is selected.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-alloc')">Cancel</button>
+      <button class="btn bp" onclick="submitAllocation()">Allocate Container →</button>
     </div>
   </div>
 </div>
