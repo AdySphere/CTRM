@@ -2580,7 +2580,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <div class="page" id="page-allocation">
       <div class="ph">
         <div class="ph-left"><div class="pt">Allocation Engine</div><div class="ps">Match buy lots → sell contracts · Quantities reconcile here · Supports partial allocation</div></div>
-        <div class="ph-right"><button class="btn bp" onclick="openModal('modal-new-alloc')">＋ Allocate</button></div>
+        <div class="ph-right"><button class="btn bp" onclick="openAllocModal()">＋ Allocate</button></div>
       </div>
       <div class="sr">
         <div class="sc"><div class="scl">Buy Lots Available</div><div class="scv ta3">2</div></div>
@@ -3883,10 +3883,7 @@ function calcQPFromBL(val){
 }
 
 function addContainerRow(){
-  openModal('modal-new-alloc');
-  loadContractDropdowns();
-  // Load available containers
-  loadContainerOptions();
+  openAllocModal();
 }
 function addContainerRow_old(){
   const tb=document.getElementById('container-tbody');
@@ -3942,7 +3939,7 @@ function openLotModal(containerNo){
 }
 
 function addContainerAllocRow(){
-  openModal('modal-new-alloc');
+  openAllocModal();
 }
 
 function openNewEnquiry(){ openModal('modal-new-enquiry'); }
@@ -4582,11 +4579,39 @@ async function loadContractDropdowns() {
     fixData.map(f => `<option value="${f.lot_ref}">${f.lot_ref} · ${f.deal_id} · $${parseFloat(f.fixed_price).toLocaleString()} · ${f.fixed_qty_mt} MT</option>`).join('');
 }
 
+async function onSellContractChange() {
+  const contractId = document.getElementById('alloc-sell-contract-sel')?.value;
+  const soSel = document.getElementById('alloc-sell-order-sel');
+  if (!soSel) return;
+  soSel.innerHTML = '<option value="">— Loading... —</option>';
+  try {
+    const url = contractId
+      ? API_BASE + '/api/orders?type=SO&contract_id=' + contractId
+      : API_BASE + '/api/orders?type=SO';
+    const res = await fetch(url);
+    const data = await res.json();
+    const orders = Array.isArray(data.data) ? data.data : [];
+    soSel.innerHTML = '<option value="">— Select Sales Order —</option>' +
+      orders.map(o => `<option value="${o.id}">${o.order_no} · ${o.counterparty_name || ''} · ${o.qty_mt} MT</option>`).join('');
+  } catch(e) {
+    soSel.innerHTML = '<option value="">— Error loading orders —</option>';
+  }
+}
+
+async function openAllocModal() {
+  openModal('modal-new-alloc');
+  await Promise.all([loadContainerOptions(), loadContractDropdowns()]);
+  // reset sell order dropdown
+  const soSel = document.getElementById('alloc-sell-order-sel');
+  if (soSel) soSel.innerHTML = '<option value="">— Select Sales Contract first —</option>';
+}
+
 async function submitAllocation() {
   const g = id => document.getElementById(id)?.value;
   const containerId = parseInt(g('alloc-container-select'));
   const sellContractId = parseInt(g('alloc-sell-contract-sel'));
   const buyContractId = parseInt(g('alloc-buy-contract-sel')) || null;
+  const sellOrderId = parseInt(g('alloc-sell-order-sel')) || null;
   const fixationRef = g('alloc-fixation-sel') || null;
   const allocPct = parseFloat(g('alloc-pct')) || 100;
 
@@ -4604,6 +4629,7 @@ async function submitAllocation() {
         container_id: containerId,
         buy_contract_id: buyContractId,
         sell_contract_id: sellContractId,
+        sell_order_id: sellOrderId,
         fixation_lot_ref: fixationRef,
         allocation_pct: allocPct,
       })
@@ -4619,7 +4645,7 @@ async function submitAllocation() {
   } catch(err) {
     toast('Error', err.message, 'warning');
   } finally {
-    if (btn) { btn.textContent = 'Allocate Container →'; btn.disabled = false; }
+    if (btn) { btn.textContent = 'Create Allocation →'; btn.disabled = false; }
   }
 }
 
@@ -4728,30 +4754,7 @@ async function loadAllocationTable() {
 </div>
 
 <!-- ══ MODAL: NEW ALLOCATION ══ -->
-<div class="mo" id="modal-new-alloc">
-  <div class="modal">
-    <div class="modal-hd">
-      <div><div class="modal-title">New Allocation</div><div class="modal-sub">Allocate buy lot / container to sales contract</div></div>
-      <button class="btn bxs bd" onclick="closeModal('modal-new-alloc')">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="fg">
-        <div class="f"><div class="fl">Buy Contract <span class="req">*</span></div><select class="fs"><option>PC-2026-001 — Copper MillBerry · Glencore AG</option><option>PC-2026-002 — Lead-Tin Ingots</option></select></div>
-        <div class="f"><div class="fl">Container / Lot <span class="req">*</span></div><select class="fs"><option>KMTC121 — 24 MT Copper MillBerry</option><option>KMTC122 — 25 MT Copper MillBerry</option><option>KMTC123 — 26 MT Copper MillBerry</option><option>MAER232 — 27.5 MT Copper Berry</option></select></div>
-        <div class="f"><div class="fl">Sales Contract <span class="req">*</span></div><select class="fs"><option value="">— Select Sales Contract —</option><option>SC-2026-001 — Tata Metals Ltd</option><option>SC-2026-002 — ArcelorMittal</option></select></div>
-        <div class="f"><div class="fl">Sales Order</div><select class="fs"><option>SO-10042 — Tata Metals</option></select></div>
-        <div class="f"><div class="fl">Allocated Qty (MT) <span class="req">*</span></div><input type="number" class="fi" placeholder="e.g. 24.00"></div>
-        <div class="f"><div class="fl">Payable Weight (MT)</div><input type="number" class="fi" placeholder="After moisture deduction"></div>
-        <div class="f"><div class="fl">Fixation Lot Ref</div><select class="fs"><option>FIX123 — SHORT · 68.25 MT · $8,848</option><option>FIX456 — LONG · 51.19 MT · $10,500</option><option>— Unpriced (no fixation yet)</option></select></div>
-        <div class="f"><div class="fl">Allocation Notes</div><input type="text" class="fi" placeholder="e.g. Full container allocation"></div>
-      </div>
-    </div>
-    <div class="modal-ft">
-      <button class="btn bs2" onclick="closeModal('modal-new-alloc')">Cancel</button>
-      <button class="btn bp" onclick="submitAllocation()">Create Allocation →</button>
-    </div>
-  </div>
-</div>
+<!-- MODAL: NEW ALLOCATION — see real modal below -->
 
 
 <!-- ══ MODAL: NEW ENQUIRY ══ -->
@@ -4960,8 +4963,13 @@ async function loadAllocationTable() {
           </select>
         </div>
         <div class="f"><div class="fl">Sales Contract <span class="req">*</span></div>
-          <select class="fs" id="alloc-sell-contract-sel">
+          <select class="fs" id="alloc-sell-contract-sel" onchange="onSellContractChange()">
             <option value="">— Select —</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Sales Order</div>
+          <select class="fs" id="alloc-sell-order-sel">
+            <option value="">— Select Sales Order —</option>
           </select>
         </div>
         <div class="f"><div class="fl">Fixation Lot Ref</div>

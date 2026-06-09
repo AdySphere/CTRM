@@ -49,6 +49,7 @@ module.exports.dealsRouter = dealsRouter;
 const logRouter = require('express').Router();
 
 logRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query(`
       SELECT l.*, pol.name as pol_name, pod.name as pod_name,
@@ -154,6 +155,7 @@ module.exports.conRouter = conRouter;
 const fixRouter = require('express').Router();
 
 fixRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { deal_id } = req.query;
     let sql = `SELECT * FROM fixation_lots WHERE 1=1`;
@@ -186,6 +188,7 @@ module.exports.fixRouter = fixRouter;
 const hedgeRouter = require('express').Router();
 
 hedgeRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { deal_id } = req.query;
     let sql = `SELECT h.*, c.name as commodity_name FROM hedges h
@@ -228,6 +231,7 @@ module.exports.hedgeRouter = hedgeRouter;
 const allocRouter = require('express').Router();
 
 allocRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query(`
       SELECT a.*,
@@ -247,6 +251,7 @@ allocRouter.get('/', async (req, res) => {
 });
 
 allocRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { container_id, buy_contract_id, sell_contract_id, sell_order_id,
       payable_weight_mt, allocation_pct = 100, fixation_lot_ref } = req.body;
@@ -274,3 +279,38 @@ allocRouter.post('/', async (req, res) => {
 });
 
 module.exports.allocRouter = allocRouter;
+
+// ── ORDERS ────────────────────────────────────────────────────────
+const ordersRouter = require('express').Router();
+
+ordersRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { type, contract_id } = req.query;
+    let sql = `SELECT o.*, c.contract_no, cp.name as counterparty_name
+               FROM orders o
+               LEFT JOIN contracts c ON c.id = o.contract_id
+               LEFT JOIN counterparties cp ON cp.id = c.counterparty_id
+               WHERE 1=1`;
+    const params = [];
+    if (type) { params.push(type); sql += ` AND o.order_type=$${params.length}`; }
+    if (contract_id) { params.push(contract_id); sql += ` AND o.contract_id=$${params.length}`; }
+    sql += ' ORDER BY o.order_date DESC';
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+ordersRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { order_no, order_type, contract_id, deal_id, order_date, qty_mt, erp_ref } = req.body;
+    const result = await query(`
+      INSERT INTO orders (order_no, order_type, contract_id, deal_id, order_date, qty_mt, erp_ref)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
+    `, [order_no, order_type, contract_id, deal_id, order_date, qty_mt, erp_ref]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.ordersRouter = ordersRouter;
