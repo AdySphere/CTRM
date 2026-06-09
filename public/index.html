@@ -4589,12 +4589,18 @@ async function onSellContractChange() {
       ? API_BASE + '/api/orders?type=SO&contract_id=' + contractId
       : API_BASE + '/api/orders?type=SO';
     const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const orders = Array.isArray(data.data) ? data.data : [];
-    soSel.innerHTML = '<option value="">— Select Sales Order —</option>' +
-      orders.map(o => `<option value="${o.id}">${o.order_no} · ${o.counterparty_name || ''} · ${o.qty_mt} MT</option>`).join('');
+    if (!orders.length) {
+      soSel.innerHTML = '<option value="">— No sales orders on this contract —</option>';
+    } else {
+      soSel.innerHTML = '<option value="">— Select Sales Order —</option>' +
+        orders.map(o => `<option value="${o.id}">${o.order_no} · ${o.counterparty_name || ''} · ${o.qty_mt} MT</option>`).join('');
+    }
   } catch(e) {
-    soSel.innerHTML = '<option value="">— Error loading orders —</option>';
+    soSel.innerHTML = '<option value="">— Could not load orders —</option>';
+    console.warn('onSellContractChange error:', e.message);
   }
 }
 

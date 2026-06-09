@@ -210,6 +210,26 @@ async function seed() {
   `);
   console.log('✓ fixation_lots seeded');
 
+  // ── ORDERS (PO + SO) ─────────────────────────────────────────────
+  await query(`
+    INSERT INTO orders (order_no, order_type, contract_id, deal_id, order_date, qty_mt, status, erp_ref)
+    VALUES
+      ('PO-2026-001', 'PO',
+        (SELECT id FROM contracts WHERE contract_no='PC-2026-001'),
+        (SELECT id FROM deals WHERE deal_no='DEAL123'),
+        '2026-03-25', 100.00, 'CONFIRMED', 'ERP-PO-8801'),
+      ('SO-10042', 'SO',
+        (SELECT id FROM contracts WHERE contract_no='SC-2026-001'),
+        (SELECT id FROM deals WHERE deal_no='DEAL456'),
+        '2026-03-25', 56.25, 'CONFIRMED', 'ERP-SO-10042'),
+      ('SO-10043', 'SO',
+        (SELECT id FROM contracts WHERE contract_no='SC-2026-001'),
+        (SELECT id FROM deals WHERE deal_no='DEAL123'),
+        '2026-04-01', 43.75, 'CONFIRMED', 'ERP-SO-10043')
+    ON CONFLICT (order_no) DO NOTHING;
+  `);
+  console.log('✓ orders seeded (PO-2026-001, SO-10042, SO-10043)');
+
   // ── HEDGES ───────────────────────────────────────────────────────
   await query(`
     INSERT INTO hedges (req_ref, deal_id, trade_date, hedge_type, commodity_code,
