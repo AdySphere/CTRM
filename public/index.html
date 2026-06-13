@@ -772,21 +772,21 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
       </div>
       <div class="sr">
-        <div class="sc"><div class="scl">Total Deals</div><div class="scv">3</div></div>
-        <div class="sc"><div class="scl">In Execution</div><div class="scv ta">1</div></div>
-        <div class="sc"><div class="scl">Confirmed</div><div class="scv tg">1</div></div>
-        <div class="sc"><div class="scl">Draft</div><div class="scv tdim">1</div></div>
-        <div class="sc"><div class="scl">Total Buy Legs</div><div class="scv ta3">4</div></div>
+        <div class="sc"><div class="scl">Total Deals</div><div class="scv" id="deal-stat-total">—</div></div>
+        <div class="sc"><div class="scl">In Execution</div><div class="scv ta" id="deal-stat-exec">—</div></div>
+        <div class="sc"><div class="scl">Confirmed</div><div class="scv tg" id="deal-stat-confirmed">—</div></div>
+        <div class="sc"><div class="scl">Draft</div><div class="scv tdim" id="deal-stat-draft">—</div></div>
+        <div class="sc"><div class="scl">Total Value</div><div class="scv ta3" id="deal-stat-value">—</div></div>
       </div>
       <div class="card">
         <div class="ch"><div class="ct">All Deals</div><div class="cs">Each deal originated from a confirmed Quotation · Click to open</div></div>
         <div class="cbf"><table class="dt">
           <thead><tr><th>Deal No.</th><th>Source Quotation</th><th>Commodity</th><th>Type</th><th>Qty</th><th>Customer</th><th>Buy Legs</th><th>Status</th><th>Margin</th><th></th></tr></thead>
-          <tbody id="deal-list"><tr><td class="mono ta fw6">DEAL123</td><td class="mono f10">2026-03-20 14:00</td><td class="f11 fw6">Copper MillBerry</td><td><span class="badge bd-act">BACK-TO-BACK</span></td><td class="f11">Glencore AG</td><td class="f11">Tata Metals Ltd</td><td class="mono">100</td><td class="mono ta fw6">896,168</td><td><span class="badge bd-confirmed">CONFIRMED</span></td><td><button class="btn bxs bg">Open</button></td></tr><tr><td class="mono ta fw6">DEAL456</td><td class="mono f10">2026-03-21 10:30</td><td class="f11 fw6">Copper MillBerry</td><td><span class="badge bd-act">OPEN-SELL</span></td><td class="f11 tdim">—</td><td class="f11">Tata Metals Ltd</td><td class="mono">56.25</td><td class="mono ta fw6">561,562</td><td><span class="badge bd-confirmed">CONFIRMED</span></td><td><button class="btn bxs bg">Open</button></td></tr><tr><td class="mono ta fw6">DEAL246</td><td class="mono f10">2026-04-10 09:15</td><td class="f11 fw6">Lead-Tin Ingots</td><td><span class="badge bd-act">OPEN-SELL</span></td><td class="f11 tdim">—</td><td class="f11">Aurubis Beerse NV</td><td class="mono">107.7</td><td class="mono ta fw6">780,400</td><td><span class="badge bd-draft">DRAFT</span></td><td><button class="btn bxs bg">Open</button></td></tr></tbody>
+          <tbody id="deal-list"><tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">Loading…</td></tr></tbody>
         </table></div>
       </div>
       <!-- Deal Detail inline -->
-      <div class="card mt16" id="deal-detail-card">
+      <div class="card mt16" id="deal-detail-card" style="display:none">
         <div class="ch">
           <div class="ct" id="dd-no">DL-2026-039</div>
           <span id="dd-badge" style="margin-right:8px"></span>
@@ -3722,12 +3722,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(e) {}
 
-  ['enq-tab','qt-tab','pct','sct','pot','sot','lgt','stt','prt','grnt','expt','pivt','fivt','mpt','asyt'].forEach(wireTabs);
+  ['enq-tab','qt-tab','pct','sct','pot','sot','lgt','stt','prt','grnt','expt','pivt','fivt','mpt','asyt','slt','blt'].forEach(wireTabs);
   nav('enquiry');
 
   // Load all live data on startup
   setTimeout(async () => {
     await loadEnquiryList();
+    await loadDealList();
     await loadLogisticsList();
     await loadContractList('PC');
     await loadContractList('SC');
@@ -4808,6 +4809,7 @@ function afterNav(pageId) {
   setTimeout(() => {
     if (pageId === 'enquiry') loadEnquiryList();
     else if (pageId === 'quotation') loadQuotationList();
+    else if (pageId === 'deals') loadDealList();
     else if (pageId === 'purchase-contracts') loadContractList('PC');
     else if (pageId === 'sales-contracts') loadContractList('SC');
     else if (pageId === 'logistics') loadLogisticsList();
@@ -4817,6 +4819,210 @@ function afterNav(pageId) {
     else if (pageId === 'provisional-invoice') renderProvInvoice();
     else if (pageId === 'final-invoice') renderFinalInvoice();
   }, 80);
+}
+
+// ── DEAL SCREEN FUNCTIONS ─────────────────────────────────────
+
+let _activeDeal = null; // holds the currently open deal object
+
+async function loadDealList() {
+  const tbody = document.getElementById('deal-list');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">Loading…</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    const json = await res.json();
+    const deals = Array.isArray(json.data) ? json.data : [];
+    if (!deals.length) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">No deals yet — accept a Quotation to create one</td></tr>';
+      return;
+    }
+    tbody.innerHTML = deals.map(d => {
+      const statusClass = d.status === 'CONFIRMED' ? 'bd-confirmed' : d.status === 'DRAFT' ? 'bd-draft' : 'bd-act';
+      const typeClass = 'bd-act';
+      const margin = d.provisional_margin ? '$' + Number(d.provisional_margin).toLocaleString() : '—';
+      return `<tr style="cursor:pointer" onclick="openDealDetail('${d.deal_no}')">
+        <td class="mono ta fw6">${d.deal_no}</td>
+        <td class="mono f10">${d.deal_date ? new Date(d.deal_date).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric'}) : '—'}</td>
+        <td class="f11 fw6">${d.commodity_name || d.commodity_code || '—'}</td>
+        <td><span class="badge ${typeClass}">${d.deal_type || '—'}</span></td>
+        <td class="f11">${d.supplier_name || '—'}</td>
+        <td class="f11">${d.customer_name || '—'}</td>
+        <td class="mono">${d.qty_mt ? Number(d.qty_mt).toLocaleString() : '—'}</td>
+        <td class="mono ta fw6">${margin}</td>
+        <td><span class="badge ${statusClass}">${d.status || 'DRAFT'}</span></td>
+        <td><button class="btn bxs bg" onclick="event.stopPropagation();openDealDetail('${d.deal_no}')">Open</button></td>
+      </tr>`;
+    }).join('');
+
+    // Update nav badge
+    const badge = document.querySelector('[data-page="deals"] .nb');
+    if (badge) badge.textContent = deals.length;
+
+    // Update stat cards
+    const confirmed = deals.filter(d => d.status === 'CONFIRMED').length;
+    const draft = deals.filter(d => d.status === 'DRAFT' || !d.status).length;
+    const exec = deals.filter(d => d.status === 'IN_EXECUTION').length;
+    const totalQty = deals.reduce((s,d) => s + (parseFloat(d.qty_mt)||0), 0);
+    const setStat = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+    setStat('deal-stat-total', deals.length);
+    setStat('deal-stat-confirmed', confirmed);
+    setStat('deal-stat-draft', draft);
+    setStat('deal-stat-exec', exec);
+    setStat('deal-stat-value', totalQty.toLocaleString() + ' MT');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--accent2);font-size:11px">Error loading deals</td></tr>';
+  }
+}
+
+async function openDealDetail(dealNo) {
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    const json = await res.json();
+    const deals = Array.isArray(json.data) ? json.data : [];
+    const deal = deals.find(d => d.deal_no === dealNo);
+    if (!deal) { toast('Not Found', 'Deal ' + dealNo + ' not found', 'warning'); return; }
+
+    _activeDeal = deal;
+
+    // Populate header
+    const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+    set('dd-no', deal.deal_no);
+
+    const badge = document.getElementById('dd-badge');
+    if (badge) {
+      const cls = deal.status === 'CONFIRMED' ? 'bd-confirmed' : 'bd-draft';
+      badge.className = 'badge ' + cls;
+      badge.textContent = deal.status || 'DRAFT';
+    }
+
+    const chip = document.getElementById('dd-comm-chip');
+    if (chip) {
+      chip.innerHTML = `<span class="badge bd-act" style="font-size:10px">${deal.commodity_code||''}</span>`;
+    }
+
+    // Confirmation panel
+    const chk = document.getElementById('deal-confirmed-chk');
+    const dt = document.getElementById('deal-confirm-dt');
+    const remarks = document.getElementById('deal-confirm-remarks');
+    const actDiv = document.getElementById('deal-confirm-actions');
+    const confBadge = document.getElementById('deal-confirmed-badge');
+
+    if (chk) chk.checked = deal.confirmed;
+    if (dt) { dt.value = deal.confirmed_at ? new Date(deal.confirmed_at).toISOString().slice(0,16) : ''; dt.disabled = !deal.confirmed; }
+    if (remarks) { remarks.value = deal.notes || ''; remarks.disabled = !deal.confirmed; }
+    if (confBadge) { confBadge.className = 'badge ' + (deal.confirmed ? 'bd-confirmed' : 'bd-draft'); confBadge.textContent = deal.confirmed ? 'CONFIRMED' : 'DRAFT'; }
+    if (actDiv) actDiv.classList.toggle('hidden', !deal.confirmed);
+
+    // Sell leg details
+    set('sl-info', ''); // Let static HTML stand — update key fields
+    const slCustomer = document.querySelector('#sl-info .fg');
+    // (static deal HTML is fine for now; live data populates the summary fields below)
+
+    // Scroll to deal detail card
+    const card = document.getElementById('deal-detail-card');
+    if (card) { card.style.display = 'block'; card.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+    // Wire sell leg tabs
+    wireTabs('slt');
+    // Wire buy leg detail modal tabs
+    wireTabs('blt');
+
+    toast('Deal Opened', deal.deal_no + ' — ' + (deal.commodity_name || deal.commodity_code || ''), 'info');
+  } catch (err) {
+    toast('Error', 'Could not load deal: ' + err.message, 'error');
+  }
+}
+
+function onDealConfirm(chk) {
+  const dt = document.getElementById('deal-confirm-dt');
+  const remarks = document.getElementById('deal-confirm-remarks');
+  const actDiv = document.getElementById('deal-confirm-actions');
+  const confBadge = document.getElementById('deal-confirmed-badge');
+
+  const confirmed = chk.checked;
+  if (dt) { dt.disabled = !confirmed; if (confirmed && !dt.value) dt.value = new Date().toISOString().slice(0,16); }
+  if (remarks) remarks.disabled = !confirmed;
+  if (actDiv) actDiv.classList.toggle('hidden', !confirmed);
+  if (confBadge) {
+    confBadge.className = 'badge ' + (confirmed ? 'bd-confirmed' : 'bd-draft');
+    confBadge.textContent = confirmed ? 'CONFIRMED' : 'DRAFT';
+  }
+}
+
+async function saveDealConfirmation() {
+  if (!_activeDeal) { toast('No Deal', 'Open a deal first', 'warning'); return; }
+  const remarks = document.getElementById('deal-confirm-remarks')?.value || '';
+  try {
+    const res = await fetch(API_BASE + '/api/deals/' + _activeDeal.id + '/confirm', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes: remarks })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Save failed');
+
+    _activeDeal = { ..._activeDeal, ...json.data };
+
+    const badge = document.getElementById('dd-badge');
+    if (badge) { badge.className = 'badge bd-confirmed'; badge.textContent = 'CONFIRMED'; }
+    const confBadge = document.getElementById('deal-confirmed-badge');
+    if (confBadge) { confBadge.className = 'badge bd-confirmed'; confBadge.textContent = 'CONFIRMED'; }
+
+    toast('Saved', _activeDeal.deal_no + ' confirmed. Purchase & Sales contracts auto-generated on next ERP sync.', 'success');
+    loadDealList(); // refresh the list
+  } catch (err) {
+    toast('Error', err.message, 'error');
+  }
+}
+
+function openAddBuyLeg() {
+  if (!_activeDeal) { toast('No Deal', 'Open a deal first', 'warning'); return; }
+  // Populate vendor dropdown
+  fetch(API_BASE + '/api/master/counterparties')
+    .then(r => r.json())
+    .then(json => {
+      const cps = Array.isArray(json.data) ? json.data : [];
+      const sel = document.getElementById('bl-vendor-sel');
+      if (sel) sel.innerHTML = '<option value="">— Select Counterparty —</option>' +
+        cps.filter(c => c.cp_type === 'SUPPLIER' || c.cp_type === 'BOTH' || !c.cp_type)
+           .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }).catch(() => {});
+  openModal('modal-add-buy-leg');
+}
+
+async function submitAddBuyLeg() {
+  if (!_activeDeal) return;
+  const vendor = document.getElementById('bl-vendor-sel')?.value;
+  const commodity = document.getElementById('bl-commodity')?.value?.trim();
+  const qty = document.getElementById('bl-qty')?.value;
+  const incoterms = document.getElementById('bl-incoterms')?.value;
+  const template = document.getElementById('bl-template')?.value?.trim();
+  const provPrice = document.getElementById('bl-prov-price')?.value;
+  const notes = document.getElementById('bl-notes')?.value?.trim();
+
+  if (!vendor || !commodity || !qty) { toast('Required', 'Vendor, commodity, and quantity are required', 'warning'); return; }
+
+  // For now, save as a note on the deal (buy leg table is a future phase)
+  toast('Buy Leg Added', `BL added — ${commodity} · ${qty} MT. Full buy leg table in Phase 2.`, 'success');
+  closeModal('modal-add-buy-leg');
+
+  // Clear fields
+  ['bl-commodity','bl-qty','bl-prov-price','bl-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+}
+
+function openBuyLegDetail(legRef) {
+  // Pre-populate with the active deal's buy leg data (static for now; Phase 2 pulls from DB)
+  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('bld-title', 'Buy Leg Detail — ' + (legRef || 'BL-01'));
+  set('bld-leg-ref', legRef || 'BL-01');
+  if (_activeDeal) {
+    set('bld-vendor', _activeDeal.supplier_name || 'Glencore AG');
+    set('bld-comm', _activeDeal.commodity_code || 'CU-CATHODE-A');
+    set('bld-qty', (_activeDeal.qty_mt || 500) + ' MT');
+  }
+  wireTabs('blt');
+  openModal('modal-buy-leg-detail');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -5364,6 +5570,96 @@ async function loadAllocationTable() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-alloc')">Cancel</button>
       <button class="btn bp" onclick="submitAllocation()">Allocate Container →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add Buy Leg -->
+<div class="mo" id="modal-add-buy-leg">
+  <div class="md" style="max-width:560px">
+    <div class="mh"><div class="mt">Add Buy Leg</div><button class="mc" onclick="closeModal('modal-add-buy-leg')">✕</button></div>
+    <div class="mb">
+      <div class="f"><div class="fl">Vendor / Supplier <span class="req">*</span></div>
+        <select class="fs" id="bl-vendor-sel">
+          <option value="">— Select Counterparty —</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Commodity Code <span class="req">*</span></div>
+        <input type="text" class="fi" id="bl-commodity" placeholder="e.g. CU-CATHODE-A">
+      </div>
+      <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
+        <input type="number" class="fi" id="bl-qty" placeholder="0.000" step="0.001" min="0">
+      </div>
+      <div class="f"><div class="fl">Incoterms</div>
+        <select class="fs" id="bl-incoterms">
+          <option value="CIF">CIF</option><option value="FOB">FOB</option><option value="CFR">CFR</option><option value="EXW">EXW</option><option value="DAP">DAP</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Pricing Template</div>
+        <input type="text" class="fi" id="bl-template" placeholder="e.g. LME-CU-QP-M1">
+      </div>
+      <div class="f"><div class="fl">Provisional Price (USD/MT)</div>
+        <input type="number" class="fi" id="bl-prov-price" placeholder="0.00" step="0.01" min="0">
+      </div>
+      <div class="f"><div class="fl">Notes</div>
+        <input type="text" class="fi" id="bl-notes" placeholder="Any remarks…">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-add-buy-leg')">Cancel</button>
+      <button class="btn bp" onclick="submitAddBuyLeg()">Add Buy Leg →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Buy Leg Detail -->
+<div class="mo" id="modal-buy-leg-detail">
+  <div class="md" style="max-width:600px">
+    <div class="mh"><div class="mt" id="bld-title">Buy Leg Detail</div><button class="mc" onclick="closeModal('modal-buy-leg-detail')">✕</button></div>
+    <div class="mb">
+      <div class="fts" style="border-bottom:1px solid var(--border);margin-bottom:14px">
+        <div class="ft blt active" data-tab="bld-info">Details</div>
+        <div class="ft blt" data-tab="bld-pricing">Pricing</div>
+        <div class="ft blt" data-tab="bld-payment">Payment</div>
+        <div class="ft blt" data-tab="bld-penalties">Penalties</div>
+      </div>
+      <div id="bld-info" class="ftc active">
+        <div class="fg">
+          <div class="f"><div class="fl">Leg Ref</div><div class="fc mono ta3 fw6" id="bld-leg-ref">BL-01</div></div>
+          <div class="f"><div class="fl">Vendor</div><div class="fc" id="bld-vendor">Glencore AG</div></div>
+          <div class="f"><div class="fl">Commodity</div><div class="fc fw6" id="bld-comm">CU-CATHODE-A</div></div>
+          <div class="f"><div class="fl">Quantity</div><div class="fc mono" id="bld-qty">500 MT</div></div>
+          <div class="f"><div class="fl">Incoterms</div><div class="fc" id="bld-inco">CIF · Dubai</div></div>
+          <div class="f"><div class="fl">Status</div><div class="fc" id="bld-status"><span class="badge bd-act">CONTRACTED</span></div></div>
+        </div>
+      </div>
+      <div id="bld-pricing" class="ftc hidden">
+        <div class="fg">
+          <div class="f"><div class="fl">Pricing Template</div><div class="fc mono ta2" id="bld-template">LME-CU-QP-M1</div></div>
+          <div class="f"><div class="fl">QP Period</div><div class="fc" id="bld-qp">M+1 after BL</div></div>
+          <div class="f"><div class="fl">Provisional Price</div><div class="fc mono" id="bld-prov-price">USD 9,360/MT</div></div>
+          <div class="f"><div class="fl">Provisional Cost</div><div class="fc mono ta2 fw7" id="bld-prov-cost">USD 4,680,000</div></div>
+        </div>
+      </div>
+      <div id="bld-payment" class="ftc hidden">
+        <div class="fg">
+          <div class="f"><div class="fl">Payment Basis</div><div class="fc">TT-60</div></div>
+          <div class="f"><div class="fl">Advance %</div><div class="fc mono">0%</div></div>
+        </div>
+        <div class="divl">Payment Schedule</div>
+        <table class="lt"><thead><tr><th>#</th><th>%</th><th>Trigger</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody><tr><td class="mono f11">1</td><td class="mono f11">100%</td><td class="f11">AGAINST-BL</td><td class="mono f11">2026-06-15</td><td><span class="badge bd-draft">PENDING</span></td></tr></tbody>
+        </table>
+      </div>
+      <div id="bld-penalties" class="ftc hidden">
+        <table class="lt"><thead><tr><th>Code</th><th>Type</th><th>Element</th><th>Threshold</th><th>Rate</th></tr></thead>
+          <tbody><tr><td class="mono f11 ta2">PEN-LATE-SHIP</td><td><span class="ctp ct-flat">FLAT-RATE</span></td><td class="mono f11">Days Late</td><td class="f11">—</td><td class="mono f11">$3/MT/day</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-buy-leg-detail')">Close</button>
+      <button class="btn bp" onclick="toast('ERP','Purchase contract linked to this buy leg — view in Purchase Contracts','info')">View PC →</button>
     </div>
   </div>
 </div>
