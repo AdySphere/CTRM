@@ -914,7 +914,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-r">
           <button class="btn bs2" onclick="nav('purchase-orders',document.querySelector('[data-page=purchase-orders]'))">View POs →</button>
           <button class="btn bp" onclick="openNewPCContract()">＋ New Contract</button>
-          <button class="print-btn" onclick="printPage('Purchase Contract — PC-2026-001')">🖨 Print</button>
+          <button class="print-btn" onclick="printPCContract()">🖨 Print Contract</button>
           <button class="export-btn" onclick="exportToExcel('pc-detail-card','Purchase_Contract_PC-2026-001')">⬇ Export</button>
         </div>
       </div>
@@ -1268,7 +1268,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-r">
           <button class="btn bs2" onclick="nav('sales-orders',document.querySelector('[data-page=sales-orders]'))">View SOs →</button>
           <button class="btn bp" onclick="openNewSCContract()">＋ New Contract</button>
-          <button class="print-btn" onclick="printPage('Sales Contract — SC-2026-001')">🖨 Print</button>
+          <button class="print-btn" onclick="printSCContract()">🖨 Print Contract</button>
           <button class="export-btn" onclick="exportToExcel('sc-detail-card','Sales_Contract_SC-2026-001')">⬇ Export</button>
         </div>
       </div>
@@ -3134,6 +3134,203 @@ function printPage(title){
   window.print();
 }
 
+function printPCContract() {
+  // Get data from the currently open PC detail card
+  const card = document.getElementById('pc-detail-card');
+  if (!card || card.style.display === 'none') {
+    toast('No Contract Open', 'Open a Purchase Contract first, then print', 'warning');
+    return;
+  }
+  const contractNo = card.querySelector('.ct')?.textContent?.replace(' — Purchase Contract','').trim() || 'PC-DRAFT';
+  const summary = card.querySelector('.cs')?.textContent?.trim() || '';
+  const status = card.querySelector('.badge')?.textContent?.trim() || 'DRAFT';
+
+  // Collect General tab fields
+  const fields = {};
+  card.querySelectorAll('#pc-gen .f').forEach(f => {
+    const label = f.querySelector('.fl')?.textContent?.trim();
+    const val = f.querySelector('.fc,.fv')?.textContent?.trim();
+    if (label && val) fields[label] = val;
+  });
+  card.querySelectorAll('#pc-material .f').forEach(f => {
+    const label = f.querySelector('.fl')?.textContent?.trim();
+    const val = f.querySelector('.fc,.fv,.fi')?.value || f.querySelector('.fc,.fv')?.textContent?.trim();
+    if (label && val) fields[label] = val;
+  });
+  card.querySelectorAll('#pc-price .f').forEach(f => {
+    const label = f.querySelector('.fl')?.textContent?.trim();
+    const val = f.querySelector('.fc,.fv,.fi')?.value || f.querySelector('.fc,.fv')?.textContent?.trim();
+    if (label && val) fields[label] = val;
+  });
+
+  const printWin = window.open('', '_blank', 'width=900,height=700');
+  printWin.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>${contractNo}</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; color: #111; background: #fff; padding: 40px; }
+    .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 20px; }
+    .logo-block .company { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-block .tagline { font-size: 9px; color: #666; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+    .contract-id { text-align: right; }
+    .contract-id .no { font-size: 20px; font-weight: 800; color: #111; }
+    .contract-id .type { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .contract-id .status { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .section { margin-bottom: 18px; }
+    .section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #666; border-bottom: 1px solid #e0e0e0; padding-bottom: 5px; margin-bottom: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 16px; }
+    .field { }
+    .field .label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-bottom: 2px; }
+    .field .value { font-size: 11px; font-weight: 600; color: #111; }
+    .field .value.mono { font-family: 'Courier New', monospace; }
+    table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    th { background: #f5f5f5; font-weight: 700; text-transform: uppercase; font-size: 8px; letter-spacing: 0.8px; padding: 6px 8px; text-align: left; border: 1px solid #e0e0e0; }
+    td { padding: 6px 8px; border: 1px solid #e0e0e0; vertical-align: top; }
+    .highlight { background: #f8f9fa; }
+    .signature-block { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+    .sig { border-top: 1px solid #111; padding-top: 8px; }
+    .sig .role { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #666; }
+    .sig .name { font-size: 11px; font-weight: 700; margin-top: 4px; }
+    .footer { margin-top: 30px; padding-top: 10px; border-top: 1px solid #e0e0e0; font-size: 8px; color: #999; display:flex; justify-content:space-between; }
+    .notice { margin-top: 16px; padding: 10px 14px; background: #fffbf0; border: 1px solid #ffe58f; border-radius: 4px; font-size: 9px; color: #664d00; }
+    @media print {
+      body { padding: 20px; }
+      button { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div style="text-align:right;margin-bottom:12px">
+    <button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600">🖨 Print / Save PDF</button>
+  </div>
+  <div class="header">
+    <div class="logo-block">
+      <div class="company">Trading Company DMCC</div>
+      <div class="tagline">Commodity Trading · Dubai, UAE</div>
+      <div style="margin-top:8px;font-size:10px;color:#444">
+        DMCC Business Centre · Jumeirah Lakes Towers · Dubai, UAE<br>
+        Tel: +971 4 XXX XXXX · trade@company.ae
+      </div>
+    </div>
+    <div class="contract-id">
+      <div class="type">Purchase Contract</div>
+      <div class="no">${contractNo}</div>
+      <div style="margin-top:6px"><span class="status">${status}</span></div>
+      <div style="margin-top:6px;font-size:9px;color:#666">Date: ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Parties</div>
+    <div class="grid-2">
+      <div class="field"><div class="label">Buyer (We)</div><div class="value">Trading Company DMCC</div></div>
+      <div class="field"><div class="label">Seller / Vendor</div><div class="value">${fields['Vendor'] || fields['Counterparty'] || summary.split('·')[1]?.trim() || '—'}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Commodity & Quantity</div>
+    <div class="grid">
+      <div class="field"><div class="label">Commodity</div><div class="value">${fields['Commodity'] || summary.split('·')[2]?.trim() || '—'}</div></div>
+      <div class="field"><div class="label">Quantity</div><div class="value mono">${fields['Quantity'] || '—'}</div></div>
+      <div class="field"><div class="label">Tolerance</div><div class="value mono">${fields['Tolerance'] || '± 5% Seller's Option'}</div></div>
+      <div class="field"><div class="label">Grade / Spec</div><div class="value">${fields['Grade'] || fields['Specification'] || '—'}</div></div>
+      <div class="field"><div class="label">Incoterms</div><div class="value">${fields['Incoterms'] || '—'}</div></div>
+      <div class="field"><div class="label">Port of Loading</div><div class="value">${fields['Port of Loading'] || fields['POL'] || '—'}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Pricing</div>
+    <div class="grid">
+      <div class="field"><div class="label">Pricing Basis</div><div class="value">${fields['Pricing Formula'] || fields['Pricing Basis'] || fields['Template'] || '—'}</div></div>
+      <div class="field"><div class="label">QP Period</div><div class="value">${fields['QP Period'] || '—'}</div></div>
+      <div class="field"><div class="label">Provisional Price</div><div class="value mono">${fields['Provisional Price'] || '—'}</div></div>
+      <div class="field"><div class="label">Provisional Value</div><div class="value mono">${fields['Provisional Value'] || fields['Contract Value'] || '—'}</div></div>
+      <div class="field"><div class="label">Currency</div><div class="value">USD</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Payment Terms</div>
+    <div class="grid">
+      <div class="field"><div class="label">Payment Basis</div><div class="value">${fields['Payment Basis'] || fields['Payment Terms'] || '—'}</div></div>
+      <div class="field"><div class="label">Provisional %</div><div class="value mono">${fields['Provisional %'] || '90%'}</div></div>
+      <div class="field"><div class="label">Final Settlement</div><div class="value">${fields['Final Settlement'] || 'After QP close'}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Shipment</div>
+    <div class="grid">
+      <div class="field"><div class="label">Shipment Period</div><div class="value mono">${fields['Shipment Period'] || fields['Shipment Window'] || '—'}</div></div>
+      <div class="field"><div class="label">Port of Discharge</div><div class="value">${fields['Port of Discharge'] || fields['POD'] || '—'}</div></div>
+      <div class="field"><div class="label">Vessel / Carrier</div><div class="value">${fields['Vessel'] || 'Seller's Choice'}</div></div>
+    </div>
+  </div>
+
+  <div class="notice">
+    This contract is subject to the Standard Terms and Conditions of Trading Company DMCC. In case of any discrepancy between this contract and any other document, this contract shall prevail. This document constitutes the entire agreement between the parties with respect to the subject matter hereof.
+  </div>
+
+  <div class="signature-block">
+    <div class="sig">
+      <div class="role">For and on behalf of Buyer</div>
+      <div class="name">Trading Company DMCC</div>
+      <div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>
+    </div>
+    <div class="sig">
+      <div class="role">For and on behalf of Seller</div>
+      <div class="name">${fields['Vendor'] || fields['Counterparty'] || '—'}</div>
+      <div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>CTRM Platform · Generated ${new Date().toLocaleString('en-GB')}</span>
+    <span>${contractNo} · Page 1 of 1</span>
+  </div>
+</body>
+</html>`);
+  printWin.document.close();
+}
+
+function printSCContract() {
+  const card = document.getElementById('sc-detail-card');
+  if (!card || card.style.display === 'none') {
+    toast('No Contract Open', 'Open a Sales Contract first, then print', 'warning');
+    return;
+  }
+  // Reuse same print logic with SC context
+  const contractNo = card.querySelector('.ct')?.textContent?.replace(' — Sales Contract','').trim() || 'SC-DRAFT';
+  toast('Print', contractNo + ' — opening print view', 'info');
+  // For SC, swap buyer/seller roles
+  const printWin = window.open('', '_blank', 'width=900,height=700');
+  const summary = card.querySelector('.cs')?.textContent?.trim() || '';
+  const status = card.querySelector('.badge')?.textContent?.trim() || 'DRAFT';
+  const fields = {};
+  card.querySelectorAll('.ftc .f').forEach(f => {
+    const label = f.querySelector('.fl')?.textContent?.trim();
+    const val = f.querySelector('.fc,.fv')?.textContent?.trim() || f.querySelector('.fi')?.value;
+    if (label && val) fields[label] = val;
+  });
+  printWin.document.write(`<!DOCTYPE html><html><head><title>${contractNo}</title>
+  <style>* { margin:0; padding:0; box-sizing:border-box; } body { font-family: Arial, sans-serif; font-size: 11px; color: #111; padding: 40px; } .header { display:flex; justify-content:space-between; border-bottom: 2px solid #111; padding-bottom: 16px; margin-bottom: 20px; } .company { font-size: 18px; font-weight: 800; } .no { font-size: 20px; font-weight: 800; } .section { margin-bottom: 18px; } .section-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #666; border-bottom: 1px solid #e0e0e0; padding-bottom: 5px; margin-bottom: 10px; } .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 16px; } .label { font-size: 8px; text-transform: uppercase; color: #888; margin-bottom: 2px; } .value { font-size: 11px; font-weight: 600; } .signature-block { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; } .sig { border-top: 1px solid #111; padding-top: 8px; } @media print { button { display: none !important; } }</style>
+  </head><body>
+  <div style="text-align:right;margin-bottom:12px"><button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600">🖨 Print / Save PDF</button></div>
+  <div class="header"><div><div class="company">Trading Company DMCC</div><div style="font-size:10px;color:#666;margin-top:4px">Commodity Trading · Dubai, UAE</div></div><div style="text-align:right"><div style="font-size:10px;color:#666">Sales Contract</div><div class="no">${contractNo}</div><div style="font-size:9px;color:#666;margin-top:4px">${status} · ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div></div></div>
+  <div class="section"><div class="section-title">Parties</div><div class="grid"><div><div class="label">Seller (We)</div><div class="value">Trading Company DMCC</div></div><div><div class="label">Buyer / Customer</div><div class="value">${fields['Customer'] || summary.split('·')[1]?.trim() || '—'}</div></div></div></div>
+  <div class="section"><div class="section-title">Commodity & Quantity</div><div class="grid"><div><div class="label">Commodity</div><div class="value">${fields['Commodity'] || '—'}</div></div><div><div class="label">Quantity</div><div class="value">${fields['Quantity'] || '—'}</div></div><div><div class="label">Incoterms</div><div class="value">${fields['Incoterms'] || '—'}</div></div></div></div>
+  <div class="section"><div class="section-title">Pricing & Payment</div><div class="grid"><div><div class="label">Pricing Basis</div><div class="value">${fields['Pricing Formula'] || fields['Template'] || '—'}</div></div><div><div class="label">Payment Basis</div><div class="value">${fields['Payment Basis'] || '—'}</div></div><div><div class="label">Provisional %</div><div class="value">${fields['Provisional %'] || '90%'}</div></div></div></div>
+  <div class="signature-block"><div class="sig"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666">For and on behalf of Seller</div><div style="font-size:11px;font-weight:700;margin-top:4px">Trading Company DMCC</div><div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div><div class="sig"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666">For and on behalf of Buyer</div><div style="font-size:11px;font-weight:700;margin-top:4px">${fields['Customer'] || '—'}</div><div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div></div>
+  <div style="margin-top:20px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:8px;color:#999;display:flex;justify-content:space-between"><span>CTRM Platform · Generated ${new Date().toLocaleString('en-GB')}</span><span>${contractNo} · Page 1 of 1</span></div>
+  </body></html>`);
+  printWin.document.close();
+}
+
 
 
 
@@ -4418,23 +4615,30 @@ function openNewSCContract(){
 }
 async function loadNewContractDropdowns() {
   try {
-    const [cpRes, dealRes] = await Promise.all([
+    const [cpRes, dealRes, cmRes] = await Promise.all([
       fetch(API_BASE + '/api/master/counterparties'),
-      fetch(API_BASE + '/api/deals')
+      fetch(API_BASE + '/api/deals'),
+      fetch(API_BASE + '/api/master/commodities')
     ]);
     const cps = (await cpRes.json()).data || [];
     const deals = (await dealRes.json()).data || [];
+    const cms = (await cmRes.json()).data || [];
     const cpSel = document.getElementById('nc-counterparty-sel');
     const dealSel = document.getElementById('nc-deal-sel');
+    const cmSel = document.getElementById('nc-commodity');
+    const dtFld = document.getElementById('nc-contract-date');
     if (cpSel) cpSel.innerHTML = '<option value="">— Select —</option>' + cps.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
     if (dealSel) dealSel.innerHTML = '<option value="">— None —</option>' + deals.map(d=>`<option value="${d.id}">${d.deal_no}</option>`).join('');
+    if (cmSel) cmSel.innerHTML = '<option value="">— Select Commodity —</option>' + cms.map(c=>`<option value="${c.code}">${c.name || c.code}</option>`).join('');
+    if (dtFld && !dtFld.value) dtFld.value = new Date().toISOString().split('T')[0];
   } catch(e) { console.error('Dropdown load error:', e); }
 }
 async function submitNewContract() {
   const type = document.getElementById('new-contract-type')?.value;
   const dealId = document.getElementById('nc-deal-sel')?.value;
   const cpId = document.getElementById('nc-counterparty-sel')?.value;
-  const commCode = document.getElementById('nc-commodity')?.value?.trim();
+  const commCode = document.getElementById('nc-commodity')?.value;
+  const contractDate = document.getElementById('nc-contract-date')?.value;
   const qty = document.getElementById('nc-qty')?.value;
   const incoterms = document.getElementById('nc-incoterms')?.value;
   const pricing = document.getElementById('nc-pricing')?.value?.trim();
@@ -5803,8 +6007,11 @@ async function loadAllocationTable() {
       <div class="f"><div class="fl">Linked Deal</div>
         <select class="fs" id="nc-deal-sel"><option value="">— None —</option></select>
       </div>
-      <div class="f"><div class="fl">Commodity Code <span class="req">*</span></div>
-        <input type="text" class="fi" id="nc-commodity" placeholder="e.g. CU-MILLBERRY">
+      <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
+        <select class="fs" id="nc-commodity"><option value="">— Select Commodity —</option></select>
+      </div>
+      <div class="f"><div class="fl">Contract Date</div>
+        <input type="date" class="fi" id="nc-contract-date">
       </div>
       <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
         <input type="number" class="fi" id="nc-qty" placeholder="0.000" step="0.001" min="0">

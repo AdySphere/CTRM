@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
         d.deal_no
       FROM contracts c
       JOIN counterparties cp ON cp.id = c.counterparty_id
-      JOIN commodities cm ON cm.code = c.commodity_code
+      LEFT JOIN commodities cm ON cm.code = c.commodity_code
       LEFT JOIN locations pol ON pol.id = c.pol_id
       LEFT JOIN locations pod ON pod.id = c.pod_id
       LEFT JOIN deals d ON d.id = c.deal_id
@@ -63,13 +63,19 @@ router.post('/', async (req, res) => {
       const num = String(parseInt(countRes.rows[0].count) + 1).padStart(3, '0');
       contract_no = prefix + '-' + new Date().getFullYear() + '-' + num;
     }
+    // Validate commodity_code exists (or set null if free-text)
+    let validCommodity = null;
+    if (commodity_code) {
+      const cmRes = await query(`SELECT code FROM commodities WHERE code=$1`, [commodity_code]);
+      validCommodity = cmRes.rows.length ? commodity_code : null;
+    }
     const result = await query(`
       INSERT INTO contracts (contract_no, contract_date, contract_type, deal_id, commodity_code,
-        counterparty_id, qty_mt, incoterms, payment_pct, currency, notes, status)
-      VALUES ($1,COALESCE($2::date,CURRENT_DATE),$3,$4,$5,$6,$7,$8,$9,$10,$11,'DRAFT')
+        counterparty_id, qty_mt, incoterms, payment_pct, currency, pricing_formula, notes, status)
+      VALUES ($1,COALESCE($2::date,CURRENT_DATE),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'DRAFT')
       RETURNING *
-    `, [contract_no, contract_date||null, contract_type, deal_id||null, commodity_code,
-        counterparty_id, qty_mt, incoterms, payment_pct, currency, notes]);
+    `, [contract_no, contract_date||null, contract_type, deal_id||null, validCommodity,
+        counterparty_id, qty_mt, incoterms, payment_pct, currency, pricing_formula||null, notes]);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

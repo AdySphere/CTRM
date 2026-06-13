@@ -259,6 +259,7 @@ async function setupDatabase() {
       payment_term_code   VARCHAR(20),
       payment_pct         DECIMAL(5,2) DEFAULT 90,  -- provisional payment %
       currency            VARCHAR(5) DEFAULT 'USD',
+      pricing_formula     TEXT,
       status              VARCHAR(20) DEFAULT 'DRAFT',
       erp_ref             VARCHAR(50),
       notes               TEXT,
@@ -266,6 +267,10 @@ async function setupDatabase() {
       updated_at          TIMESTAMPTZ DEFAULT NOW()
     );
   `);
+  // Add pricing_formula column if it doesn't exist (migration)
+  try {
+    await query(`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS pricing_formula TEXT`);
+  } catch(e) {}
   console.log('✓ contracts');
 
   await query(`
