@@ -492,3 +492,62 @@ quotationsRouter.post('/:id/accept', async (req, res) => {
 });
 
 module.exports.quotationsRouter = quotationsRouter;
+
+// ── BUY LEGS ──────────────────────────────────────────────────────
+const buyLegsRouter = require('express').Router();
+
+buyLegsRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { deal_id } = req.query;
+    let sql = `
+      SELECT bl.*, cp.name as supplier_name
+      FROM buy_legs bl
+      LEFT JOIN counterparties cp ON cp.id = bl.supplier_id
+      WHERE 1=1
+    `;
+    const params = [];
+    if (deal_id) { params.push(deal_id); sql += ` AND bl.deal_id=$${params.length}`; }
+    sql += ' ORDER BY bl.created_at ASC';
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+buyLegsRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { deal_id, supplier_id, commodity_code, qty_mt, incoterms,
+      pricing_template, provisional_price, notes } = req.body;
+    if (!deal_id || !commodity_code || !qty_mt) {
+      return res.status(400).json({ error: 'deal_id, commodity_code and qty_mt required' });
+    }
+    // Auto-generate leg_ref
+    const countRes = await query(`SELECT COUNT(*) FROM buy_legs WHERE deal_id=$1`, [deal_id]);
+    const legNo = String(parseInt(countRes.rows[0].count) + 1).padStart(2, '0');
+    const legRef = `BL-${legNo}`;
+    const provCost = provisional_price && qty_mt ? (provisional_price * qty_mt).toFixed(2) : null;
+
+    const result = await query(`
+      INSERT INTO buy_legs (deal_id, leg_ref, supplier_id, commodity_code, qty_mt,
+        incoterms, pricing_template, provisional_price, provisional_cost, notes, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'DRAFT') RETURNING *
+    `, [deal_id, legRef, supplier_id||null, commodity_code, qty_mt,
+        incoterms||'CIF', pricing_template||null, provisional_price||null, provCost, notes||null]);
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+buyLegsRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const fields = req.body;
+    const sets = Object.keys(fields).map((k, i) => `${k}=$${i+2}`).join(',');
+    const result = await query(`UPDATE buy_legs SET ${sets} WHERE id=$1 RETURNING *`,
+      [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.buyLegsRouter = buyLegsRouter;

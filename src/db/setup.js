@@ -218,6 +218,26 @@ async function setupDatabase() {
   `);
   console.log('✓ deals');
 
+  // ── BUY LEGS ────────────────────────────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS buy_legs (
+      id              SERIAL PRIMARY KEY,
+      deal_id         INT NOT NULL REFERENCES deals(id),
+      leg_ref         VARCHAR(20),
+      supplier_id     INT REFERENCES counterparties(id),
+      commodity_code  VARCHAR(20),
+      qty_mt          DECIMAL(12,3),
+      incoterms       VARCHAR(20),
+      pricing_template VARCHAR(50),
+      provisional_price DECIMAL(14,4),
+      provisional_cost  DECIMAL(16,2),
+      status          VARCHAR(20) DEFAULT 'DRAFT',
+      notes           TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  console.log('✓ buy_legs');
+
   // ── CONTRACTS ───────────────────────────────────────────────────
 
   await query(`

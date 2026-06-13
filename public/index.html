@@ -4927,6 +4927,8 @@ async function openDealDetail(dealNo) {
     wireTabs('slt');
     // Wire buy leg detail modal tabs
     wireTabs('blt');
+    // Load buy legs from DB
+    await loadBuyLegs(deal.id);
 
     toast('Deal Opened', deal.deal_no + ' — ' + (deal.commodity_name || deal.commodity_code || ''), 'info');
   } catch (err) {
@@ -4991,6 +4993,39 @@ function openAddBuyLeg() {
   openModal('modal-add-buy-leg');
 }
 
+async function loadBuyLegs(dealId) {
+  const tbody = document.getElementById('buy-legs-tbody');
+  const title = document.getElementById('buy-legs-title');
+  if (!tbody || !dealId) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/buy-legs?deal_id=' + dealId);
+    const json = await res.json();
+    const legs = Array.isArray(json.data) ? json.data : [];
+    if (title) title.textContent = 'Buy Legs (' + legs.length + ')';
+    if (!legs.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No buy legs yet — click + Leg to add one</td></tr>';
+      return;
+    }
+    tbody.innerHTML = legs.map(bl => {
+      const cost = bl.provisional_cost ? '$' + Number(bl.provisional_cost).toLocaleString() : '—';
+      const statusCls = bl.status === 'CONTRACTED' ? 'bd-confirmed' : bl.status === 'DRAFT' ? 'bd-draft' : 'bd-act';
+      return `<tr>
+        <td class="mono f11 ta3">${bl.leg_ref || '—'}</td>
+        <td class="f11">${bl.supplier_name || '—'}</td>
+        <td class="f11">${bl.commodity_code || '—'}</td>
+        <td class="mono f11">${bl.qty_mt ? Number(bl.qty_mt).toLocaleString() + ' MT' : '—'}</td>
+        <td class="mono f11">${bl.pricing_template || '—'}</td>
+        <td class="mono f11 ta2">${cost}</td>
+        <td><span class="badge ${statusCls}">${bl.status || 'DRAFT'}</span></td>
+        <td><button class="btn bxs bg" onclick="openBuyLegDetail('${bl.leg_ref}','${bl.id}')">Open</button></td>
+      </tr>`;
+    }).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--accent2);font-size:11px">Error loading buy legs</td></tr>';
+  }
+}
+
 async function submitAddBuyLeg() {
   if (!_activeDeal) return;
   const vendor = document.getElementById('bl-vendor-sel')?.value;
@@ -5001,14 +5036,33 @@ async function submitAddBuyLeg() {
   const provPrice = document.getElementById('bl-prov-price')?.value;
   const notes = document.getElementById('bl-notes')?.value?.trim();
 
-  if (!vendor || !commodity || !qty) { toast('Required', 'Vendor, commodity, and quantity are required', 'warning'); return; }
+  if (!commodity || !qty) { toast('Required', 'Commodity and quantity are required', 'warning'); return; }
 
-  // For now, save as a note on the deal (buy leg table is a future phase)
-  toast('Buy Leg Added', `BL added — ${commodity} · ${qty} MT. Full buy leg table in Phase 2.`, 'success');
-  closeModal('modal-add-buy-leg');
+  try {
+    const res = await fetch(API_BASE + '/api/buy-legs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deal_id: _activeDeal.id,
+        supplier_id: vendor || null,
+        commodity_code: commodity,
+        qty_mt: parseFloat(qty),
+        incoterms: incoterms || 'CIF',
+        pricing_template: template || null,
+        provisional_price: provPrice ? parseFloat(provPrice) : null,
+        notes: notes || null
+      })
+    });
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error || 'Save failed');
 
-  // Clear fields
-  ['bl-commodity','bl-qty','bl-prov-price','bl-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    toast('Buy Leg Added', json.data.leg_ref + ' — ' + commodity + ' · ' + qty + ' MT saved', 'success');
+    closeModal('modal-add-buy-leg');
+    ['bl-commodity','bl-qty','bl-prov-price','bl-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    await loadBuyLegs(_activeDeal.id);
+  } catch (err) {
+    toast('Error', err.message, 'error');
+  }
 }
 
 function openBuyLegDetail(legRef) {
