@@ -3078,15 +3078,18 @@ function wireTabs(cls){
   document.querySelectorAll('.ft.'+cls).forEach(tab=>{
     tab.onclick=function(){
       const id=this.dataset.tab;
-      document.querySelectorAll('.ft.'+cls).forEach(t=>t.classList.remove('active'));
-      this.classList.add('active');
-      // find sibling ftc elements - look at parent's siblings
-      const parent=this.closest('.card,.page');
+      // Only deactivate tabs within the same parent container, not all tabs of this class
+      const parent=this.closest('.card,.page,.md');
       if(parent){
+        parent.querySelectorAll('.ft.'+cls).forEach(t=>t.classList.remove('active'));
+        this.classList.add('active');
         parent.querySelectorAll('.ftc').forEach(c=>{
           c.classList.toggle('hidden',c.id!==id);
           c.classList.toggle('active',c.id===id);
         });
+      } else {
+        document.querySelectorAll('.ft.'+cls).forEach(t=>t.classList.remove('active'));
+        this.classList.add('active');
       }
     };
   });
@@ -4955,24 +4958,34 @@ function onDealConfirm(chk) {
 async function saveDealConfirmation() {
   if (!_activeDeal) { toast('No Deal', 'Open a deal first', 'warning'); return; }
   const remarks = document.getElementById('deal-confirm-remarks')?.value || '';
+  const confirmedAt = document.getElementById('deal-confirm-dt')?.value || '';
   try {
     const res = await fetch(API_BASE + '/api/deals/' + _activeDeal.id + '/confirm', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notes: remarks })
+      body: JSON.stringify({ notes: remarks, confirmed_at: confirmedAt || null })
     });
     const json = await res.json();
     if (!json.success) throw new Error(json.error || 'Save failed');
 
     _activeDeal = { ..._activeDeal, ...json.data };
 
+    // Update header badge
     const badge = document.getElementById('dd-badge');
     if (badge) { badge.className = 'badge bd-confirmed'; badge.textContent = 'CONFIRMED'; }
     const confBadge = document.getElementById('deal-confirmed-badge');
     if (confBadge) { confBadge.className = 'badge bd-confirmed'; confBadge.textContent = 'CONFIRMED'; }
 
+    // Update the row in the deal list immediately without full reload
+    document.querySelectorAll('#deal-list tr').forEach(row => {
+      if (row.textContent.includes(_activeDeal.deal_no)) {
+        const statusCell = row.querySelector('.badge');
+        if (statusCell) { statusCell.className = 'badge bd-confirmed'; statusCell.textContent = 'CONFIRMED'; }
+      }
+    });
+
     toast('Saved', _activeDeal.deal_no + ' confirmed. Purchase & Sales contracts auto-generated on next ERP sync.', 'success');
-    loadDealList(); // refresh the list
+    await loadDealList(); // full refresh to sync stat cards
   } catch (err) {
     toast('Error', err.message, 'error');
   }

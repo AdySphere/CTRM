@@ -36,9 +36,11 @@ dealsRouter.post('/', async (req, res) => {
 dealsRouter.patch('/:id/confirm', async (req, res) => {
   try {
     const { id } = req.params;
+    const { notes, confirmed_at } = req.body || {};
     const result = await query(`
-      UPDATE deals SET confirmed=TRUE, confirmed_at=NOW(), status='CONFIRMED' WHERE id=$1 RETURNING *
-    `, [id]);
+      UPDATE deals SET confirmed=TRUE, confirmed_at=COALESCE($2::timestamptz, NOW()),
+        status='CONFIRMED', notes=COALESCE($3, notes) WHERE id=$1 RETURNING *
+    `, [id, confirmed_at || null, notes || null]);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
