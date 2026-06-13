@@ -4472,164 +4472,186 @@ async function submitNewContract(){
     loadContractList(type);
   }catch(err){toast('Error',err.message,'error');}
 }
+function buildContractHTML(c, type) {
+  const contractNo = c.contract_no || (type==='PC'?'PC-DRAFT':'SC-DRAFT');
+  const vendor = type==='PC' ? (c.counterparty_name||'—') : 'Trading Company DMCC';
+  const customer = type==='PC' ? 'Trading Company DMCC' : (c.counterparty_name||'—');
+  const commodity = c.commodity_name || c.commodity_code || '—';
+  const qty = (c.qty_mt||'—') + ' MT';
+  const incoterms = c.incoterms || '—';
+  const deal = c.deal_no || '—';
+  const pricing = c.pricing_formula || '—';
+  const status = c.status || 'DRAFT';
+  const contractDate = c.contract_date ? new Date(c.contract_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const typeLabel = type==='PC' ? 'Purchase Contract' : 'Sales Contract';
+  const buyerLabel = type==='PC' ? 'Buyer' : 'Seller (We)';
+  const sellerLabel = type==='PC' ? 'Seller / Vendor' : 'Buyer / Customer';
+  const buyerName = type==='PC' ? 'Trading Company DMCC' : vendor;
+  const sellerName = type==='PC' ? vendor : customer;
+  const remarks = type==='PC'
+    ? 'Further to our discussions, '+vendor+' (Seller) agrees to sell and Trading Company DMCC (Buyer) agrees to buy the commodity described herein, on the following terms and conditions.'
+    : 'Further to our discussions, Trading Company DMCC (Seller) agrees to sell and '+customer+' (Buyer) agrees to buy the commodity described herein, on the following terms and conditions.';
+  return [
+    '<div id="print-contract-body" style="font-family:Arial,sans-serif;font-size:11px;color:#111;max-width:820px;margin:0 auto;padding:32px;">',
+    // Header
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:16px;margin-bottom:20px;">',
+    '<div>',
+    '<div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;">Trading Company DMCC</div>',
+    '<div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:3px;">Commodity Trading &amp; Risk Management</div>',
+    '<div style="margin-top:10px;font-size:9px;color:#555;line-height:1.7;">DMCC Business Centre, Jumeirah Lakes Towers<br>Dubai, United Arab Emirates &nbsp;|&nbsp; trade@company.ae</div>',
+    '</div>',
+    '<div style="text-align:right;">',
+    '<div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">'+typeLabel+'</div>',
+    '<div style="font-size:22px;font-weight:800;">'+contractNo+'</div>',
+    '<div style="margin-top:6px;display:inline-block;padding:3px 12px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;background:#d4edda;color:#155724;border:1px solid #c3e6cb;">'+status+'</div>',
+    '<div style="margin-top:6px;font-size:9px;color:#666;">Date: '+contractDate+'</div>',
+    '<div style="font-size:9px;color:#666;">Deal Ref: '+deal+'</div>',
+    '</div></div>',
+    // Remarks
+    '<div style="padding:10px 14px;background:#f8f9fa;border-left:3px solid #ccc;font-size:10px;color:#333;font-style:italic;margin-bottom:20px;line-height:1.6;">'+remarks+'</div>',
+    // Parties
+    '<div style="margin-bottom:18px;">',
+    '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:5px;margin-bottom:12px;">Contracting Parties</div>',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">'+buyerLabel+'</div><div style="font-size:14px;font-weight:800;">'+buyerName+'</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">'+sellerLabel+'</div><div style="font-size:14px;font-weight:800;">'+sellerName+'</div></div>',
+    '</div></div>',
+    // Commodity
+    '<div style="margin-bottom:18px;">',
+    '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:5px;margin-bottom:12px;">Commodity &amp; Quantity</div>',
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 20px;">',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Commodity</div><div style="font-size:11px;font-weight:600;">'+commodity+'</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Contract Quantity</div><div style="font-size:11px;font-weight:600;">'+qty+'</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Tolerance</div><div style="font-size:11px;font-weight:600;">+/- 5% Sellers Option</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Incoterms</div><div style="font-size:11px;font-weight:600;">'+incoterms+'</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Weight Basis</div><div style="font-size:11px;font-weight:600;">Shipped Weight</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Currency</div><div style="font-size:11px;font-weight:600;">USD</div></div>',
+    '</div></div>',
+    // Pricing
+    '<div style="margin-bottom:18px;">',
+    '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:5px;margin-bottom:12px;">Pricing &amp; Quotational Period</div>',
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 20px;">',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Pricing Basis</div><div style="font-size:11px;font-weight:600;">'+pricing+'</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">QP Period</div><div style="font-size:11px;font-weight:600;">As per contract terms</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Exchange</div><div style="font-size:11px;font-weight:600;">LME / SHFE</div></div>',
+    '</div></div>',
+    // Payment
+    '<div style="margin-bottom:18px;">',
+    '<div style="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:5px;margin-bottom:12px;">Payment Terms</div>',
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px 20px;">',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Payment Method</div><div style="font-size:11px;font-weight:600;">TT / LC at sight</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Provisional Payment</div><div style="font-size:11px;font-weight:600;">90% against BL documents</div></div>',
+    '<div><div style="font-size:8px;text-transform:uppercase;color:#999;margin-bottom:3px;">Final Settlement</div><div style="font-size:11px;font-weight:600;">After QP close + assay</div></div>',
+    '</div></div>',
+    // Legal
+    '<div style="padding:12px 16px;background:#fffbf0;border-left:3px solid #f0ad00;font-size:9px;color:#664d00;line-height:1.6;margin-bottom:20px;">',
+    'This contract is subject to the Standard Terms and Conditions of Trading Company DMCC. In the event of any conflict between this contract and any other document, this contract shall prevail. All disputes shall be resolved by arbitration in Dubai under DIAC rules.',
+    '</div>',
+    // Signatures
+    '<div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:60px;">',
+    '<div style="border-top:1px solid #333;padding-top:10px;">',
+    '<div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#888;">For and on behalf of '+buyerLabel.split(' ')[0]+'</div>',
+    '<div style="font-size:12px;font-weight:700;margin-top:4px;">'+buyerName+'</div>',
+    '<div style="margin-top:35px;font-size:8px;color:#999;">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>',
+    '</div>',
+    '<div style="border-top:1px solid #333;padding-top:10px;">',
+    '<div style="font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#888;">For and on behalf of '+sellerLabel.split(' ')[0]+'</div>',
+    '<div style="font-size:12px;font-weight:700;margin-top:4px;">'+sellerName+'</div>',
+    '<div style="margin-top:35px;font-size:8px;color:#999;">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>',
+    '</div></div>',
+    '<div style="margin-top:24px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:8px;color:#aaa;display:flex;justify-content:space-between;">',
+    '<span>Generated by CTRM Platform &middot; '+new Date().toLocaleString('en-GB')+'</span>',
+    '<span>'+contractNo+' &middot; Page 1 of 1 &middot; CONFIDENTIAL</span>',
+    '</div>',
+    '</div>'
+  ].join('');
+}
 function printPCContract(){
   const card=document.getElementById('pc-detail-card');
   if(!card||card.style.display==='none'){toast('No Contract Open','Open a Purchase Contract first, then print','warning');return;}
   const c=window._currentContract||{};
-  const contractNo=c.contract_no||document.getElementById('pcd-no')?.textContent||'PC-DRAFT';
-  const vendor=c.counterparty_name||document.getElementById('pcd-vendor')?.textContent||'—';
-  const commodity=c.commodity_name||c.commodity_code||document.getElementById('pcd-commodity')?.textContent||'—';
-  const qty=(c.qty_mt||document.getElementById('pcd-qty')?.textContent||'—')+' MT';
-  const incoterms=c.incoterms||document.getElementById('pcd-incoterms')?.textContent||'—';
-  const deal=c.deal_no||document.getElementById('pcd-deal')?.textContent||'—';
-  const pricing=c.pricing_formula||document.getElementById('pcd-pricing')?.textContent||'—';
-  const status=c.status||'DRAFT';
-  const contractDate=c.contract_date?new Date(c.contract_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  const remarks=document.getElementById('pcd-remarks')?.value||('Further to our discussions, '+vendor+' confirms sale of '+commodity+' to Trading Company DMCC at the following terms and conditions.');
-  const W=window.open('','_blank','width=950,height=750');
-  const css=[
-    '*{margin:0;padding:0;box-sizing:border-box;}',
-    'body{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#111;padding:40px;max-width:900px;margin:0 auto;}',
-    '.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:18px;margin-bottom:22px;}',
-    '.co{font-size:20px;font-weight:800;letter-spacing:-0.5px;}',
-    '.co-sub{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:3px;}',
-    '.co-addr{margin-top:10px;font-size:9px;color:#555;line-height:1.6;}',
-    '.cno-blk{text-align:right;}',
-    '.cno-type{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;}',
-    '.cno{font-size:22px;font-weight:800;}',
-    '.cbadge{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:#d4edda;color:#155724;border:1px solid #c3e6cb;}',
-    '.sec{margin-bottom:20px;}',
-    '.st{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:6px;margin-bottom:12px;}',
-    '.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 20px;}',
-    '.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 20px;}',
-    '.lbl{font-size:8px;text-transform:uppercase;letter-spacing:0.8px;color:#999;margin-bottom:3px;}',
-    '.val{font-size:11px;font-weight:600;color:#111;}',
-    '.val-big{font-size:14px;font-weight:800;color:#111;}',
-    '.notice{margin:20px 0;padding:12px 16px;background:#fffbf0;border-left:3px solid #f0ad00;font-size:9px;color:#664d00;line-height:1.6;}',
-    '.remarks{margin:16px 0;padding:10px 14px;background:#f8f9fa;border:1px solid #e0e0e0;font-size:10px;color:#333;font-style:italic;line-height:1.6;}',
-    '.sig-blk{margin-top:50px;display:grid;grid-template-columns:1fr 1fr;gap:60px;}',
-    '.sig{border-top:1px solid #333;padding-top:10px;}',
-    '.sig-role{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#888;}',
-    '.sig-name{font-size:12px;font-weight:700;margin-top:4px;}',
-    '.sig-line{margin-top:35px;font-size:8px;color:#999;}',
-    '.ftr{margin-top:30px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:8px;color:#aaa;display:flex;justify-content:space-between;}',
-    '.divider{border:none;border-top:1px solid #f0f0f0;margin:16px 0;}',
-    '@media print{.no-print{display:none!important;}body{padding:20px;}}'
-  ].join('');
-  const html=[
-    '<!DOCTYPE html><html><head><title>'+contractNo+'</title><style>'+css+'</style></head><body>',
-    '<div class="no-print" style="text-align:right;margin-bottom:16px;">',
-    '<button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:8px;">&#128424; Print / Save as PDF</button>',
-    '<button onclick="window.close()" style="background:#f5f5f5;color:#111;border:1px solid #ddd;padding:10px 16px;border-radius:4px;cursor:pointer;font-size:12px;">Close</button>',
-    '</div>',
-    // Header
-    '<div class="hdr">',
-    '<div><div class="co">Trading Company DMCC</div>',
-    '<div class="co-sub">Commodity Trading &amp; Risk Management</div>',
-    '<div class="co-addr">DMCC Business Centre, Jumeirah Lakes Towers<br>Dubai, United Arab Emirates<br>trade@company.ae &nbsp;|&nbsp; +971 4 XXX XXXX</div></div>',
-    '<div class="cno-blk">',
-    '<div class="cno-type">Purchase Contract</div>',
-    '<div class="cno">'+contractNo+'</div>',
-    '<div><span class="cbadge">'+status+'</span></div>',
-    '<div style="margin-top:8px;font-size:9px;color:#666;">Date: '+contractDate+'</div>',
-    '<div style="margin-top:4px;font-size:9px;color:#666;">Ref: '+deal+'</div>',
-    '</div></div>',
-    // Remarks
-    '<div class="remarks">'+remarks+'</div>',
-    // Parties
-    '<div class="sec"><div class="st">Contracting Parties</div><div class="grid2">',
-    '<div><div class="lbl">Buyer</div><div class="val-big">Trading Company DMCC</div><div style="font-size:9px;color:#666;margin-top:2px;">DMCC Business Centre, Dubai, UAE</div></div>',
-    '<div><div class="lbl">Seller / Vendor</div><div class="val-big">'+vendor+'</div></div>',
-    '</div></div>',
-    // Commodity
-    '<div class="sec"><div class="st">Commodity &amp; Quantity</div><div class="grid3">',
-    '<div><div class="lbl">Commodity</div><div class="val">'+commodity+'</div></div>',
-    '<div><div class="lbl">Contract Quantity</div><div class="val">'+qty+'</div></div>',
-    '<div><div class="lbl">Tolerance</div><div class="val">+/- 5% Sellers Option</div></div>',
-    '<div><div class="lbl">Incoterms</div><div class="val">'+incoterms+'</div></div>',
-    '<div><div class="lbl">Weight Basis</div><div class="val">Shipped Weight</div></div>',
-    '<div><div class="lbl">Currency</div><div class="val">USD</div></div>',
-    '</div></div>',
-    // Pricing
-    '<div class="sec"><div class="st">Pricing &amp; Quotational Period</div><div class="grid3">',
-    '<div><div class="lbl">Pricing Basis</div><div class="val">'+pricing+'</div></div>',
-    '<div><div class="lbl">QP Period</div><div class="val">As per contract terms</div></div>',
-    '<div><div class="lbl">Pricing Frequency</div><div class="val">Monthly average</div></div>',
-    '</div></div>',
-    // Payment
-    '<div class="sec"><div class="st">Payment Terms</div><div class="grid3">',
-    '<div><div class="lbl">Payment Method</div><div class="val">TT / LC at sight</div></div>',
-    '<div><div class="lbl">Provisional Payment</div><div class="val">90% against BL documents</div></div>',
-    '<div><div class="lbl">Final Settlement</div><div class="val">After QP close + assay</div></div>',
-    '</div></div>',
-    // Legal notice
-    '<div class="notice">This Purchase Contract is entered into between Trading Company DMCC (&quot;Buyer&quot;) and '+vendor+' (&quot;Seller&quot;). This contract is subject to the Standard Terms and Conditions of Trading Company DMCC. In the event of any conflict between this contract and any other document, this contract shall prevail. All disputes shall be resolved by arbitration in Dubai under DIAC rules.</div>',
-    '<hr class="divider">',
-    // Signatures
-    '<div class="sig-blk">',
-    '<div class="sig"><div class="sig-role">For and on behalf of Buyer</div><div class="sig-name">Trading Company DMCC</div><div class="sig-line">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div>',
-    '<div class="sig"><div class="sig-role">For and on behalf of Seller</div><div class="sig-name">'+vendor+'</div><div class="sig-line">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div>',
-    '</div>',
-    '<div class="ftr"><span>Generated by CTRM Platform &middot; '+new Date().toLocaleString('en-GB')+'</span><span>'+contractNo+' &middot; Page 1 of 1 &middot; CONFIDENTIAL</span></div>',
-    '</body></html>'
-  ].join('');
-  W.document.write(html);
-  W.document.close();
+  showPrintModal(buildContractHTML(c,'PC'));
 }
 function printSCContract(){
   const card=document.getElementById('sc-detail-card');
-  if(!card||card.style.display==='none'){toast('No Contract Open','Open a Sales Contract first','warning');return;}
-  const contractNo=card.querySelector('.ct')?.textContent?.replace(' — Sales Contract','').trim()||'SC-DRAFT';
-  const status=card.querySelector('.badge')?.textContent?.trim()||'DRAFT';
-  const fields={};
-  card.querySelectorAll('.ftc .f').forEach(function(f){
-    const label=f.querySelector('.fl')?.textContent?.trim();
-    const val=(f.querySelector('.fc,.fv')?.textContent?.trim())||(f.querySelector('.fi')?.value)||'';
-    if(label&&val)fields[label]=val;
-  });
-  const W=window.open('','_blank','width=900,height=700');
-  const get=function(k){return fields[k]||'';};
-  const html=[
-    '<!DOCTYPE html><html><head><title>'+contractNo+'</title>',
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:40px;}',
-    '.hdr{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:16px;margin-bottom:20px;}',
-    '.co{font-size:18px;font-weight:800;}.cno{font-size:20px;font-weight:800;text-align:right;}',
-    '.sec{margin-bottom:18px;}.st{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:5px;margin-bottom:10px;}',
-    '.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;}.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px;}',
-    '.lbl{font-size:8px;text-transform:uppercase;color:#888;margin-bottom:2px;}.val{font-size:11px;font-weight:600;}',
-    '.sig-blk{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px;}.sig{border-top:1px solid #111;padding-top:8px;}',
-    '@media print{button{display:none!important;}}</style></head><body>',
-    '<div style="text-align:right;margin-bottom:12px"><button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:8px 20px;border-radius:4px;cursor:pointer">Print / Save PDF</button></div>',
-    '<div class="hdr"><div><div class="co">Trading Company DMCC</div><div style="font-size:10px;color:#666;margin-top:4px">Commodity Trading &middot; Dubai, UAE</div></div>',
-    '<div style="text-align:right"><div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px">Sales Contract</div><div class="cno">'+contractNo+'</div>',
-    '<div style="font-size:9px;color:#666;margin-top:4px">'+status+' &middot; '+new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</div></div></div>',
-    '<div class="sec"><div class="st">Parties</div><div class="grid2">',
-    '<div><div class="lbl">Seller (We)</div><div class="val">Trading Company DMCC</div></div>',
-    '<div><div class="lbl">Buyer / Customer</div><div class="val">'+(get('Customer')||'&mdash;')+'</div></div></div></div>',
-    '<div class="sec"><div class="st">Commodity &amp; Quantity</div><div class="grid">',
-    '<div><div class="lbl">Commodity</div><div class="val">'+(get('Commodity')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Quantity</div><div class="val">'+(get('Quantity')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Incoterms</div><div class="val">'+(get('Incoterms')||'&mdash;')+'</div></div></div></div>',
-    '<div class="sec"><div class="st">Pricing &amp; Payment</div><div class="grid">',
-    '<div><div class="lbl">Pricing Basis</div><div class="val">'+(get('Pricing Formula')||get('Template')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Payment Basis</div><div class="val">'+(get('Payment Basis')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Provisional %</div><div class="val">'+(get('Provisional %')||'90%')+'</div></div></div></div>',
-    '<div class="sig-blk">',
-    '<div class="sig"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666">For and on behalf of Seller</div>',
-    '<div style="font-size:11px;font-weight:700;margin-top:4px">Trading Company DMCC</div>',
-    '<div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div>',
-    '<div class="sig"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666">For and on behalf of Buyer</div>',
-    '<div style="font-size:11px;font-weight:700;margin-top:4px">'+(get('Customer')||'&mdash;')+'</div>',
-    '<div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div></div>',
-    '<div style="margin-top:30px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:8px;color:#999;display:flex;justify-content:space-between">',
-    '<span>CTRM Platform &middot; Generated '+new Date().toLocaleString('en-GB')+'</span><span>'+contractNo+' &middot; Page 1 of 1</span></div>',
-    '</body></html>'
+  if(!card||card.style.display==='none'){toast('No Contract Open','Open a Sales Contract first, then print','warning');return;}
+  const c=window._currentContract||{};
+  showPrintModal(buildContractHTML(c,'SC'));
+}
+function showPrintModal(bodyHTML){
+  let overlay=document.getElementById('print-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='print-overlay';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;overflow-y:auto;';
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML=[
+    '<div style="background:#fff;border-radius:8px;max-width:880px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4);">',
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #e0e0e0;background:#f8f9fa;border-radius:8px 8px 0 0;">',
+    '<span style="font-weight:700;font-size:13px;color:#111;">Contract Preview</span>',
+    '<div style="display:flex;gap:8px;">',
+    '<button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:8px 18px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;">&#128424; Print / Save PDF</button>',
+    '<button onclick="document.getElementById(&quot;print-overlay&quot;).style.display=&quot;none&quot;" style="background:#e0e0e0;color:#111;border:none;padding:8px 14px;border-radius:4px;cursor:pointer;font-size:12px;">&#10005; Close</button>',
+    '</div></div>',
+    bodyHTML,
+    '</div>'
   ].join('');
-  W.document.write(html);
-  W.document.close();
+  overlay.style.display='flex';
+  // Add print style to hide everything except overlay
+  let ps=document.getElementById('print-style');
+  if(!ps){ps=document.createElement('style');ps.id='print-style';document.head.appendChild(ps);}
+  ps.textContent='@media print{body>*:not(#print-overlay){display:none!important;}#print-overlay{position:static!important;background:none!important;padding:0!important;}.no-print{display:none!important;}}';
+}
+async function loadNewContractDropdowns(){
+  try{
+    const [cpRes,dealRes,cmRes]=await Promise.all([
+      fetch(API_BASE+'/api/master/counterparties'),
+      fetch(API_BASE+'/api/deals'),
+      fetch(API_BASE+'/api/master/commodities')
+    ]);
+    const cps=(await cpRes.json()).data||[];
+    const deals=(await dealRes.json()).data||[];
+    const cms=(await cmRes.json()).data||[];
+    const cpSel=document.getElementById('nc-counterparty-sel');
+    const dealSel=document.getElementById('nc-deal-sel');
+    const cmSel=document.getElementById('nc-commodity');
+    if(cpSel)cpSel.innerHTML='<option value="">— Select —</option>'+cps.map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('');
+    if(dealSel)dealSel.innerHTML='<option value="">— None —</option>'+deals.map(d=>'<option value="'+d.id+'">'+d.deal_no+'</option>').join('');
+    if(cmSel)cmSel.innerHTML='<option value="">— Select Commodity —</option>'+cms.map(c=>'<option value="'+c.code+'">'+(c.name||c.code)+'</option>').join('');
+  }catch(e){console.error('Dropdown load error:',e);}
+}
+async function submitNewContract(){
+  const type=document.getElementById('new-contract-type')?.value;
+  const dealId=document.getElementById('nc-deal-sel')?.value;
+  const cpId=document.getElementById('nc-counterparty-sel')?.value;
+  const commCode=document.getElementById('nc-commodity')?.value;
+  const qty=document.getElementById('nc-qty')?.value;
+  const contractDate=document.getElementById('nc-contract-date')?.value;
+  const incoterms=document.getElementById('nc-incoterms')?.value;
+  const pricing=document.getElementById('nc-pricing')?.value?.trim();
+  const notes=document.getElementById('nc-notes')?.value?.trim();
+  if(!cpId||!commCode||!qty){toast('Required','Counterparty, commodity and quantity are required','warning');return;}
+  try{
+    const res=await fetch(API_BASE+'/api/contracts',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        contract_type:type,deal_id:dealId||null,
+        counterparty_id:parseInt(cpId),commodity_code:commCode||null,
+        qty_mt:parseFloat(qty),incoterms:incoterms||'CIF',
+        pricing_formula:pricing||null,notes:notes||null,
+        contract_date:contractDate||new Date().toISOString().split('T')[0]
+      })
+    });
+    const json=await res.json();
+    if(!res.ok||!json.success)throw new Error(json.error||'HTTP '+res.status);
+    toast('Contract Created',json.data.contract_no+' saved','success');
+    closeModal('modal-new-contract');
+    loadContractList(type);
+  }catch(err){toast('Error',err.message,'error');}
 }
 
-// CREATE INVOICE
 function openCreateInvoice(type){
   openModal('modal-create-invoice');
   const titleEl = document.getElementById('invoice-modal-title');
