@@ -928,21 +928,21 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="cbf"><table class="dt">
           <thead><tr><th>Contract No.</th><th>Deal</th><th>Date</th><th>Vendor</th><th>Commodity</th><th>Grade</th><th>Qty (MT)</th><th>Incoterms</th><th>POL</th><th>Pricing Formula</th><th>Status</th><th>Purchase Order</th><th>Ver.</th><th></th></tr></thead>
           <tbody id="pc-list-tbody">
-            <tr style="cursor:pointer" onclick="openPCDetail()">
+            <tr style="cursor:pointer" onclick="openPCDetailByNo('PC-2026-001')">
               <td class="mono ta fw6">PC-2026-001</td><td class="mono">DEAL123</td><td class="mono f10">2026-03-20</td>
               <td class="f11 fw6">Glencore AG</td><td><span class="cc"><span class="cp pcu"></span>Copper MillBerry</span></td>
               <td class="f10">91% Cu min</td><td class="mono fw6">100</td><td class="f10">CIF</td><td class="f10">Dar es Salaam</td>
               <td class="mono f10">91% LME Lowest of 4</td><td><span class="badge bd-act">CONTRACTED</span></td>
               <td class="mono ta2">PO-20088</td><td class="mono f10">v1.0</td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openPCDetail()">Open</button></td>
+              <td><button class="btn bxs bg" onclick="event.stopPropagation();openPCDetailByNo('PC-2026-001')">Open</button></td>
             </tr>
-            <tr style="cursor:pointer">
+            <tr style="cursor:pointer" onclick="openPCDetailByNo('PC-2026-002')">
               <td class="mono ta fw6">PC-2026-002</td><td class="mono">DL-2026-040</td><td class="mono f10">2026-04-01</td>
               <td class="f11 fw6">Noble Resources Ltd</td><td><span class="cc"><span class="cp pfe"></span>Steel HMS 1&2</span></td>
               <td class="f10">80:20</td><td class="mono fw6">700</td><td class="f10">FOB</td><td class="f10">Hamburg</td>
               <td class="mono f10">Quality Adj.</td><td><span class="badge bd-draft">DRAFT</span></td>
               <td class="mono tdim">—</td><td class="mono f10">v0.1</td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openPCDetail()">Open</button></td>
+              <td><button class="btn bxs bg" onclick="event.stopPropagation();openPCDetailByNo('PC-2026-002')">Open</button></td>
             </tr>
           </tbody>
         </table></div>
@@ -950,14 +950,16 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <!-- PC DETAIL -->
       <div class="card mt14" id="pc-detail-card" style="display:none">
         <div class="ch">
-          <div class="ct">PC-2026-001 — Purchase Contract</div>
-          <div class="cs" style="margin-left:8px">DEAL123 · Glencore AG · Copper MillBerry · 100 MT CIF Dar es Salaam</div>
-          <span class="badge bd-act" style="margin-left:auto">CONTRACTED</span>
-          <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','v1.1 draft created','info')">New Version</button>
+          <div class="ct" id="pcd-title">— Purchase Contract</div>
+          <div class="cs" style="margin-left:8px" id="pcd-summary">—</div>
+          <span class="badge bd-act" style="margin-left:auto" id="pcd-status-badge">DRAFT</span>
+          <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','New version drafted','info')">New Version</button>
           <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
+          <button class="btn bg bsm" style="margin-left:7px" onclick="printPCContract()">🖨 Print</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('pc-detail-card').style.display='none'">✕ Close</button>
         </div>
-        <div class="lcb">
-          <div class="lcs done">DRAFT</div><div class="lcs done">UNDER REVIEW</div><div class="lcs cur">CONTRACTED</div>
+        <div class="lcb" id="pcd-lifecycle">
+          <div class="lcs" id="pcd-lcs-draft">DRAFT</div><div class="lcs" id="pcd-lcs-review">UNDER REVIEW</div><div class="lcs" id="pcd-lcs-contracted">CONTRACTED</div>
           <div class="lcs fut">PARTIALLY SHIPPED</div><div class="lcs fut">FULLY SHIPPED</div><div class="lcs fut">CLOSED</div>
         </div>
         <div class="fts">
@@ -972,21 +974,21 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft pct" data-tab="pc-docs">Documents</div>
         </div>
         <div id="pc-gen" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">Contract No.</div><div class="fc mono">PC-2026-001</div></div>
-          <div class="f"><div class="fl">Internal Ref (Deal ID)</div><div class="fc mono ta">DEAL123</div></div>
-          <div class="f"><div class="fl">Contract Date</div><input type="date" class="fi" value="2026-03-20"></div>
-          <div class="f"><div class="fl">Status</div><div class="fc tg fw6">CONTRACTED</div></div>
-          <div class="f"><div class="fl">Version</div><div class="fc mono">v1.0</div></div>
+          <div class="f"><div class="fl">Contract No.</div><div class="fc mono" id="pcd-no">—</div></div>
+          <div class="f"><div class="fl">Linked Deal</div><div class="fc mono ta" id="pcd-deal">—</div></div>
+          <div class="f"><div class="fl">Contract Date</div><div class="fc mono" id="pcd-date">—</div></div>
+          <div class="f"><div class="fl">Status</div><div class="fc fw6" id="pcd-status">—</div></div>
           <div class="f"><div class="fl">Direction</div><div class="fc">PURCHASE — we are the BUYER</div></div>
           <div class="f"><div class="fl">Our Company (Buyer)</div><div class="fc">Trading Company DMCC</div></div>
-          <div class="f"><div class="fl">Vendor (Seller)</div><div class="fc fw6">Glencore AG</div></div>
-          <div class="f"><div class="fl">Vendor BC Code</div><div class="fc mono tdim">V-001</div></div>
-          <div class="f"><div class="fl">Vendor Contact / Attn.</div><input type="text" class="fi" placeholder="e.g. Mr. John Smith, Metals Desk"></div>
-          <div class="f"><div class="fl">Broker / Agent</div><input type="text" class="fi" placeholder="If via broker"></div>
-          <div class="f"><div class="fl">Broker Commission</div><input type="text" class="fi" placeholder="e.g. 1.5% of invoice — deducted at final payment"></div>
-          <div class="f"><div class="fl">BC Purchase Order No.</div><div class="fc mono ta2">PO-20088</div></div>
-          <div class="f"><div class="fl">Purchase Order Status</div><div class="fc ta">OPEN — synced 2026-03-21</div></div>
-          <div class="f csf"><div class="fl">Contract Header Remarks</div><textarea class="fta" style="min-height:50px">Further to our various exchanges, Glencore AG confirms sale of Copper MillBerry to Trading Company DMCC at the following terms and conditions.</textarea></div>
+          <div class="f"><div class="fl">Vendor (Seller)</div><div class="fc fw6" id="pcd-vendor">—</div></div>
+          <div class="f"><div class="fl">Commodity</div><div class="fc fw6" id="pcd-commodity">—</div></div>
+          <div class="f"><div class="fl">Quantity</div><div class="fc mono fw7" id="pcd-qty">—</div></div>
+          <div class="f"><div class="fl">Incoterms</div><div class="fc" id="pcd-incoterms">—</div></div>
+          <div class="f"><div class="fl">Pricing Formula</div><div class="fc mono" id="pcd-pricing">—</div></div>
+          <div class="f"><div class="fl">Vendor Contact / Attn.</div><input type="text" class="fi" id="pcd-contact" placeholder="e.g. Mr. John Smith, Metals Desk"></div>
+          <div class="f"><div class="fl">Broker / Agent</div><input type="text" class="fi" id="pcd-broker" placeholder="If via broker"></div>
+          <div class="f"><div class="fl">Broker Commission</div><input type="text" class="fi" id="pcd-brokerage" placeholder="e.g. 1.5% of invoice"></div>
+          <div class="f csf"><div class="fl">Contract Header Remarks</div><textarea class="fta" id="pcd-remarks" style="min-height:50px"></textarea></div>
         </div></div>
         <div id="pc-material" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Add one line per quality grade. Each has its own quantity, spec, HS code and base price. Sample 1 has Q1+Q2 Lead-Tin as separate lines.</div>
@@ -1282,21 +1284,21 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="cbf"><table class="dt">
           <thead><tr><th>Contract No.</th><th>Deal</th><th>Date</th><th>Customer</th><th>Commodity</th><th>Grade</th><th>Qty (MT)</th><th>Incoterms</th><th>POD</th><th>Pricing Formula</th><th>Status</th><th>Sales Order</th><th>Ver.</th><th></th></tr></thead>
           <tbody id="sc-list-tbody">
-            <tr style="cursor:pointer" onclick="openSCDetail()">
+            <tr style="cursor:pointer" onclick="openSCDetailByNo('SC-2026-001')">
               <td class="mono ta fw6">SC-2026-001</td><td class="mono">DEAL456</td><td class="mono f10">2026-03-21</td>
               <td class="f11 fw6">Tata Metals Ltd</td><td><span class="cc"><span class="cp pcu"></span>Copper MillBerry</span></td>
               <td class="f10">91% Cu min</td><td class="mono fw6">100</td><td class="f10">CIF</td><td class="f10">Nhava Sheva</td>
               <td class="mono f10">95% LME Highest of 4</td><td><span class="badge bd-act">CONTRACTED</span></td>
               <td class="mono ta2">SO-10042</td><td class="mono f10">v1.0</td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openSCDetail()">Open</button></td>
+              <td><button class="btn bxs bg" onclick="event.stopPropagation();openSCDetailByNo('SC-2026-001')">Open</button></td>
             </tr>
-            <tr style="cursor:pointer">
+            <tr style="cursor:pointer" onclick="openSCDetailByNo('SC-2026-002')">
               <td class="mono ta fw6">SC-2026-002</td><td class="mono">DL-2026-040</td><td class="mono f10">2026-04-02</td>
               <td class="f11 fw6">ArcelorMittal SA</td><td><span class="cc"><span class="cp pfe"></span>Steel HMS 1&2</span></td>
               <td class="f10">80:20</td><td class="mono fw6">2000</td><td class="f10">CFR</td><td class="f10">Rotterdam</td>
               <td class="mono f10">Quality Adj.</td><td><span class="badge bd-draft">DRAFT</span></td>
               <td class="mono tdim">—</td><td class="mono f10">v0.1</td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openSCDetail()">Open</button></td>
+              <td><button class="btn bxs bg" onclick="event.stopPropagation();openSCDetailByNo('SC-2026-002')">Open</button></td>
             </tr>
           </tbody>
         </table></div>
@@ -1304,11 +1306,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <!-- SC DETAIL -->
       <div class="card mt14" id="sc-detail-card" style="display:none">
         <div class="ch">
-          <div class="ct">SC-2026-001 — Sales Contract</div>
-          <div class="cs" style="margin-left:8px">DEAL456 · Tata Metals Ltd · Copper MillBerry · 100 MT CIF Nhava Sheva</div>
-          <span class="badge bd-act" style="margin-left:auto">CONTRACTED</span>
-          <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','v1.1 draft created','info')">New Version</button>
+          <div class="ct" id="scd-title">— Sales Contract</div>
+          <div class="cs" style="margin-left:8px" id="scd-summary">—</div>
+          <span class="badge bd-act" style="margin-left:auto" id="scd-status-badge">DRAFT</span>
+          <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','New version drafted','info')">New Version</button>
           <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
+          <button class="btn bg bsm" style="margin-left:7px" onclick="printSCContract()">🖨 Print</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('sc-detail-card').style.display='none'">✕ Close</button>
         </div>
         <div class="lcb">
           <div class="lcs done">DRAFT</div><div class="lcs done">UNDER REVIEW</div><div class="lcs cur">CONTRACTED</div>
@@ -4470,85 +4474,103 @@ async function submitNewContract(){
 }
 function printPCContract(){
   const card=document.getElementById('pc-detail-card');
-  if(!card||card.style.display==='none'){toast('No Contract Open','Open a Purchase Contract first','warning');return;}
-  const contractNo=card.querySelector('.ct')?.textContent?.replace(' — Purchase Contract','').trim()||'PC-DRAFT';
-  const status=card.querySelector('.badge')?.textContent?.trim()||'DRAFT';
-  const fields={};
-  card.querySelectorAll('.ftc .f').forEach(function(f){
-    const label=f.querySelector('.fl')?.textContent?.trim();
-    const val=(f.querySelector('.fc,.fv')?.textContent?.trim())||(f.querySelector('.fi')?.value)||'';
-    if(label&&val)fields[label]=val;
-  });
-  const W=window.open('','_blank','width=900,height=700');
-  const get=function(k){return fields[k]||'';};
+  if(!card||card.style.display==='none'){toast('No Contract Open','Open a Purchase Contract first, then print','warning');return;}
+  const c=window._currentContract||{};
+  const contractNo=c.contract_no||document.getElementById('pcd-no')?.textContent||'PC-DRAFT';
+  const vendor=c.counterparty_name||document.getElementById('pcd-vendor')?.textContent||'—';
+  const commodity=c.commodity_name||c.commodity_code||document.getElementById('pcd-commodity')?.textContent||'—';
+  const qty=(c.qty_mt||document.getElementById('pcd-qty')?.textContent||'—')+' MT';
+  const incoterms=c.incoterms||document.getElementById('pcd-incoterms')?.textContent||'—';
+  const deal=c.deal_no||document.getElementById('pcd-deal')?.textContent||'—';
+  const pricing=c.pricing_formula||document.getElementById('pcd-pricing')?.textContent||'—';
+  const status=c.status||'DRAFT';
+  const contractDate=c.contract_date?new Date(c.contract_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const remarks=document.getElementById('pcd-remarks')?.value||('Further to our discussions, '+vendor+' confirms sale of '+commodity+' to Trading Company DMCC at the following terms and conditions.');
+  const W=window.open('','_blank','width=950,height=750');
+  const css=[
+    '*{margin:0;padding:0;box-sizing:border-box;}',
+    'body{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#111;padding:40px;max-width:900px;margin:0 auto;}',
+    '.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #111;padding-bottom:18px;margin-bottom:22px;}',
+    '.co{font-size:20px;font-weight:800;letter-spacing:-0.5px;}',
+    '.co-sub{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-top:3px;}',
+    '.co-addr{margin-top:10px;font-size:9px;color:#555;line-height:1.6;}',
+    '.cno-blk{text-align:right;}',
+    '.cno-type{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;}',
+    '.cno{font-size:22px;font-weight:800;}',
+    '.cbadge{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:#d4edda;color:#155724;border:1px solid #c3e6cb;}',
+    '.sec{margin-bottom:20px;}',
+    '.st{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:6px;margin-bottom:12px;}',
+    '.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 20px;}',
+    '.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 20px;}',
+    '.lbl{font-size:8px;text-transform:uppercase;letter-spacing:0.8px;color:#999;margin-bottom:3px;}',
+    '.val{font-size:11px;font-weight:600;color:#111;}',
+    '.val-big{font-size:14px;font-weight:800;color:#111;}',
+    '.notice{margin:20px 0;padding:12px 16px;background:#fffbf0;border-left:3px solid #f0ad00;font-size:9px;color:#664d00;line-height:1.6;}',
+    '.remarks{margin:16px 0;padding:10px 14px;background:#f8f9fa;border:1px solid #e0e0e0;font-size:10px;color:#333;font-style:italic;line-height:1.6;}',
+    '.sig-blk{margin-top:50px;display:grid;grid-template-columns:1fr 1fr;gap:60px;}',
+    '.sig{border-top:1px solid #333;padding-top:10px;}',
+    '.sig-role{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:#888;}',
+    '.sig-name{font-size:12px;font-weight:700;margin-top:4px;}',
+    '.sig-line{margin-top:35px;font-size:8px;color:#999;}',
+    '.ftr{margin-top:30px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:8px;color:#aaa;display:flex;justify-content:space-between;}',
+    '.divider{border:none;border-top:1px solid #f0f0f0;margin:16px 0;}',
+    '@media print{.no-print{display:none!important;}body{padding:20px;}}'
+  ].join('');
   const html=[
-    '<!DOCTYPE html><html><head><title>'+contractNo+'</title>',
-    '<style>*{margin:0;padding:0;box-sizing:border-box;}',
-    'body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:40px;}',
-    '.hdr{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:16px;margin-bottom:20px;}',
-    '.co{font-size:18px;font-weight:800;}.cno{font-size:20px;font-weight:800;text-align:right;}',
-    '.sec{margin-bottom:18px;}.st{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#666;border-bottom:1px solid #e0e0e0;padding-bottom:5px;margin-bottom:10px;}',
-    '.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 16px;}',
-    '.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px;}',
-    '.lbl{font-size:8px;text-transform:uppercase;color:#888;margin-bottom:2px;}',
-    '.val{font-size:11px;font-weight:600;}',
-    '.sig-blk{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px;}',
-    '.sig{border-top:1px solid #111;padding-top:8px;}',
-    '.notice{margin-top:16px;padding:10px 14px;background:#fffbf0;border:1px solid #ffe58f;font-size:9px;color:#664d00;}',
-    '.ftr{margin-top:30px;padding-top:10px;border-top:1px solid #e0e0e0;font-size:8px;color:#999;display:flex;justify-content:space-between;}',
-    '@media print{button{display:none!important;}}',
-    '</style></head><body>',
-    '<div style="text-align:right;margin-bottom:12px">',
-    '<button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600">Print / Save PDF</button>',
+    '<!DOCTYPE html><html><head><title>'+contractNo+'</title><style>'+css+'</style></head><body>',
+    '<div class="no-print" style="text-align:right;margin-bottom:16px;">',
+    '<button onclick="window.print()" style="background:#111;color:#fff;border:none;padding:10px 24px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;margin-right:8px;">&#128424; Print / Save as PDF</button>',
+    '<button onclick="window.close()" style="background:#f5f5f5;color:#111;border:1px solid #ddd;padding:10px 16px;border-radius:4px;cursor:pointer;font-size:12px;">Close</button>',
     '</div>',
+    // Header
     '<div class="hdr">',
     '<div><div class="co">Trading Company DMCC</div>',
-    '<div style="font-size:9px;color:#666;margin-top:2px;text-transform:uppercase;letter-spacing:1px">Commodity Trading &middot; Dubai, UAE</div>',
-    '<div style="margin-top:8px;font-size:10px;color:#444">DMCC Business Centre &middot; Jumeirah Lakes Towers &middot; Dubai, UAE</div></div>',
-    '<div style="text-align:right">',
-    '<div style="font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px">Purchase Contract</div>',
+    '<div class="co-sub">Commodity Trading &amp; Risk Management</div>',
+    '<div class="co-addr">DMCC Business Centre, Jumeirah Lakes Towers<br>Dubai, United Arab Emirates<br>trade@company.ae &nbsp;|&nbsp; +971 4 XXX XXXX</div></div>',
+    '<div class="cno-blk">',
+    '<div class="cno-type">Purchase Contract</div>',
     '<div class="cno">'+contractNo+'</div>',
-    '<div style="margin-top:6px;font-size:9px;color:#666">'+status+' &nbsp;&middot;&nbsp; '+new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})+'</div>',
+    '<div><span class="cbadge">'+status+'</span></div>',
+    '<div style="margin-top:8px;font-size:9px;color:#666;">Date: '+contractDate+'</div>',
+    '<div style="margin-top:4px;font-size:9px;color:#666;">Ref: '+deal+'</div>',
     '</div></div>',
-    '<div class="sec"><div class="st">Parties</div><div class="grid2">',
-    '<div><div class="lbl">Buyer (We)</div><div class="val">Trading Company DMCC</div></div>',
-    '<div><div class="lbl">Seller / Vendor</div><div class="val">'+(get('Vendor')||get('Counterparty')||'&mdash;')+'</div></div>',
+    // Remarks
+    '<div class="remarks">'+remarks+'</div>',
+    // Parties
+    '<div class="sec"><div class="st">Contracting Parties</div><div class="grid2">',
+    '<div><div class="lbl">Buyer</div><div class="val-big">Trading Company DMCC</div><div style="font-size:9px;color:#666;margin-top:2px;">DMCC Business Centre, Dubai, UAE</div></div>',
+    '<div><div class="lbl">Seller / Vendor</div><div class="val-big">'+vendor+'</div></div>',
     '</div></div>',
-    '<div class="sec"><div class="st">Commodity &amp; Quantity</div><div class="grid">',
-    '<div><div class="lbl">Commodity</div><div class="val">'+(get('Commodity')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Quantity</div><div class="val">'+(get('Quantity')||'&mdash;')+'</div></div>',
+    // Commodity
+    '<div class="sec"><div class="st">Commodity &amp; Quantity</div><div class="grid3">',
+    '<div><div class="lbl">Commodity</div><div class="val">'+commodity+'</div></div>',
+    '<div><div class="lbl">Contract Quantity</div><div class="val">'+qty+'</div></div>',
     '<div><div class="lbl">Tolerance</div><div class="val">+/- 5% Sellers Option</div></div>',
-    '<div><div class="lbl">Grade / Spec</div><div class="val">'+(get('Grade')||get('Specification')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Incoterms</div><div class="val">'+(get('Incoterms')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Port of Loading</div><div class="val">'+(get('Port of Loading')||get('POL')||'&mdash;')+'</div></div>',
-    '</div></div>',
-    '<div class="sec"><div class="st">Pricing</div><div class="grid">',
-    '<div><div class="lbl">Pricing Basis</div><div class="val">'+(get('Pricing Formula')||get('Pricing Basis')||get('Template')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">QP Period</div><div class="val">'+(get('QP Period')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Provisional Price</div><div class="val">'+(get('Provisional Price')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Provisional Value</div><div class="val">'+(get('Provisional Value')||get('Contract Value')||'&mdash;')+'</div></div>',
+    '<div><div class="lbl">Incoterms</div><div class="val">'+incoterms+'</div></div>',
+    '<div><div class="lbl">Weight Basis</div><div class="val">Shipped Weight</div></div>',
     '<div><div class="lbl">Currency</div><div class="val">USD</div></div>',
     '</div></div>',
-    '<div class="sec"><div class="st">Payment Terms</div><div class="grid">',
-    '<div><div class="lbl">Payment Basis</div><div class="val">'+(get('Payment Basis')||get('Payment Terms')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Provisional %</div><div class="val">'+(get('Provisional %')||'90%')+'</div></div>',
-    '<div><div class="lbl">Final Settlement</div><div class="val">After QP close</div></div>',
+    // Pricing
+    '<div class="sec"><div class="st">Pricing &amp; Quotational Period</div><div class="grid3">',
+    '<div><div class="lbl">Pricing Basis</div><div class="val">'+pricing+'</div></div>',
+    '<div><div class="lbl">QP Period</div><div class="val">As per contract terms</div></div>',
+    '<div><div class="lbl">Pricing Frequency</div><div class="val">Monthly average</div></div>',
     '</div></div>',
-    '<div class="sec"><div class="st">Shipment</div><div class="grid">',
-    '<div><div class="lbl">Shipment Period</div><div class="val">'+(get('Shipment Period')||get('Shipment Window')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Port of Discharge</div><div class="val">'+(get('Port of Discharge')||get('POD')||'&mdash;')+'</div></div>',
-    '<div><div class="lbl">Vessel / Carrier</div><div class="val">Sellers Choice</div></div>',
+    // Payment
+    '<div class="sec"><div class="st">Payment Terms</div><div class="grid3">',
+    '<div><div class="lbl">Payment Method</div><div class="val">TT / LC at sight</div></div>',
+    '<div><div class="lbl">Provisional Payment</div><div class="val">90% against BL documents</div></div>',
+    '<div><div class="lbl">Final Settlement</div><div class="val">After QP close + assay</div></div>',
     '</div></div>',
-    '<div class="notice">This contract is subject to the Standard Terms and Conditions of Trading Company DMCC. This document constitutes the entire agreement between the parties with respect to the subject matter hereof.</div>',
+    // Legal notice
+    '<div class="notice">This Purchase Contract is entered into between Trading Company DMCC (&quot;Buyer&quot;) and '+vendor+' (&quot;Seller&quot;). This contract is subject to the Standard Terms and Conditions of Trading Company DMCC. In the event of any conflict between this contract and any other document, this contract shall prevail. All disputes shall be resolved by arbitration in Dubai under DIAC rules.</div>',
+    '<hr class="divider">',
+    // Signatures
     '<div class="sig-blk">',
-    '<div class="sig"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666">For and on behalf of Buyer</div>',
-    '<div style="font-size:11px;font-weight:700;margin-top:4px">Trading Company DMCC</div>',
-    '<div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div>',
-    '<div class="sig"><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#666">For and on behalf of Seller</div>',
-    '<div style="font-size:11px;font-weight:700;margin-top:4px">'+(get('Vendor')||get('Counterparty')||'&mdash;')+'</div>',
-    '<div style="margin-top:30px;font-size:9px;color:#888">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div>',
+    '<div class="sig"><div class="sig-role">For and on behalf of Buyer</div><div class="sig-name">Trading Company DMCC</div><div class="sig-line">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div>',
+    '<div class="sig"><div class="sig-role">For and on behalf of Seller</div><div class="sig-name">'+vendor+'</div><div class="sig-line">Authorised Signatory &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div></div>',
     '</div>',
-    '<div class="ftr"><span>CTRM Platform &middot; Generated '+new Date().toLocaleString('en-GB')+'</span><span>'+contractNo+' &middot; Page 1 of 1</span></div>',
+    '<div class="ftr"><span>Generated by CTRM Platform &middot; '+new Date().toLocaleString('en-GB')+'</span><span>'+contractNo+' &middot; Page 1 of 1 &middot; CONFIDENTIAL</span></div>',
     '</body></html>'
   ].join('');
   W.document.write(html);
@@ -4932,40 +4954,85 @@ async function loadContractList(type) {
 }
 
 async function openContractDetail(contractId, type) {
-  const pageId = type === 'PC' ? 'purchase-contracts' : 'sales-contracts';
-  nav(pageId, document.querySelector('[data-page=' + pageId + ']'));
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId);
+    const data = await res.json();
+    const c = data.data || data;
+    if (!c || !c.contract_no) { toast('Not Found', 'Contract not found', 'warning'); return; }
 
-  const res = await fetch(API_BASE + '/api/contracts/' + contractId);
-  const data = await res.json();
-  const c = data.data || data;
-  if (!c || !c.contract_no) return;
+    window._currentContract = c;
 
-  // Populate contract header fields
-  const prefix = type === 'PC' ? 'pcd' : 'scd';
-  const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v||'—'; };
-  const setVal = (id, v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+    const s = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v||'—'; };
+    const sv = (id, v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
 
-  set(prefix+'-no', c.contract_no);
-  set(prefix+'-status', c.status);
-  set(prefix+'-counterparty', c.counterparty_name);
-  set(prefix+'-commodity', c.commodity_name || c.commodity_code);
-  set(prefix+'-qty', c.qty_mt + ' MT');
-  set(prefix+'-incoterms', c.incoterms);
-  set(prefix+'-deal', c.deal_no || '—');
+    if (type === 'PC') {
+      // Header
+      const title = document.getElementById('pcd-title');
+      if (title) title.textContent = c.contract_no + ' — Purchase Contract';
+      const summary = document.getElementById('pcd-summary');
+      if (summary) summary.textContent = [c.deal_no, c.counterparty_name, c.commodity_name||c.commodity_code, (c.qty_mt||'—')+' MT', c.incoterms].filter(Boolean).join(' · ');
+      const badge = document.getElementById('pcd-status-badge');
+      if (badge) { badge.textContent = c.status||'DRAFT'; badge.className = 'badge ' + (c.status==='CONTRACTED'?'bd-confirmed':c.status==='DRAFT'?'bd-draft':'bd-act'); }
+      // Lifecycle
+      ['pcd-lcs-draft','pcd-lcs-review','pcd-lcs-contracted'].forEach(function(id,i){
+        const el=document.getElementById(id);
+        if(!el)return;
+        const stages=['DRAFT','UNDER REVIEW','CONTRACTED'];
+        const cur=stages.indexOf(c.status||'DRAFT');
+        el.className='lcs '+(i<cur?'done':i===cur?'cur':'fut');
+      });
+      // General tab
+      s('pcd-no', c.contract_no);
+      s('pcd-deal', c.deal_no||'—');
+      s('pcd-date', c.contract_date ? new Date(c.contract_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—');
+      s('pcd-status', c.status||'DRAFT');
+      s('pcd-vendor', c.counterparty_name||'—');
+      s('pcd-commodity', (c.commodity_name||c.commodity_code)||'—');
+      s('pcd-qty', c.qty_mt ? c.qty_mt + ' MT' : '—');
+      s('pcd-incoterms', c.incoterms||'—');
+      s('pcd-pricing', c.pricing_formula||'—');
+      sv('pcd-remarks', 'Further to our discussions, ' + (c.counterparty_name||'Vendor') + ' confirms sale of ' + (c.commodity_name||c.commodity_code||'commodity') + ' to Trading Company DMCC at the following terms and conditions.');
+      // Show card
+      const card = document.getElementById('pc-detail-card');
+      if (card) { card.style.display='block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
+      wireTabs('pct');
+    } else {
+      // SC
+      const title = document.getElementById('scd-title');
+      if (title) title.textContent = c.contract_no + ' — Sales Contract';
+      const summary = document.getElementById('scd-summary');
+      if (summary) summary.textContent = [c.deal_no, c.counterparty_name, c.commodity_name||c.commodity_code, (c.qty_mt||'—')+' MT', c.incoterms].filter(Boolean).join(' · ');
+      const badge = document.getElementById('scd-status-badge');
+      if (badge) { badge.textContent = c.status||'DRAFT'; badge.className = 'badge ' + (c.status==='CONTRACTED'?'bd-confirmed':c.status==='DRAFT'?'bd-draft':'bd-act'); }
+      const card = document.getElementById('sc-detail-card');
+      if (card) { card.style.display='block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
+      wireTabs('sct');
+    }
+    toast('Opened', c.contract_no + ' · ' + (c.counterparty_name||''), 'info');
+  } catch(err) { toast('Error', err.message, 'error'); }
+}
 
-  // Pricing lines
-  if (c.pricing_lines && c.pricing_lines.length > 0) {
-    const pl = c.pricing_lines[0];
-    set(prefix+'-index-pct', (pl.index_pct||'—') + '%');
-    set(prefix+'-payable-pct', (pl.payable_pct||'—') + '%');
-    set(prefix+'-pricing-rule', pl.pricing_rule?.toUpperCase() || '—');
-    set(prefix+'-calc-method', pl.calc_method?.toUpperCase() || '—');
-    set(prefix+'-qp-start', pl.qp_start_date?.split('T')[0] || '—');
-    set(prefix+'-qp-end', pl.qp_end_date?.split('T')[0] || '—');
-  }
-
-  window._currentContract = c;
-  toast('Loaded', c.contract_no + ' · ' + (c.counterparty_name||''), 'success');
+// Open PC detail by contract_no (for static rows that don't have DB id yet)
+async function openPCDetailByNo(contractNo) {
+  try {
+    const res = await fetch(API_BASE + '/api/contracts');
+    const data = await res.json();
+    const contracts = data.data || [];
+    const c = contracts.find(function(x){ return x.contract_no === contractNo; });
+    if (c) { await openContractDetail(c.id, 'PC'); return; }
+    // Fallback: just show the static card
+    openPCDetail();
+  } catch(e) { openPCDetail(); }
+}
+async function openSCDetailByNo(contractNo) {
+  try {
+    const res = await fetch(API_BASE + '/api/contracts');
+    const data = await res.json();
+    const contracts = data.data || [];
+    const c = contracts.find(function(x){ return x.contract_no === contractNo; });
+    if (c) { await openContractDetail(c.id, 'SC'); return; }
+    openSCDetail();
+  } catch(e) { openSCDetail(); }
 }
 
 // ── LOGISTICS DRILL-DOWN ──────────────────────────────────────
