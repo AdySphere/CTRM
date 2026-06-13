@@ -913,7 +913,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-l"><div class="pt">Purchase Contracts</div><div class="ps">Auto-generated on deal confirmation · One per buy leg · Generates Purchase Order · Full contract terms</div></div>
         <div class="ph-r">
           <button class="btn bs2" onclick="nav('purchase-orders',document.querySelector('[data-page=purchase-orders]'))">View POs →</button>
-          <button class="btn bp" onclick="toast('Info','Purchase contracts auto-generated on deal confirmation','info')">＋ New Contract</button>
+          <button class="btn bp" onclick="openNewPCContract()">＋ New Contract</button>
           <button class="print-btn" onclick="printPage('Purchase Contract — PC-2026-001')">🖨 Print</button>
           <button class="export-btn" onclick="exportToExcel('pc-detail-card','Purchase_Contract_PC-2026-001')">⬇ Export</button>
         </div>
@@ -927,7 +927,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="card"><div class="ch"><div class="ct">Purchase Contract List</div></div>
         <div class="cbf"><table class="dt">
           <thead><tr><th>Contract No.</th><th>Deal</th><th>Date</th><th>Vendor</th><th>Commodity</th><th>Grade</th><th>Qty (MT)</th><th>Incoterms</th><th>POL</th><th>Pricing Formula</th><th>Status</th><th>Purchase Order</th><th>Ver.</th><th></th></tr></thead>
-          <tbody id="log-list-tbody">
+          <tbody id="pc-list-tbody">
             <tr style="cursor:pointer" onclick="openPCDetail()">
               <td class="mono ta fw6">PC-2026-001</td><td class="mono">DEAL123</td><td class="mono f10">2026-03-20</td>
               <td class="f11 fw6">Glencore AG</td><td><span class="cc"><span class="cp pcu"></span>Copper MillBerry</span></td>
@@ -942,7 +942,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <td class="f10">80:20</td><td class="mono fw6">700</td><td class="f10">FOB</td><td class="f10">Hamburg</td>
               <td class="mono f10">Quality Adj.</td><td><span class="badge bd-draft">DRAFT</span></td>
               <td class="mono tdim">—</td><td class="mono f10">v0.1</td>
-              <td><button class="btn bxs bg">Open</button></td>
+              <td><button class="btn bxs bg" onclick="event.stopPropagation();openPCDetail()">Open</button></td>
             </tr>
           </tbody>
         </table></div>
@@ -1267,7 +1267,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-l"><div class="pt">Sales Contracts</div><div class="ps">Auto-generated on deal confirmation · One per sell leg · Generates Sales Order · Full contract terms</div></div>
         <div class="ph-r">
           <button class="btn bs2" onclick="nav('sales-orders',document.querySelector('[data-page=sales-orders]'))">View SOs →</button>
-          <button class="btn bp" onclick="toast('Info','Sales contracts auto-generated on deal confirmation','info')">＋ New Contract</button>
+          <button class="btn bp" onclick="openNewSCContract()">＋ New Contract</button>
           <button class="print-btn" onclick="printPage('Sales Contract — SC-2026-001')">🖨 Print</button>
           <button class="export-btn" onclick="exportToExcel('sc-detail-card','Sales_Contract_SC-2026-001')">⬇ Export</button>
         </div>
@@ -1281,7 +1281,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="card"><div class="ch"><div class="ct">Sales Contract List</div></div>
         <div class="cbf"><table class="dt">
           <thead><tr><th>Contract No.</th><th>Deal</th><th>Date</th><th>Customer</th><th>Commodity</th><th>Grade</th><th>Qty (MT)</th><th>Incoterms</th><th>POD</th><th>Pricing Formula</th><th>Status</th><th>Sales Order</th><th>Ver.</th><th></th></tr></thead>
-          <tbody>
+          <tbody id="sc-list-tbody">
             <tr style="cursor:pointer" onclick="openSCDetail()">
               <td class="mono ta fw6">SC-2026-001</td><td class="mono">DEAL456</td><td class="mono f10">2026-03-21</td>
               <td class="f11 fw6">Tata Metals Ltd</td><td><span class="cc"><span class="cp pcu"></span>Copper MillBerry</span></td>
@@ -1296,7 +1296,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <td class="f10">80:20</td><td class="mono fw6">2000</td><td class="f10">CFR</td><td class="f10">Rotterdam</td>
               <td class="mono f10">Quality Adj.</td><td><span class="badge bd-draft">DRAFT</span></td>
               <td class="mono tdim">—</td><td class="mono f10">v0.1</td>
-              <td><button class="btn bxs bg">Open</button></td>
+              <td><button class="btn bxs bg" onclick="event.stopPropagation();openSCDetail()">Open</button></td>
             </tr>
           </tbody>
         </table></div>
@@ -4403,10 +4403,61 @@ function openNewContract(){
   else toast('New Contract', 'Open Purchase Contracts or Sales Contracts page first', 'info');
 }
 function openNewPCContract(){
-  toast('New Purchase Contract', 'Fill in the contract details — commodity, counterparty, qty, pricing terms', 'info');
+  document.getElementById('new-contract-type-label').textContent = 'Purchase Contract';
+  document.getElementById('new-contract-type').value = 'PC';
+  document.getElementById('new-contract-counterparty-label').textContent = 'Vendor / Supplier';
+  openModal('modal-new-contract');
+  loadNewContractDropdowns();
 }
 function openNewSCContract(){
-  toast('New Sales Contract', 'Fill in the contract details — commodity, counterparty, qty, pricing terms', 'info');
+  document.getElementById('new-contract-type-label').textContent = 'Sales Contract';
+  document.getElementById('new-contract-type').value = 'SC';
+  document.getElementById('new-contract-counterparty-label').textContent = 'Customer';
+  openModal('modal-new-contract');
+  loadNewContractDropdowns();
+}
+async function loadNewContractDropdowns() {
+  try {
+    const [cpRes, dealRes] = await Promise.all([
+      fetch(API_BASE + '/api/master/counterparties'),
+      fetch(API_BASE + '/api/deals')
+    ]);
+    const cps = (await cpRes.json()).data || [];
+    const deals = (await dealRes.json()).data || [];
+    const cpSel = document.getElementById('nc-counterparty-sel');
+    const dealSel = document.getElementById('nc-deal-sel');
+    if (cpSel) cpSel.innerHTML = '<option value="">— Select —</option>' + cps.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    if (dealSel) dealSel.innerHTML = '<option value="">— None —</option>' + deals.map(d=>`<option value="${d.id}">${d.deal_no}</option>`).join('');
+  } catch(e) { console.error('Dropdown load error:', e); }
+}
+async function submitNewContract() {
+  const type = document.getElementById('new-contract-type')?.value;
+  const dealId = document.getElementById('nc-deal-sel')?.value;
+  const cpId = document.getElementById('nc-counterparty-sel')?.value;
+  const commCode = document.getElementById('nc-commodity')?.value?.trim();
+  const qty = document.getElementById('nc-qty')?.value;
+  const incoterms = document.getElementById('nc-incoterms')?.value;
+  const pricing = document.getElementById('nc-pricing')?.value?.trim();
+  const notes = document.getElementById('nc-notes')?.value?.trim();
+  if (!cpId || !commCode || !qty) { toast('Required', 'Counterparty, commodity and quantity are required', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/contracts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contract_type: type, deal_id: dealId || null,
+        counterparty_id: parseInt(cpId), commodity_code: commCode,
+        qty_mt: parseFloat(qty), incoterms: incoterms || 'CIF',
+        pricing_formula: pricing || null, notes: notes || null,
+        contract_date: new Date().toISOString().split('T')[0]
+      })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || 'HTTP ' + res.status);
+    toast('Contract Created', json.data.contract_no + ' saved', 'success');
+    closeModal('modal-new-contract');
+    loadContractList(type);
+  } catch(err) { toast('Error', err.message, 'error'); }
 }
 
 // CREATE INVOICE
@@ -5051,30 +5102,35 @@ async function submitAddBuyLeg() {
 
   if (!commodity || !qty) { toast('Required', 'Commodity and quantity are required', 'warning'); return; }
 
+  if (!_activeDeal?.id) { toast('No Deal ID', 'Cannot determine deal — please close and re-open the deal', 'error'); return; }
+
   try {
+    const payload = {
+      deal_id: _activeDeal.id,
+      supplier_id: vendor && vendor !== '' ? parseInt(vendor) : null,
+      commodity_code: commodity,
+      qty_mt: parseFloat(qty),
+      incoterms: incoterms || 'CIF',
+      pricing_template: template || null,
+      provisional_price: provPrice && provPrice !== '' ? parseFloat(provPrice) : null,
+      notes: notes || null
+    };
     const res = await fetch(API_BASE + '/api/buy-legs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        deal_id: _activeDeal.id,
-        supplier_id: vendor || null,
-        commodity_code: commodity,
-        qty_mt: parseFloat(qty),
-        incoterms: incoterms || 'CIF',
-        pricing_template: template || null,
-        provisional_price: provPrice ? parseFloat(provPrice) : null,
-        notes: notes || null
-      })
+      body: JSON.stringify(payload)
     });
     const json = await res.json();
-    if (!json.success) throw new Error(json.error || 'Save failed');
+    if (!res.ok || !json.success) throw new Error(json.error || 'HTTP ' + res.status);
 
     toast('Buy Leg Added', json.data.leg_ref + ' — ' + commodity + ' · ' + qty + ' MT saved', 'success');
     closeModal('modal-add-buy-leg');
     ['bl-commodity','bl-qty','bl-prov-price','bl-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('bl-vendor-sel').value = '';
     await loadBuyLegs(_activeDeal.id);
   } catch (err) {
-    toast('Error', err.message, 'error');
+    toast('Error saving buy leg', err.message, 'error');
+    console.error('Buy leg error:', err);
   }
 }
 
@@ -5727,6 +5783,48 @@ async function loadAllocationTable() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-buy-leg-detail')">Close</button>
       <button class="btn bp" onclick="toast('ERP','Purchase contract linked to this buy leg — view in Purchase Contracts','info')">View PC →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New Contract (PC or SC) -->
+<div class="mo" id="modal-new-contract">
+  <div class="md" style="max-width:540px">
+    <div class="mh">
+      <div class="mt" id="new-contract-type-label">New Purchase Contract</div>
+      <button class="mc" onclick="closeModal('modal-new-contract')">✕</button>
+    </div>
+    <input type="hidden" id="new-contract-type" value="PC">
+    <div class="mb">
+      <div class="f">
+        <div class="fl" id="new-contract-counterparty-label">Vendor / Supplier <span class="req">*</span></div>
+        <select class="fs" id="nc-counterparty-sel"><option value="">— Select —</option></select>
+      </div>
+      <div class="f"><div class="fl">Linked Deal</div>
+        <select class="fs" id="nc-deal-sel"><option value="">— None —</option></select>
+      </div>
+      <div class="f"><div class="fl">Commodity Code <span class="req">*</span></div>
+        <input type="text" class="fi" id="nc-commodity" placeholder="e.g. CU-MILLBERRY">
+      </div>
+      <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
+        <input type="number" class="fi" id="nc-qty" placeholder="0.000" step="0.001" min="0">
+      </div>
+      <div class="f"><div class="fl">Incoterms</div>
+        <select class="fs" id="nc-incoterms">
+          <option value="CIF">CIF</option><option value="FOB">FOB</option>
+          <option value="CFR">CFR</option><option value="EXW">EXW</option><option value="DAP">DAP</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Pricing Formula</div>
+        <input type="text" class="fi" id="nc-pricing" placeholder="e.g. 91% LME Lowest of 4">
+      </div>
+      <div class="f"><div class="fl">Notes</div>
+        <input type="text" class="fi" id="nc-notes" placeholder="Any remarks…">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-contract')">Cancel</button>
+      <button class="btn bp" onclick="submitNewContract()">Create Contract →</button>
     </div>
   </div>
 </div>

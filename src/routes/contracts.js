@@ -54,14 +54,21 @@ router.get('/:id', async (req, res) => {
 // POST /api/contracts
 router.post('/', async (req, res) => {
   try {
-    const { contract_no, contract_date, contract_type, deal_id, commodity_code,
-      counterparty_id, qty_mt, incoterms, payment_pct = 90, currency = 'USD', notes } = req.body;
+    let { contract_no, contract_date, contract_type, deal_id, commodity_code,
+      counterparty_id, qty_mt, incoterms, payment_pct = 90, currency = 'USD', pricing_formula, notes } = req.body;
+    // Auto-generate contract_no if not provided
+    if (!contract_no) {
+      const prefix = contract_type === 'SC' ? 'SC' : 'PC';
+      const countRes = await query(`SELECT COUNT(*) FROM contracts WHERE contract_type=$1`, [contract_type]);
+      const num = String(parseInt(countRes.rows[0].count) + 1).padStart(3, '0');
+      contract_no = prefix + '-' + new Date().getFullYear() + '-' + num;
+    }
     const result = await query(`
       INSERT INTO contracts (contract_no, contract_date, contract_type, deal_id, commodity_code,
         counterparty_id, qty_mt, incoterms, payment_pct, currency, notes, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'DRAFT')
+      VALUES ($1,COALESCE($2::date,CURRENT_DATE),$3,$4,$5,$6,$7,$8,$9,$10,$11,'DRAFT')
       RETURNING *
-    `, [contract_no, contract_date, contract_type, deal_id, commodity_code,
+    `, [contract_no, contract_date||null, contract_type, deal_id||null, commodity_code,
         counterparty_id, qty_mt, incoterms, payment_pct, currency, notes]);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
