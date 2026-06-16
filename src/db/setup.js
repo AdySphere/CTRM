@@ -208,6 +208,10 @@ async function setupDatabase() {
       qty_mt          DECIMAL(12,3),
       supplier_id     INT REFERENCES counterparties(id),
       customer_id     INT REFERENCES counterparties(id),
+      incoterms       VARCHAR(10),
+      origin          VARCHAR(100),
+      destination     VARCHAR(100),
+      direction       VARCHAR(10),
       confirmed       BOOLEAN DEFAULT FALSE,
       confirmed_at    TIMESTAMPTZ,
       confirmed_by    VARCHAR(50),
@@ -275,6 +279,11 @@ async function setupDatabase() {
     await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS version INT DEFAULT 1`);
     await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS parent_quotation_id INT REFERENCES quotations(id)`);
     await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS quote_type VARCHAR(5) DEFAULT 'SQ'`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS incoterms VARCHAR(10)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS origin VARCHAR(100)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS destination VARCHAR(100)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)`);
+
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS direction VARCHAR(10) DEFAULT 'BUY'`);
   } catch(e) {}
   console.log('✓ contracts');

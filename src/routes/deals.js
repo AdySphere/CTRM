@@ -493,7 +493,10 @@ quotationsRouter.post('/:id/accept', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
     const qtRes = await query(`
-      SELECT q.*, e.supplier_id, e.deal_type
+      SELECT q.*,
+        e.supplier_id as enq_supplier_id, e.customer_id as enq_customer_id,
+        e.deal_type, e.direction, e.incoterms as enq_incoterms,
+        e.origin, e.destination, e.enquiry_no
       FROM quotations q LEFT JOIN enquiries e ON e.id=q.enquiry_id
       WHERE q.id=$1 OR q.quotation_no=$1
     `, [req.params.id]);
@@ -501,14 +504,22 @@ quotationsRouter.post('/:id/accept', async (req, res) => {
     const qt = qtRes.rows[0];
     if (qt.status === 'CONVERTED') return res.status(400).json({ error: 'Already converted to a deal' });
 
-    // Auto-generate deal number
-    const dealCount = await query(`SELECT COUNT(*) FROM deals`);
-    const dealNo = 'DEAL' + String(parseInt(dealCount.rows[0].count) + 1).padStart(3, '0');
+    // Auto-generate deal number — sequential
+    const yr = new Date().getFullYear();
+    const dealCount = await query(`SELECT COUNT(*) FROM deals WHERE deal_no LIKE $1`, [`DL-${yr}-%`]);
+    const dealNo = 'DL-' + yr + '-' + String(parseInt(dealCount.rows[0].count) + 1).padStart(3, '0');
+
+    // Resolve fields — quotation values take priority over enquiry defaults
+    const supplierId = qt.enq_supplier_id || null;
+    const customerId = qt.customer_id || qt.enq_customer_id || null;
+    const incoterms = qt.incoterms || qt.enq_incoterms || null;
+    const direction = qt.direction || qt.quote_type === 'PQ' ? 'BUY' : 'SELL';
 
     const dealRes = await query(`
       INSERT INTO deals (deal_no, deal_date, enquiry_id, commodity_code, deal_type,
-        qty_mt, supplier_id, customer_id, confirmed, confirmed_at, status)
-      VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7, TRUE, NOW(), 'CONFIRMED') RETURNING *
+        qty_mt, supplier_id, customer_id, incoterms, origin, destination, direction,
+        confirmed, confirmed_at, status)
+      VALUES ($1, NOW(), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, TRUE, NOW(), 'CONFIRMED') RETURNING *
     `, [dealNo, qt.enquiry_id, qt.commodity_code, qt.deal_type || 'BACK-TO-BACK',
         qt.qty_mt, qt.supplier_id||null, qt.customer_id]);
 

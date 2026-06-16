@@ -673,10 +673,18 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </table>
         </div>
       </div>
+      <!-- RELATED DOCUMENTS -->
+      <div class="card mt14" id="enq-related-docs" style="display:none">
+        <div class="ch"><div class="ct">Related Documents</div><div class="cs">Quotations, Deals and Contracts linked to this enquiry</div></div>
+        <div class="cb"><div id="enq-related-list" style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="padding:10px 14px;background:var(--surface2);border-radius:var(--r);font-size:11px;color:var(--text3)">Loading…</div>
+        </div></div>
+      </div>
+
       <div class="br btw mt16">
         <button class="btn bg" onclick="nav('enquiry',document.querySelector('[data-page=enquiry]'))">← Back to List</button>
         <div class="br gap7">
-          <button class="btn bs">Save Draft</button>
+          <button class="btn bs" onclick="saveEnquiryDraft()">Save Draft</button>
           <button class="btn bp" onclick="createQuotation()">Create Quotation →</button>
         </div>
       </div>
@@ -4160,17 +4168,54 @@ function onNqEnquiryChange() {
   const sel = document.getElementById('nq-enquiry-sel');
   const opt = sel?.options[sel.selectedIndex];
   if (!opt || !opt.value) return;
-  const cpSel = document.getElementById('nq-customer-sel');
+  const d = opt.dataset;
+
+  // Auto-set quote type from enquiry direction
+  const isBuy = d.dir === 'BUY';
+  const pqRadio = document.getElementById('nq-type-pq');
+  const sqRadio = document.getElementById('nq-type-sq');
+  if (pqRadio && sqRadio) {
+    pqRadio.checked = isBuy;
+    sqRadio.checked = !isBuy;
+    onNqTypeChange(isBuy ? pqRadio : sqRadio);
+  }
+
+  // Copy commodity
   const cmSel = document.getElementById('nq-commodity-sel');
+  if (cmSel && d.comm) { cmSel.value = d.comm; onNqCommodityChange(); }
+
+  // Copy counterparty (vendor for BUY, customer for SELL)
+  const cpSel = document.getElementById('nq-customer-sel');
+  if (cpSel) {
+    const cpId = isBuy ? d.sid : d.cid;
+    if (cpId) cpSel.value = cpId;
+  }
+
+  // Copy qty
   const qtyEl = document.getElementById('nq-qty');
+  if (qtyEl && d.qty) qtyEl.value = d.qty;
+
+  // Copy incoterms
   const incoEl = document.getElementById('nq-incoterms');
+  if (incoEl && d.inco) incoEl.value = d.inco;
+
+  // Copy POD/origin
   const podEl = document.getElementById('nq-pod');
+  if (podEl && d.dest) podEl.value = d.dest;
+  const polEl = document.getElementById('nq-pol');
+  if (polEl && d.origin) polEl.value = d.origin;
+
+  // Update UOM badge
   const uomBadge = document.getElementById('nq-uom-badge');
-  if (cpSel && opt.dataset.cid) cpSel.value = opt.dataset.cid;
-  if (cmSel && opt.dataset.comm) { cmSel.value = opt.dataset.comm; onNqCommodityChange(); }
-  if (qtyEl && opt.dataset.qty) qtyEl.value = opt.dataset.qty;
-  if (incoEl && opt.dataset.inco) incoEl.value = opt.dataset.inco;
-  if (podEl && opt.dataset.dest) podEl.value = opt.dataset.dest;
+  if (uomBadge && d.uom) uomBadge.textContent = d.uom;
+  const qtyLbl = document.getElementById('nq-qty-label');
+  if (qtyLbl && d.uom) qtyLbl.innerHTML = 'Quantity (' + d.uom + ') <span class="req">*</span>';
+
+  // Show linked enquiry reference banner
+  const enqRef = document.getElementById('nq-enq-ref');
+  if (enqRef) enqRef.textContent = d.enqno || '';
+  const enqBanner = document.getElementById('nq-enq-ref-banner');
+  if (enqBanner) enqBanner.style.display = d.enqno ? 'flex' : 'none';
 }
 function onNqCommodityChange() {
   const cmSel = document.getElementById('nq-commodity-sel');
@@ -4623,6 +4668,31 @@ function openNewContract(){
   else if(page.includes('sales')) openNewSCContract();
   else toast('New Contract', 'Open Purchase Contracts or Sales Contracts page first', 'info');
 }
+function prefillContractFromDeal(deal, type) {
+  if (!deal) return;
+  setTimeout(function(){
+    const cmSel = document.getElementById('nc-commodity');
+    if (cmSel && deal.commodity_code) {
+      cmSel.value = deal.commodity_code;
+      const uom = (window._commodityCache[deal.commodity_code]?.uom)||'MT';
+      const lbl = document.getElementById('nc-qty-label');
+      if (lbl) lbl.innerHTML = 'Quantity ('+uom+') <span class="req">*</span>';
+    }
+    const qtyEl = document.getElementById('nc-qty');
+    if (qtyEl && deal.qty_mt) qtyEl.value = deal.qty_mt;
+    const incoSel = document.getElementById('nc-incoterms');
+    if (incoSel && deal.incoterms) incoSel.value = deal.incoterms;
+    const cpSel = document.getElementById('nc-counterparty-sel');
+    if (cpSel) {
+      const cpId = type==='PC' ? deal.supplier_id : deal.customer_id;
+      if (cpId) cpSel.value = cpId;
+    }
+    const dealSel = document.getElementById('nc-deal-sel');
+    if (dealSel && deal.id) dealSel.value = deal.id;
+    const pricingEl = document.getElementById('nc-pricing');
+    if (pricingEl && deal.pricing_template) pricingEl.value = deal.pricing_template;
+  }, 500);
+}
 function openNewPCContract(){
   document.getElementById('new-contract-type-label').textContent='Purchase Contract';
   document.getElementById('new-contract-type').value='PC';
@@ -4631,8 +4701,7 @@ function openNewPCContract(){
   if(dt)dt.value=new Date().toISOString().split('T')[0];
   openModal('modal-new-contract');
   loadNewContractDropdowns();
-  // After dropdowns load, wire onchange for commodity UOM
-  setTimeout(function(){ var s=document.getElementById('nc-commodity'); if(s) s.onchange=function(){ var uom=s.options[s.selectedIndex]?.dataset?.uom||(window._commodityCache[s.value]?.uom)||'MT'; var lbl=document.getElementById('nc-qty-label'); if(lbl) lbl.innerHTML='Quantity ('+uom+') <span class="req">*</span>'; }; }, 400);
+  if(window._activeDeal) prefillContractFromDeal(window._activeDeal,'PC');
 }
 function openNewSCContract(){
   document.getElementById('new-contract-type-label').textContent='Sales Contract';
@@ -4642,6 +4711,7 @@ function openNewSCContract(){
   if(dt)dt.value=new Date().toISOString().split('T')[0];
   openModal('modal-new-contract');
   loadNewContractDropdowns();
+  if(window._activeDeal) prefillContractFromDeal(window._activeDeal,'SC');
 }
 async function loadNewContractDropdowns(){
   try{
@@ -5154,6 +5224,8 @@ async function openEnquiryDetail(ref) {
     if (confirmBtn) { confirmBtn.onclick = function(){ confirmDeal(enq.id, enqNo); }; }
 
     wireTabs('enq-tab');
+    // Load related documents
+    await loadRelatedDocs(enq.id, enqNo);
     toast('Loaded', enqNo + ' · ' + (enq.commodity_name || enq.commodity_code || ''), 'info');
   } catch(err) {
     toast('Error', 'Failed to load: ' + err.message, 'warning');
@@ -5259,6 +5331,78 @@ function onEnqCPChange(sel, side) {
   }
   // Update deal value estimate if qty is available
   updateEnqDealValue();
+}
+
+async function loadRelatedDocs(enqId, enqNo) {
+  const panel = document.getElementById('enq-related-docs');
+  const list = document.getElementById('enq-related-list');
+  if (!panel || !list) return;
+  panel.style.display = 'block';
+  list.innerHTML = '<div style="font-size:11px;color:var(--text3)">Loading…</div>';
+  try {
+    const [qtRes, dealRes] = await Promise.all([
+      fetch(API_BASE + '/api/quotations').then(function(r){return r.json();}),
+      fetch(API_BASE + '/api/deals').then(function(r){return r.json();})
+    ]);
+    const quotes = (qtRes.data||[]).filter(function(q){ return q.enquiry_no === enqNo; });
+    const deals = (dealRes.data||[]).filter(function(d){ return String(d.enquiry_id) === String(enqId); });
+    if (!quotes.length && !deals.length) {
+      list.innerHTML = '<div style="padding:10px 14px;background:var(--surface2);border-radius:var(--r);font-size:11px;color:var(--text3)">No related documents yet — create a quotation to get started</div>';
+      return;
+    }
+    const cards = [];
+    quotes.forEach(function(q) {
+      const cls = q.status==='OPEN'?'bd-act':q.status==='CONVERTED'?'bd-confirmed':'bd-draft';
+      const qtype = q.quote_type_resolved || q.quote_type || 'SQ';
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:10px 14px;background:var(--surface2);border-radius:var(--r);min-width:160px;cursor:pointer;border:1px solid var(--border)';
+      row.innerHTML = '<div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:4px">'+qtype+' Quotation</div>'
+        + '<div style="font-size:12px;font-weight:700;color:var(--accent)">'+q.quotation_no+'</div>'
+        + '<div style="margin-top:4px"><span class="badge '+cls+'" style="font-size:8px">'+q.status+'</span></div>';
+      row.onclick = function(){ openQuotationDetail(q.quotation_no); };
+      list.appendChild(row);
+    });
+    deals.forEach(function(d) {
+      const cls = d.status==='CONFIRMED'?'bd-confirmed':'bd-draft';
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:10px 14px;background:var(--surface2);border-radius:var(--r);min-width:160px;cursor:pointer;border:1px solid var(--border)';
+      row.innerHTML = '<div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:4px">Deal</div>'
+        + '<div style="font-size:12px;font-weight:700;color:var(--accent)">'+d.deal_no+'</div>'
+        + '<div style="margin-top:4px"><span class="badge '+cls+'" style="font-size:8px">'+d.status+'</span></div>';
+      row.onclick = function(){ openDealDetail(d.deal_no); };
+      list.appendChild(row);
+    });
+    if (!list.children.length) list.innerHTML = '<div style="font-size:11px;color:var(--text3)">No related documents</div>';
+  } catch(e) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--accent2)">Could not load</div>';
+  }
+}
+
+async function saveEnquiryDraft() {
+  const enq = window._currentDeal;
+  if (!enq || !enq.id) { toast('No Enquiry', 'Open an enquiry first', 'warning'); return; }
+  const vendorSel = document.querySelector('#enq-cp .sel-vendor');
+  const custSel = document.querySelector('#enq-cp .sel-customer');
+  const commSel = document.querySelector('#enq-comm .sel-commodity');
+  const payload = {
+    commodity_code: commSel?.value || enq.commodity_code || null,
+    direction: (document.querySelector('input[name="enq-cp-dir"]:checked')?.value) || enq.direction || 'BUY',
+    supplier_id: vendorSel?.value ? parseInt(vendorSel.value) : (enq.supplier_id||null),
+    customer_id: custSel?.value ? parseInt(custSel.value) : (enq.customer_id||null),
+    status: enq.status || 'OPEN'
+  };
+  Object.keys(payload).forEach(function(k){ if(!payload[k]) delete payload[k]; });
+  try {
+    const res = await fetch(API_BASE + '/api/enquiries/' + enq.id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      Object.assign(window._currentDeal, payload);
+      toast('Saved', (enq.enquiry_no||enq.deal_no) + ' saved', 'success');
+      await loadEnquiryList();
+    } else { toast('Error', data.error||'Save failed', 'error'); }
+  } catch(err) { toast('Error', err.message, 'error'); }
 }
 
 function updateEnqDealValue() {
@@ -6186,6 +6330,7 @@ async function loadAllocationTable() {
         </div>
       </div>
       <div class="divl" id="nq-cp-label">Enquiry & Counterparty</div>
+      <div class="ban bi mb12" id="nq-enq-ref-banner" style="display:none"><span>↗</span>Carrying forward from: <strong id="nq-enq-ref"></strong></div>
       <div class="fg">
         <div class="f"><div class="fl">Source Enquiry</div>
           <select class="fs" id="nq-enquiry-sel" onchange="onNqEnquiryChange()">
@@ -6216,8 +6361,11 @@ async function loadAllocationTable() {
             <option value="">—</option><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option><option>EXW</option>
           </select>
         </div>
-        <div class="f"><div class="fl">Port of Discharge</div>
-          <input type="text" class="fi" id="nq-pod" placeholder="e.g. Nhava Sheva">
+        <div class="f"><div class="fl">Port of Loading (Origin)</div>
+          <input type="text" class="fi" id="nq-pol" placeholder="e.g. Shanghai, CN">
+        </div>
+        <div class="f"><div class="fl">Port of Discharge (Destination)</div>
+          <input type="text" class="fi" id="nq-pod" placeholder="e.g. Nhava Sheva, IN">
         </div>
         <div class="f"><div class="fl">Delivery From</div>
           <input type="date" class="fi" id="nq-delivery-from">
