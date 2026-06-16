@@ -563,7 +563,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Commodity Group</div><div class="fc" id="enq-comm-group">—</div></div>
             <div class="f"><div class="fl">Grade / Specification</div><input type="text" class="fi" placeholder="e.g. Grade A, HMS 80:20, API 2"></div>
             <div class="f"><div class="fl">Quantity <span class="req">*</span></div><input type="number" class="fi" placeholder="e.g. 500"></div>
-            <div class="f"><div class="fl">Quantity UOM</div><div class="fc" id="enq-comm-uom">MT</div></div>
+            <div class="f"><div class="fl">Quantity UOM</div><div class="fc"><span class="badge bd-act" id="enq-comm-uom" style="font-size:11px;padding:4px 10px">MT</span></div></div>
             <div class="f"><div class="fl">Tolerance %</div><input type="number" class="fi" placeholder="e.g. 5"></div>
             <div class="f"><div class="fl">Tolerance Type</div><select class="fs"><option>MOLOO</option><option>MOLCHOPT</option><option>FIXED</option></select></div>
             <div class="f"><div class="fl">Weight Basis</div><select class="fs"><option>SHIPPED-WEIGHT</option><option>OUTTURN-WEIGHT</option><option>DRAFT-SURVEY</option></select></div>
@@ -4833,62 +4833,163 @@ async function sendHedgeToTreasury(){
 // ══════════════════════════════════════════════════════════════
 
 // ── ENQUIRY DRILL-DOWN ────────────────────────────────────────
-async function openEnquiryDetail(dealNo) {
-  // Navigate to detail page
+async function openEnquiryDetail(ref) {
   nav('enq-detail', document.querySelector('[data-page=enq-detail]'));
-  
-  // Show loading
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v ?? '—'; };
-  set('enqd-no', dealNo);
+  const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v ?? ''; };
+  set('enqd-no', ref);
   set('enqd-commodity', 'Loading...');
 
   try {
-    const res = await fetch(API_BASE + '/api/deals');
-    const data = await res.json();
-    const deals = data.data || data;
-    const deal = Array.isArray(deals) ? deals.find(d => d.deal_no === dealNo) : null;
+    // Try enquiries endpoint first, fall back to deals
+    let enq = null;
+    const enqRes = await fetch(API_BASE + '/api/enquiries');
+    const enqData = await enqRes.json();
+    const enqList = enqData.data || [];
+    enq = enqList.find(function(e){ return e.enquiry_no === ref || e.deal_no === ref; });
 
-    if (!deal) {
-      toast('Not Found', 'Deal ' + dealNo + ' not found in database', 'warning');
-      return;
+    // Fall back to deals if not found in enquiries
+    if (!enq) {
+      const dealRes = await fetch(API_BASE + '/api/deals');
+      const dealData = await dealRes.json();
+      const deals = dealData.data || [];
+      enq = deals.find(function(d){ return d.deal_no === ref || d.enquiry_no === ref; });
     }
 
-    // Populate header
-    set('enqd-no', deal.deal_no);
-    set('enqd-commodity', deal.commodity_name || deal.commodity_code);
-    
-    // Status badge
+    if (!enq) { toast('Not Found', ref + ' not found', 'warning'); return; }
+
+    window._currentDeal = enq;
+
+    // ── Header ──────────────────────────────────────────────
+    const enqNo = enq.enquiry_no || enq.deal_no;
+    set('enqd-no', enqNo);
+    set('enqd-commodity', enq.commodity_name || enq.commodity_code || '—');
+
     const badge = document.getElementById('enqd-badge');
     if (badge) {
-      const colours = { DRAFT:'bd-draft', CONFIRMED:'bd-confirmed', OPEN:'bd-act', QUOTED:'bd-ship', CONVERTED:'bd-confirmed' };
-      badge.outerHTML = '<span id="enqd-badge" class="badge ' + (colours[deal.status]||'bd-draft') + '">' + (deal.status||'DRAFT') + '</span>';
+      const colours = {DRAFT:'bd-draft',OPEN:'bd-act',QUOTED:'bd-ship',CONVERTED:'bd-confirmed',CLOSED:'bd-ship'};
+      badge.outerHTML = '<span id="enqd-badge" class="badge '+(colours[enq.status]||'bd-draft')+'">'+(enq.status||'DRAFT')+'</span>';
     }
 
-    // Populate general tab fields
-    set('enqd-status',   deal.status || '—');
-    set('enqd-date',     deal.deal_date?.split('T')[0] || '—');
-    set('enqd-deal-type',deal.deal_type || '—');
-    set('enqd-qty',      (deal.qty_mt || '—') + ' MT');
-    set('enqd-supplier', deal.supplier_name || '—');
-    set('enqd-customer', deal.customer_name || '—');
-    set('enqd-ref',      deal.deal_no);
-    set('enqd-incoterms',deal.incoterms || '—');
-    set('enqd-route',    '—');
+    // Lifecycle bar
+    const stages = ['DRAFT','OPEN','QUOTED','CONVERTED','DECLINED/EXPIRED'];
+    const curIdx = stages.indexOf(enq.status||'DRAFT');
+    document.querySelectorAll('#page-enq-detail .lcs').forEach(function(el,i){
+      el.className = 'lcs ' + (i < curIdx ? 'done' : i === curIdx ? 'cur' : 'fut');
+    });
 
-    // Store current deal for actions
-    window._currentDeal = deal;
+    // ── General tab ─────────────────────────────────────────
+    set('enqd-status', enq.status || 'DRAFT');
+    set('enqd-date', (enq.enquiry_date || enq.deal_date || '').split('T')[0] || '—');
+    set('enqd-deal-type', (enq.deal_type||'—').replace(/-/g,' '));
+    const uom = (window._commodityCache[enq.commodity_code]?.uom) || enq.uom || 'MT';
+    set('enqd-qty', (enq.qty_mt || '—') + ' ' + uom);
+    set('enqd-supplier', enq.supplier_name || '—');
+    set('enqd-customer', enq.customer_name || '—');
+    set('enqd-ref', enqNo);
+    set('enqd-incoterms', enq.incoterms || '—');
+    set('enqd-route', [enq.origin, enq.destination].filter(Boolean).join(' → ') || '—');
 
-    // Wire action buttons on detail page
+    // ── Commodity & Qty tab ──────────────────────────────────
+    // Populate commodity dropdown from cache
+    const commSel = document.querySelector('#enq-comm .sel-commodity');
+    if (commSel) {
+      if (commSel.options.length <= 1) {
+        // Build options from cache
+        const cms = Object.values(window._commodityCache);
+        const groups = {};
+        cms.forEach(function(c){ const g=c.category||'OTHER'; if(!groups[g]) groups[g]=[]; groups[g].push(c); });
+        const catLabels = {'BASE-METAL':'Base Metals','FERROUS':'Ferrous','PRECIOUS':'Precious Metals','ENERGY':'Energy','AGRICULTURAL':'Agricultural','FERTILIZER':'Fertilizers','POLYMER':'Polymers','OTHER':'Other'};
+        let opts = '<option value="">— Select Commodity —</option>';
+        Object.keys(catLabels).forEach(function(cat){
+          if(!groups[cat]) return;
+          opts += '<optgroup label="'+catLabels[cat]+'">';
+          groups[cat].forEach(function(c){ opts += '<option value="'+c.code+'" data-uom="'+(c.uom||'MT')+'" data-cat="'+(c.category||'')+'" data-group="'+(c.type||'')+'">'+ c.name +' ('+(c.uom||'MT')+')</option>'; });
+          opts += '</optgroup>';
+        });
+        commSel.innerHTML = opts;
+      }
+      commSel.value = enq.commodity_code || '';
+      // Trigger UOM update
+      if (enq.commodity_code) onEnqCommodity(commSel);
+    }
+
+    // Populate vendor/customer dropdowns
+    await populateEnqCPDropdowns(enq);
+
+    // Pricing intent
+    const pricingSel = document.querySelector('#enq-price .sel-template');
+    if (pricingSel && enq.pricing_intent) {
+      // Set free-text intent field if exists
+      const piField = document.getElementById('enq-pricing-intent');
+      if (piField) piField.value = enq.pricing_intent;
+    }
+
+    // Wire action buttons
     const confirmBtn = document.getElementById('enqd-confirm-btn');
-    if (confirmBtn) {
-      confirmBtn.onclick = () => confirmDeal(deal.id, deal.deal_no);
-      confirmBtn.style.display = deal.confirmed ? 'none' : '';
-    }
+    if (confirmBtn) { confirmBtn.onclick = function(){ confirmDeal(enq.id, enqNo); }; }
 
-    toast('Loaded', dealNo + ' · ' + (deal.commodity_name || deal.commodity_code), 'success');
+    wireTabs('enq-tab');
+    toast('Loaded', enqNo + ' · ' + (enq.commodity_name || enq.commodity_code || ''), 'info');
   } catch(err) {
-    toast('Error', 'Failed to load deal: ' + err.message, 'warning');
+    toast('Error', 'Failed to load: ' + err.message, 'warning');
+    console.error('openEnquiryDetail:', err);
   }
+}
+
+async function populateEnqCPDropdowns(enq) {
+  try {
+    let cps = Object.values(window._cpCache || {});
+    if (!cps.length) {
+      const res = await fetch(API_BASE + '/api/master/counterparties');
+      const json = await res.json();
+      cps = json.data || [];
+      window._cpCache = {};
+      cps.forEach(function(c){ window._cpCache[c.id] = c; });
+    }
+    const mkOpts = function(placeholder, selectedId) {
+      return '<option value="">'+placeholder+'</option>' + cps.map(function(c){
+        return '<option value="'+c.id+'"'+(c.id==selectedId?' selected':'')+'>'+c.name+'</option>';
+      }).join('');
+    };
+    const vendorSel = document.querySelector('#enq-cp .sel-vendor');
+    const custSel = document.querySelector('#enq-cp .sel-customer');
+    if (vendorSel) vendorSel.innerHTML = mkOpts('— Select Vendor —', enq.supplier_id);
+    if (custSel) custSel.innerHTML = mkOpts('— Select Customer —', enq.customer_id);
+  } catch(e) { console.warn('Could not load CPs:', e); }
+}
+
+function onEnqCommodity(sel) {
+  const code = sel.value;
+  const opt = sel.options[sel.selectedIndex];
+  const uom = opt?.dataset?.uom || (window._commodityCache[code]?.uom) || 'MT';
+  const cat = opt?.dataset?.cat || (window._commodityCache[code]?.category) || '';
+  const grp = opt?.dataset?.group || (window._commodityCache[code]?.type) || '';
+
+  // Update UOM display
+  const uomEl = document.getElementById('enq-comm-uom');
+  if (uomEl) uomEl.textContent = uom;
+
+  // Update group display
+  const grpEl = document.getElementById('enq-comm-group');
+  if (grpEl) grpEl.textContent = cat + (grp ? ' · ' + grp : '') || '—';
+
+  // Show/hide conditional fields
+  const bulkFields = document.getElementById('enq-bulk-fields');
+  const energyFields = document.getElementById('enq-energy-fields');
+  if (bulkFields) bulkFields.classList.toggle('hidden', cat !== 'AGRICULTURAL' && cat !== 'FERROUS');
+  if (energyFields) energyFields.classList.toggle('hidden', cat !== 'ENERGY');
+
+  // Update quantity label UOM
+  const qtyLbl = document.querySelector('#enq-comm .fl');
+  // Find the qty field label specifically
+  document.querySelectorAll('#enq-comm .f').forEach(function(f){
+    const lbl = f.querySelector('.fl');
+    const inp = f.querySelector('input[type="number"]');
+    if (lbl && inp && lbl.textContent.includes('Quantity')) {
+      lbl.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
+    }
+  });
 }
 
 async function confirmDeal(id, dealNo) {
@@ -4980,6 +5081,10 @@ async function loadCommodityDropdowns() {
     if(supEl) supEl.innerHTML = mkOpts(vendors.length ? vendors : allCps, '— Select Vendor —');
     const custEl = document.getElementById('enq-customer');
     if(custEl) custEl.innerHTML = mkOpts(customers.length ? customers : allCps, '— Select Customer —');
+
+    // Cache CPs for use in detail view
+    window._cpCache = {};
+    cps.forEach(function(c){ window._cpCache[c.id] = c; });
 
   } catch(e) { console.warn('Could not load master dropdowns:', e); }
 }
