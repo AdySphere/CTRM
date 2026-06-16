@@ -664,7 +664,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="divl mt12">Document Checklist (auto-generated from Commodity Group + Incoterms + LC flag)</div>
           <table class="lt">
             <thead><tr><th>Document Type</th><th>Required</th><th>Received</th><th>Received Date</th><th>Remarks</th></tr></thead>
-            <tbody>
+            <tbody id="po-list-tbody">
               <tr><td class="f11">COMMERCIAL-INVOICE</td><td><span class="badge bd-act">YES</span></td><td><select class="fs" style="width:60px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:120px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td></tr>
               <tr><td class="f11">BILL OF LADING</td><td><span class="badge bd-act">YES</span></td><td><select class="fs" style="width:60px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:120px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td></tr>
               <tr><td class="f11">CERTIFICATE OF ANALYSIS</td><td><span class="badge bd-act">YES</span></td><td><select class="fs" style="width:60px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:120px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td></tr>
@@ -895,7 +895,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               </div>
               <div class="divl">Payment Schedule</div>
               <table class="lt"><thead><tr><th>#</th><th>%</th><th>Trigger</th><th>Due Date</th><th>Status</th></tr></thead>
-                <tbody><tr><td class="mono f11">1</td><td class="mono f11">100%</td><td class="f11">AGAINST-BL</td><td class="mono f11">2026-05-30</td><td><span class="badge bd-draft">PENDING</span></td></tr></tbody>
+                <tbody id="so-list-tbody"><tr><td class="mono f11">1</td><td class="mono f11">100%</td><td class="f11">AGAINST-BL</td><td class="mono f11">2026-05-30</td><td><span class="badge bd-draft">PENDING</span></td></tr></tbody>
               </table>
             </div>
             <div id="sl-pen" class="ftc hidden">
@@ -991,7 +991,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="cs" style="margin-left:8px" id="pcd-summary">—</div>
           <span class="badge bd-act" style="margin-left:auto" id="pcd-status-badge">DRAFT</span>
           <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','New version drafted','info')">New Version</button>
-          <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
+          <button class="btn bp bsm" style="margin-left:7px" onclick="confirmContract('PC')">Confirm Contract →</button>
           <button class="btn bg bsm" style="margin-left:7px" onclick="printPCContract()">🖨 Print</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('pc-detail-card').style.display='none'">✕ Close</button>
         </div>
@@ -1031,7 +1031,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bi mb12"><span>ℹ</span>Add one line per quality grade. Each has its own quantity, spec, HS code and base price. Sample 1 has Q1+Q2 Lead-Tin as separate lines.</div>
           <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade / Quality</th><th>Qty (MT)</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle / Ingot Wt</th><th>Weight Basis</th><th>Origin</th></tr></thead>
           <tbody id="pc-mat-tbody">
-            <tr><td class="mono f10">1</td><td><span class="cc"><span class="cp pcu"></span>Copper MillBerry</span></td><td class="mono f10">7404.00.00</td><td class="f10">MillBerry · Cu min 91%</td><td class="mono fw6">100</td><td class="mono f10">±0.1%</td><td class="f10">MOLOO</td><td class="mono f10">MT</td><td class="f10">Bags</td><td class="mono f10">—</td><td class="f10">SHIPPED-WEIGHT</td><td class="f10">Tanzania</td></tr>
+            <tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading material lines…</td></tr>
           </tbody></table>
           <div class="lar br-row g7"><button class="btn bg bsm" onclick="addPCMatLine()">+ Add Quality / Material Line</button></div>
           <div class="divl mt12">General Material Terms</div>
@@ -1069,26 +1069,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <th>Derived MT Exposure</th>
             </tr></thead>
             <tbody id="pc-price-tbody">
-              <tr>
-                <td class="mono f10 fw6">1</td>
-                <td class="f11 fw6">Copper MillBerry<br><span class="f10 tdim mono">CU-MILLBERRY</span></td>
-                <td class="f11 fw6">Copper Cathode (Grade A)<br><span class="f10 tdim mono">CU-CATHODE-A</span></td>
-                <td class="mono f10">LME</td>
-                <td class="mono f10">LME</td>
-                <td class="mono f10">LME-CU-PROMPT</td>
-                <td class="mono fw6 ta">91%</td>
-                <td class="mono fw6 ta2">91%</td>
-                <td class="mono f10">—</td>
-                <td><span class="badge bd-act" style="font-size:8px">EVENT BASED</span></td>
-                <td class="f10">Lowest of 4<br><span class="tdim f10">(3M Bid/Ask, Cash Bid/Ask)</span></td>
-                <td class="mono f10">Cash Ask</td>
-                <td class="mono f10 ta2">2026-04-01</td>
-                <td class="mono f10 ta2">2026-04-30</td>
-                <td class="mono f10">—</td>
-                <td class="mono f10">—</td>
-                <td class="f10">SUPPLIER fixes</td>
-                <td class="mono fw6 tg">91.00 MT</td>
-              </tr>
+              <tr><td colspan="15" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading pricing lines…</td></tr>
             </tbody>
           </table>
           </div>
@@ -2642,24 +2623,26 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="sc"><div class="scl">Fully Allocated</div><div class="scv tg">1</div></div>
         <div class="sc"><div class="scl">Unallocated Buy Qty</div><div class="scv tdim">0 MT</div></div>
       </div>
+      <!-- LIVE STAT CARDS -->
+      <div class="sr">
+        <div class="sc"><div class="scl">Buy Lots Available</div><div class="scv ta3" id="alloc-stat-lots">—</div></div>
+        <div class="sc"><div class="scl">Sell Contracts Open</div><div class="scv ta" id="alloc-stat-sell">—</div></div>
+        <div class="sc"><div class="scl">Fully Allocated</div><div class="scv tg" id="alloc-stat-full">—</div></div>
+        <div class="sc"><div class="scl">Unallocated Qty</div><div class="scv tdim" id="alloc-stat-unalloc">—</div></div>
+      </div>
       <div class="two-col">
         <div class="card">
-          <div class="ch"><div class="ct">Buy Lots Available for Allocation</div></div>
+          <div class="ch"><div class="ct">Buy Lots (from Buy Legs)</div><div class="cs">Physical buy legs available to allocate against sell contracts</div></div>
           <div class="cbf"><table class="dt">
-            <thead><tr><th>Lot ID</th><th>Deal / Leg</th><th>Commodity</th><th>Total Qty</th><th>Allocated</th><th>Available</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td class="mono ta">BL-039-01</td><td class="mono">DL-039 / BL-01</td><td><span class="cc"><span class="cp pcu"></span>CU Cathode</span></td><td class="mono">500 MT</td><td class="mono tg">500 MT</td><td class="mono tdim">0 MT</td><td><span class="badge bd-act">FULLY-ALLOC</span></td></tr>
-              <tr><td class="mono ta">BL-040-03</td><td class="mono">DL-040 / BL-03</td><td><span class="cc"><span class="cp pfe"></span>HMS 1&2</span></td><td class="mono">700 MT</td><td class="mono ta2">500 MT</td><td class="mono ta">200 MT</td><td><span class="badge bd-ship">PART-ALLOC</span></td></tr>
-            </tbody>
+            <thead><tr><th>Lot Ref</th><th>Deal</th><th>Commodity</th><th>Total Qty</th><th>Allocated</th><th>Available</th><th>Status</th></tr></thead>
+            <tbody id="alloc-buy-tbody"><tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">Loading…</td></tr></tbody>
           </table></div>
         </div>
         <div class="card">
-          <div class="ch"><div class="ct">Allocation Lines — DL-2026-039</div></div>
+          <div class="ch"><div class="ct">Allocation Lines</div><div class="cs">All allocations — buy lot matched to sell contract</div></div>
           <div class="cbf"><table class="dt">
-            <thead><tr><th>Alloc. No.</th><th>Buy Lot</th><th>Sell Contract</th><th>Qty Allocated</th><th>Shipment</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td class="mono ta">AL-001</td><td class="mono ta3">BL-039-01</td><td class="mono ta2">SO-10042 / DL-039</td><td class="mono tg fw6">500 MT</td><td class="mono">SH-2026-011</td><td><span class="badge bd-act">CONFIRMED</span></td></tr>
-            </tbody>
+            <thead><tr><th>Alloc. No.</th><th>Buy Leg</th><th>Sell Contract</th><th>Qty</th><th>Shipment</th><th>Status</th><th></th></tr></thead>
+            <tbody id="alloc-lines-tbody"><tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">Loading…</td></tr></tbody>
           </table></div>
         </div>
       </div>
@@ -4309,148 +4292,76 @@ function createQuotation() {
   }, 600);
 }
 
-function addAdjLine() {
+async function loadAdjLines(qtId) {
   const tbody = document.getElementById('adj-lines-tbody');
-  if (!tbody) { toast('Adj Lines', 'Open a quotation and go to Adjustment Lines tab', 'info'); return; }
-  const rows = tbody.querySelectorAll('tr');
-  const n = rows.length + 1;
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td class="mono f11">${n}</td>
-    <td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="ADJ-CODE"></td>
-    <td><input type="text" class="fi" style="width:100px;font-size:10px" placeholder="Description"></td>
-    <td><select class="fs" style="font-size:10px"><option>FLAT-RATE</option><option>PCT-OF-PRICE</option><option>FORMULA</option></select></td>
-    <td><input type="number" class="fi" style="width:65px;font-size:10px" placeholder="0.00"></td>
-    <td><select class="fs" style="font-size:10px"><option>USD/MT</option><option>USD/BBL</option><option>USD/TOZ</option><option>USD/KG</option><option>%</option><option>USD</option></select></td>
-    <td><select class="fs" style="font-size:10px"><option>PRE-INVOICE</option><option>PRE-PRICE</option><option>POST-SETTLEMENT</option></select></td>
-    <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>`;
-  tbody.appendChild(tr);
+  if (!tbody || !qtId) return;
+  try {
+    const res = await fetch(API_BASE + '/api/adj-lines?quotation_id=' + qtId);
+    const data = await res.json();
+    const lines = data.data || [];
+    if (!lines.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:12px;color:var(--text3);font-size:11px">No adjustment lines yet</td></tr>'; return; }
+    const uom = (window._activeQuot && window._commodityCache && window._activeQuot.commodity_code) ? (window._commodityCache[window._activeQuot.commodity_code]?.uom||'MT') : 'MT';
+    tbody.innerHTML = lines.map(function(l){
+      return '<tr data-adj-id="'+l.id+'">'
+        + '<td class="mono f10 ta">'+l.line_no+'</td>'
+        + '<td><input type="text" class="fi" value="'+(l.adj_code||'')+'" placeholder="Code" style="font-size:10px"></td>'
+        + '<td><select class="fs" style="font-size:10px"><option'+(l.adj_type==='DEDUCTION'?' selected':'')+'>DEDUCTION</option><option'+(l.adj_type==='PREMIUM'?' selected':'')+'>PREMIUM</option><option'+(l.adj_type==='FLAT'?' selected':'')+'>FLAT</option></select></td>'
+        + '<td><input type="text" class="fi" value="'+(l.description||'')+'" placeholder="Description" style="font-size:10px"></td>'
+        + '<td><input type="number" class="fi" value="'+(l.rate||'')+'" placeholder="0.00" style="font-size:10px;text-align:right"></td>'
+        + '<td><select class="fs" style="font-size:10px"><option>USD/'+uom+'</option><option>%</option><option>USD</option></select></td>'
+        + '<td class="mono f10 ta2 tdim">—</td>'
+        + '<td><button class="btn bxs bd" onclick="deleteAdjLine('+l.id+')">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="8" style="color:var(--accent2);text-align:center;padding:12px;font-size:11px">Error loading lines</td></tr>'; }
 }
-
-function addPenLineAdv() {
+async function addAdjLine() {
+  if (!window._activeQuotDbId) { toast('Save First', 'Save the quotation before adding adjustment lines', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/adj-lines', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({quotation_id:window._activeQuotDbId, adj_type:'DEDUCTION', basis:'per-unit'})});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    await loadAdjLines(window._activeQuotDbId);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+async function deleteAdjLine(id) {
+  await fetch(API_BASE + '/api/adj-lines/' + id, {method:'DELETE'});
+  if (window._activeQuotDbId) await loadAdjLines(window._activeQuotDbId);
+}
+async function loadPenalties(qtId) {
   const tbody = document.getElementById('sell-pen-body');
-  if (!tbody) return;
-  if (tbody.querySelector('.te')) tbody.innerHTML = '';
-  const n = tbody.querySelectorAll('tr').length + 1;
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td class="mono f11">${n}</td>
-    <td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="PEN-CODE"></td>
-    <td><select class="fs" style="font-size:10px"><option>FLAT-RATE</option><option>PCT-OF-VALUE</option><option>PER-DAY</option></select></td>
-    <td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="Trigger condition"></td>
-    <td><input type="number" class="fi" style="width:65px;font-size:10px" placeholder="Rate"></td>
-    <td><select class="fs" style="font-size:10px"><option>USD/MT/day</option><option>USD/MT</option><option>%</option></select></td>
-    <td><span class="badge bd-danger" style="font-size:8px">OUT</span></td>
-    <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>`;
-  tbody.appendChild(tr);
+  if (!tbody || !qtId) return;
+  try {
+    const res = await fetch(API_BASE + '/api/penalties?quotation_id=' + qtId);
+    const data = await res.json();
+    const lines = data.data || [];
+    if (!lines.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:12px;color:var(--text3);font-size:11px">No penalties yet</td></tr>'; return; }
+    tbody.innerHTML = lines.map(function(l){
+      return '<tr data-pen-id="'+l.id+'">'
+        + '<td><input type="text" class="fi" value="'+(l.penalty_code||'')+'" placeholder="PEN-XXX" style="font-size:10px"></td>'
+        + '<td><select class="fs" style="font-size:10px"><option'+(l.penalty_type==='FLAT-RATE'?' selected':'')+'>FLAT-RATE</option><option'+(l.penalty_type==='SLIDING-SCALE'?' selected':'')+'>SLIDING-SCALE</option><option'+(l.penalty_type==='STEP'?' selected':'')+'>STEP</option></select></td>'
+        + '<td><input type="text" class="fi" value="'+(l.element||'')+'" placeholder="e.g. Days Late" style="font-size:10px"></td>'
+        + '<td><input type="text" class="fi" value="'+(l.threshold||'')+'" placeholder="—" style="font-size:10px"></td>'
+        + '<td><input type="text" class="fi" value="'+(l.rate||'')+'" placeholder="e.g. $5/MT/day" style="font-size:10px"></td>'
+        + '<td><select class="fs" style="font-size:10px"><option'+(l.direction==='OUT'?' selected':'')+'>OUT</option><option'+(l.direction==='IN'?' selected':'')+'>IN</option><option'+(l.direction==='BOTH'?' selected':'')+'>BOTH</option></select></td>'
+        + '<td><button class="btn bxs bd" onclick="deletePenalty('+l.id+')">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {}
 }
-
-function loadTemplateAdj() {
-  // Load standard penalty lines from template
-  const tbody = document.getElementById('sell-pen-body');
-  if (!tbody) return;
-  tbody.innerHTML = `
-    <tr><td class="mono f11">1</td><td class="mono f11 ta2">PEN-LATE-DEL</td><td><span class="ctp ct-flat">PER-DAY</span></td><td class="f11">Days Late Delivery</td><td><input type="number" class="fi" style="width:55px;font-size:10px" value="5"></td><td class="f11">USD/MT/day</td><td><span class="badge bd-danger" style="font-size:8px">OUT</span></td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
-    <tr><td class="mono f11">2</td><td class="mono f11 ta2">PEN-SHORT-DEL</td><td><span class="ctp ct-flat">PCT-OF-VALUE</span></td><td class="f11">Short Delivery &gt; 3%</td><td><input type="number" class="fi" style="width:55px;font-size:10px" value="2"></td><td class="f11">%</td><td><span class="badge bd-danger" style="font-size:8px">OUT</span></td><td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>`;
-  toast('Template Loaded', '2 standard penalty lines loaded from contract template', 'success');
+async function addPenLineAdv() {
+  if (!window._activeQuotDbId) { toast('Save First', 'Save the quotation before adding penalties', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/penalties', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({quotation_id:window._activeQuotDbId, penalty_type:'FLAT-RATE', direction:'OUT'})});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    await loadPenalties(window._activeQuotDbId);
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
-
-// Quotation functions (end)
-
-// Purchase contract functions
-function addPCMatLine(){
-  const tb=document.getElementById('pc-mat-tbody');
-  if(!tb)return;
-  const tr=document.createElement('tr');
-  tr.innerHTML='<td><select class="fs" style="font-size:10px"><option>CU-MILLBERRY</option><option>CU-CATHODE-A</option><option>PB-SN-INGOT</option></select></td>'
-    +'<td><input type="text" class="fi" style="width:80px;font-size:10px" placeholder="Description"></td>'
-    +'<td><input type="number" class="fi" style="width:60px;font-size:10px" placeholder="Qty"></td>'
-    +'<td><select class="fs" style="font-size:10px"><option>MT</option><option>DMT</option><option>BBL</option></select></td>'
-    +'<td><input type="number" class="fi" style="width:55px;font-size:10px" placeholder="±%" step="0.01"></td>'
-    +'<td><input type="number" class="fi" style="width:55px;font-size:10px" placeholder="±%" step="0.01"></td>'
-    +'<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
-  tb.appendChild(tr);
+async function deletePenalty(id) {
+  await fetch(API_BASE + '/api/penalties/' + id, {method:'DELETE'});
+  if (window._activeQuotDbId) await loadPenalties(window._activeQuotDbId);
 }
-function addPCQCLine(){
-  const tb=document.getElementById('pc-qc-tbody')||document.querySelector('#pc-qc table tbody');
-  if(!tb){ toast('QC Line','QC tab active — add element in QC table','info'); return; }
-  const tr=document.createElement('tr');
-  tr.innerHTML='<td><select class="fs" style="font-size:10px"><option>CU</option><option>PB</option><option>SN</option><option>MOISTURE</option><option>FE</option><option>AS</option><option>SB</option></select></td>'
-    +'<td><input type="number" class="fi" style="width:55px;font-size:10px" placeholder="Min %"></td>'
-    +'<td><input type="number" class="fi" style="width:55px;font-size:10px" placeholder="Max %"></td>'
-    +'<td><input type="number" class="fi" style="width:55px;font-size:10px" placeholder="Ref avg %"></td>'
-    +'<td><select class="fs" style="font-size:10px"><option>TYPE-A (USD charge)</option><option>TYPE-B (formula % slab)</option><option>REJECTION</option><option>INFO</option></select></td>'
-    +'<td><input type="number" class="fi" style="width:60px;font-size:10px" placeholder="Rate"></td>'
-    +'<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
-  tb.appendChild(tr);
-}
-function addPCPayLine(){
-  const tb=document.getElementById('pc-pay-tbody')||document.querySelector('#pc-pay table tbody');
-  if(!tb){ toast('Payment Line','Add payment milestone','info'); return; }
-  const tr=document.createElement('tr');
-  tr.innerHTML='<td><input type="number" class="fi" style="width:45px;font-size:10px" placeholder="#">'
-    +'</td><td><input type="text" class="fi" style="width:130px;font-size:10px" placeholder="Milestone description"></td>'
-    +'<td><input type="number" class="fi" style="width:50px;font-size:10px" placeholder="%"></td>'
-    +'<td><select class="fs" style="font-size:10px"><option>BL_DATE</option><option>ETA</option><option>ASSAY_RECEIPT</option><option>FINAL_INVOICE</option></select></td>'
-    +'<td><input type="number" class="fi" style="width:45px;font-size:10px" placeholder="Days"></td>'
-    +'<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
-  tb.appendChild(tr);
-}
-
-// Sales contract functions
-function addSCMatLine(){ addPCMatLine(); } // same pattern
-function addSCQCLine(){ addPCQCLine(); }
-function addSCPayLine(){ addPCPayLine(); }
-
-// Rollover
-function addRolloverEvent(){
-  toast('Rollover','Rollover event added · Specify new QP window dates and pricing rule','info');
-}
-
-// Provisional receipt
-function openProvRcptDetail(){
-  const el=document.getElementById('prov-rcpt-detail');
-  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
-  wireTabs('prt');
-}
-function addPRLine(){
-  toast('Receipt Line','New line added to provisional receipt · Enter lot details','info');
-}
-function addPRQCLine(){
-  toast('QC Line','QC entry line added · Enter assay values','info');
-}
-
-// GRN
-function openGRNDetail(){
-  const el=document.getElementById('grn-detail-card');
-  if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
-  wireTabs('grnt');
-}
-
-// Assay
-function showAssayEntry(lotId){
-  toast('Assay Entry','Opening assay entry for lot '+lotId,'info');
-}
-function addAssayElement(){
-  toast('Element','New element row added · Enter actual value','info');
-}
-
-// Pricing / QP
-function showQPDetail(dealId){
-  toast('QP Detail','Opening QP window detail for '+dealId,'info');
-}
-function addTypeBSlab(){
-  const tb=document.getElementById('type-b-tbody');
-  if(!tb){ toast('Slab','Type B slab table not visible — open Pricing Engine','info'); return; }
-  const tr=document.createElement('tr');
-  tr.innerHTML='<td><input type="text" class="fi" style="width:55px;font-size:10px" placeholder="Element"></td>'
-    +'<td><input type="number" class="fi" style="width:52px;font-size:10px"></td>'
-    +'<td><input type="number" class="fi" style="width:52px;font-size:10px"></td>'
-    +'<td class="mono f10">—%</td>'
-    +'<td><input type="number" class="fi" style="width:52px;font-size:10px" placeholder="%"></td>'
-    +'<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
-  tb.appendChild(tr);
-}
-
-// Adjustment / penalty functions
 function viewPenCalc(){
   toast('Penalty Calc','Opening penalty calculator · Enter actual assay values','info');
 }
@@ -4695,6 +4606,23 @@ function openNewContract(){
   else if(page.includes('sales')) openNewSCContract();
   else toast('New Contract', 'Open Purchase Contracts or Sales Contracts page first', 'info');
 }
+async function confirmContract(type) {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/confirm', {method:'PATCH', headers:{'Content-Type':'application/json'}});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Confirmed', c.contract_no + ' → CONTRACTED · PO/SO auto-generated', 'success');
+    window._currentContract = data.data;
+    const badge = document.getElementById('pcd-status-badge');
+    if (badge) { badge.className='badge bd-confirmed'; badge.textContent='CONTRACTED'; }
+    const status = document.getElementById('pcd-status');
+    if (status) status.textContent = 'CONTRACTED';
+    loadContractList(type);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function prefillContractFromDeal(deal, type) {
   if (!deal) return;
   setTimeout(function(){
@@ -5746,6 +5674,8 @@ async function openContractDetail(contractId, type) {
       const card = document.getElementById('pc-detail-card');
       if (card) { card.style.display='block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
       wireTabs('pct');
+      // Load material and pricing tabs from DB
+      if (c.id) loadContractTabs(c.id, 'pc');
     } else {
       // SC
       const title = document.getElementById('scd-title');
@@ -5834,6 +5764,9 @@ function afterNav(pageId) {
     else if (pageId === 'logistics') loadLogisticsList();
     else if (pageId === 'qpwindow') { loadQPDealOptions(); renderQPWindow(); }
     else if (pageId === 'exposure') renderExposureTable();
+    else if (pageId === 'allocation') loadAllocationPage();
+    else if (pageId === 'purchase-orders') loadOrdersList('PO');
+    else if (pageId === 'sales-orders') loadOrdersList('SO');
     else if (pageId === 'hedge') renderHedgeCard();
     else if (pageId === 'provisional-invoice') renderProvInvoice();
     else if (pageId === 'final-invoice') renderFinalInvoice();
@@ -6021,6 +5954,175 @@ function openAddBuyLeg() {
            .map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     }).catch(() => {});
   openModal('modal-add-buy-leg');
+}
+
+// ── ALLOCATION ────────────────────────────────────────────────
+async function loadAllocationPage() {
+  try {
+    const [blRes, allocRes, scRes] = await Promise.all([
+      fetch(API_BASE + '/api/buy-legs').then(function(r){return r.json();}),
+      fetch(API_BASE + '/api/allocations').then(function(r){return r.json();}),
+      fetch(API_BASE + '/api/contracts?type=SC').then(function(r){return r.json();})
+    ]);
+    const buyLegs = blRes.data || [];
+    const allocs = allocRes.data || [];
+    const sellContracts = scRes.data || [];
+
+    // Update stat cards
+    const set = function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; };
+    set('alloc-stat-lots', buyLegs.length);
+    set('alloc-stat-sell', sellContracts.filter(function(c){return c.status!=='CLOSED';}).length);
+    set('alloc-stat-full', allocs.filter(function(a){return a.status==='CONFIRMED';}).length);
+
+    // Buy lots table
+    const buyTbody = document.getElementById('alloc-buy-tbody');
+    if (buyTbody) {
+      if (!buyLegs.length) {
+        buyTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No buy legs yet — confirm a deal with buy legs first</td></tr>';
+      } else {
+        buyTbody.innerHTML = buyLegs.map(function(bl) {
+          const uom = (window._commodityCache && bl.commodity_code && window._commodityCache[bl.commodity_code]?.uom) || 'MT';
+          const allocatedQty = allocs.filter(function(a){return a.buy_leg_id==bl.id;}).reduce(function(s,a){return s+(parseFloat(a.qty_mt)||0);},0);
+          const available = (parseFloat(bl.qty_mt)||0) - allocatedQty;
+          const stCls = available <= 0 ? 'bd-confirmed' : allocatedQty > 0 ? 'bd-ship' : 'bd-draft';
+          const stLabel = available <= 0 ? 'FULLY-ALLOC' : allocatedQty > 0 ? 'PART-ALLOC' : 'UNALLOCATED';
+          return '<tr>'
+            + '<td class="mono ta">'+(bl.leg_ref||bl.id)+'</td>'
+            + '<td class="mono">'+(bl.deal_no||'—')+'</td>'
+            + '<td class="f11">'+(bl.commodity_code||'—')+'</td>'
+            + '<td class="mono">'+(bl.qty_mt||'—')+' '+uom+'</td>'
+            + '<td class="mono tg">'+allocatedQty.toFixed(3)+' '+uom+'</td>'
+            + '<td class="mono '+(available>0?'ta':'tdim')+'">'+available.toFixed(3)+' '+uom+'</td>'
+            + '<td><span class="badge '+stCls+'" style="font-size:8px">'+stLabel+'</span></td>'
+            + '</tr>';
+        }).join('');
+        const totalUnalloc = buyLegs.reduce(function(s,bl){
+          const a = allocs.filter(function(a){return a.buy_leg_id==bl.id;}).reduce(function(s2,a2){return s2+(parseFloat(a2.qty_mt)||0);},0);
+          return s + Math.max(0,(parseFloat(bl.qty_mt)||0)-a);
+        },0);
+        set('alloc-stat-unalloc', totalUnalloc.toFixed(2));
+      }
+    }
+
+    // Allocation lines table
+    const linesTbody = document.getElementById('alloc-lines-tbody');
+    if (linesTbody) {
+      if (!allocs.length) {
+        linesTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No allocations yet — click + Allocate to match buy lots to sell contracts</td></tr>';
+      } else {
+        linesTbody.innerHTML = allocs.map(function(a) {
+          const uom = (window._commodityCache && a.commodity_code && window._commodityCache[a.commodity_code]?.uom) || 'MT';
+          const stCls = a.status==='CONFIRMED'?'bd-confirmed':a.status==='DRAFT'?'bd-draft':'bd-act';
+          return '<tr>'
+            + '<td class="mono ta">'+(a.allocation_no||a.id)+'</td>'
+            + '<td class="mono ta3">'+(a.buy_contract_no||'—')+'</td>'
+            + '<td class="mono ta2">'+(a.sell_contract_no||a.sell_contract_id||'—')+'</td>'
+            + '<td class="mono tg fw6">'+(a.qty_mt||'—')+' '+uom+'</td>'
+            + '<td class="mono">'+(a.shipment_lot||'—')+'</td>'
+            + '<td><span class="badge '+stCls+'" style="font-size:8px">'+(a.status||'DRAFT')+'</span></td>'
+            + '<td><button class="btn bxs bd" onclick="deleteAllocation('+a.id+')">✕</button></td>'
+            + '</tr>';
+        }).join('');
+      }
+    }
+  } catch(e) {
+    console.error('loadAllocationPage:', e);
+    toast('Error', 'Could not load allocation data: ' + e.message, 'error');
+  }
+}
+
+async function deleteAllocation(id) {
+  if (!confirm('Remove this allocation?')) return;
+  try {
+    const res = await fetch(API_BASE + '/api/allocations/' + id, {method:'DELETE'});
+    const data = await res.json();
+    if (data.success) { await loadAllocationPage(); toast('Removed', 'Allocation removed', 'info'); }
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// ── PC/SC MATERIAL AND PRICING TABS FROM DB ───────────────────
+async function loadContractTabs(contractId, prefix) {
+  // prefix = 'pc' or 'sc'
+  try {
+    // Load pricing lines
+    const plRes = await fetch(API_BASE + '/api/contracts/' + contractId + '/pricing-lines').catch(function(){return null;});
+    if (plRes && plRes.ok) {
+      const plData = await plRes.json();
+      const lines = plData.data || [];
+      const priceTbody = document.getElementById(prefix + '-price-tbody');
+      if (priceTbody && lines.length) {
+        priceTbody.innerHTML = lines.map(function(pl, i) {
+          const uom = (window._commodityCache && pl.source_item_code && window._commodityCache[pl.source_item_code]?.uom) || 'MT';
+          return '<tr>'
+            + '<td class="mono f10 fw6">'+(i+1)+'</td>'
+            + '<td class="f11 fw6">'+(pl.source_item_code||'—')+'</td>'
+            + '<td class="f11">'+(pl.benchmark_code||'—')+'</td>'
+            + '<td class="mono f10 ta2">'+(pl.index_pct||'—')+'%</td>'
+            + '<td class="mono f10 ta2">'+(pl.payable_pct||'—')+'%</td>'
+            + '<td class="mono f10">'+(pl.pricing_rule||'—')+'</td>'
+            + '<td class="mono f10">'+(pl.calc_method||'—')+'</td>'
+            + '<td class="mono f10">'+(pl.qp_start_date?new Date(pl.qp_start_date).toLocaleDateString('en-GB'):'—')+'</td>'
+            + '<td class="mono f10">'+(pl.qp_end_date?new Date(pl.qp_end_date).toLocaleDateString('en-GB'):'—')+'</td>'
+            + '</tr>';
+        }).join('');
+      } else if (priceTbody) {
+        priceTbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines — add via Pricing & QP tab</td></tr>';
+      }
+    }
+
+    // Material tab — use contract general fields
+    const matTbody = document.getElementById(prefix + '-mat-tbody');
+    if (matTbody && window._currentContract) {
+      const c = window._currentContract;
+      const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
+      matTbody.innerHTML = '<tr>'
+        + '<td class="mono f10">1</td>'
+        + '<td class="f11 fw6">'+(c.commodity_name||c.commodity_code||'—')+'</td>'
+        + '<td class="mono f10">—</td>'
+        + '<td class="f10">—</td>'
+        + '<td class="mono fw6">'+(c.qty_mt||'—')+'</td>'
+        + '<td class="mono f10">—</td>'
+        + '<td class="f10">MOLOO</td>'
+        + '<td class="mono f10">'+uom+'</td>'
+        + '<td class="f10">—</td>'
+        + '<td class="mono f10">—</td>'
+        + '<td class="f10">SHIPPED-WEIGHT</td>'
+        + '<td class="f10">—</td>'
+        + '</tr>';
+    }
+  } catch(e) { console.warn('loadContractTabs:', e); }
+}
+
+// ── PURCHASE/SALES ORDERS ─────────────────────────────────────
+async function loadOrdersList(type) {
+  // type = 'PO' or 'SO'
+  const pageId = type === 'PO' ? 'page-purchase-orders' : 'page-sales-orders';
+  const tbodyId = type === 'PO' ? 'po-list-tbody' : 'so-list-tbody';
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/orders?type=' + type);
+    const data = await res.json();
+    const orders = data.data || [];
+    if (!orders.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No '+type+'s yet — confirm a contract to auto-generate</td></tr>';
+      return;
+    }
+    tbody.innerHTML = orders.map(function(o) {
+      const stCls = o.status==='OPEN'?'bd-act':o.status==='CLOSED'?'bd-confirmed':'bd-draft';
+      return '<tr>'
+        + '<td class="mono ta fw6" style="color:var(--accent)">'+(o.order_no||'—')+'</td>'
+        + '<td class="mono f10">'+(o.order_date?new Date(o.order_date).toLocaleDateString('en-GB'):'—')+'</td>'
+        + '<td class="mono">'+(o.contract_no||'—')+'</td>'
+        + '<td class="f11">'+(type==='PO'?'Vendor':'Customer')+'</td>'
+        + '<td class="mono">'+(o.qty_mt||'—')+' MT</td>'
+        + '<td class="mono">'+(o.erp_ref||'—')+'</td>'
+        + '<td><span class="badge '+stCls+'">'+(o.status||'OPEN')+'</span></td>'
+        + '<td><button class="btn bxs bg">Open</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {}
 }
 
 async function loadBuyLegs(dealId) {

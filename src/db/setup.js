@@ -197,6 +197,43 @@ async function setupDatabase() {
   `);
   console.log('✓ quotations');
 
+  // ── QUOTATION ADJUSTMENT LINES ────────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS quotation_adjustment_lines (
+      id              SERIAL PRIMARY KEY,
+      quotation_id    INT NOT NULL REFERENCES quotations(id) ON DELETE CASCADE,
+      line_no         INT DEFAULT 1,
+      adj_code        VARCHAR(30),
+      description     TEXT,
+      adj_type        VARCHAR(20) DEFAULT 'DEDUCTION', -- DEDUCTION, PREMIUM, FLAT
+      basis           VARCHAR(20) DEFAULT 'per-unit',  -- per-unit, pct, flat
+      rate            DECIMAL(12,4),
+      uom             VARCHAR(10) DEFAULT 'MT',
+      computed_value  DECIMAL(14,2),
+      notes           TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+  \`);
+  console.log('✓ quotation_adjustment_lines');
+
+  // ── QUOTATION SELL PENALTIES ──────────────────────────────────
+  await query(\`
+    CREATE TABLE IF NOT EXISTS quotation_penalties (
+      id              SERIAL PRIMARY KEY,
+      quotation_id    INT NOT NULL REFERENCES quotations(id) ON DELETE CASCADE,
+      line_no         INT DEFAULT 1,
+      penalty_code    VARCHAR(30),
+      penalty_type    VARCHAR(20) DEFAULT 'FLAT-RATE',
+      element         VARCHAR(50),
+      threshold       VARCHAR(50),
+      rate            VARCHAR(50),
+      direction       VARCHAR(10) DEFAULT 'OUT',
+      notes           TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+  \`);
+  console.log('✓ quotation_penalties');
+
   await query(`
     CREATE TABLE IF NOT EXISTS deals (
       id              SERIAL PRIMARY KEY,
@@ -282,7 +319,10 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS incoterms VARCHAR(10)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS origin VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS destination VARCHAR(100)`);
-    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)`);
+    await query(\`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)\`);
+    // Create adj lines tables if missing
+    await query(\`CREATE TABLE IF NOT EXISTS quotation_adjustment_lines (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, adj_code VARCHAR(30), description TEXT, adj_type VARCHAR(20) DEFAULT 'DEDUCTION', basis VARCHAR(20) DEFAULT 'per-unit', rate DECIMAL(12,4), uom VARCHAR(10) DEFAULT 'MT', computed_value DECIMAL(14,2), notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())\`);
+    await query(\`CREATE TABLE IF NOT EXISTS quotation_penalties (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, penalty_code VARCHAR(30), penalty_type VARCHAR(20) DEFAULT 'FLAT-RATE', element VARCHAR(50), threshold VARCHAR(50), rate VARCHAR(50), direction VARCHAR(10) DEFAULT 'OUT', notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())\`);
 
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS direction VARCHAR(10) DEFAULT 'BUY'`);
   } catch(e) {}

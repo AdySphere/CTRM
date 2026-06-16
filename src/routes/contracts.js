@@ -106,3 +106,40 @@ router.post('/:id/pricing-lines', async (req, res) => {
 });
 
 module.exports = router;
+
+// PATCH /api/contracts/:id/confirm — mark as CONTRACTED + auto-generate PO/SO
+router.patch("/:id/confirm", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const result = await query(
+      "UPDATE contracts SET status='CONTRACTED', updated_at=NOW() WHERE id=$1 RETURNING *",
+      [req.params.id]
+    );
+    const contract = result.rows[0];
+    if (contract) {
+      const orderType = contract.contract_type === 'PC' ? 'PO' : 'SO';
+      const yr = new Date().getFullYear();
+      const cntRes = await query("SELECT COUNT(*) FROM orders WHERE order_type=$1", [orderType]);
+      const orderNo = orderType + '-' + yr + '-' + String(parseInt(cntRes.rows[0].count)+1).padStart(5,'0');
+      await query("INSERT INTO orders (order_no, order_type, contract_id, deal_id, order_date, qty_mt, status) VALUES ($1,$2,$3,$4,CURRENT_DATE,$5,'OPEN') ON CONFLICT DO NOTHING",
+        [orderNo, orderType, contract.id, contract.deal_id||null, contract.qty_mt]);
+    }
+    res.json({ success: true, data: contract });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// GET /api/contracts/:id/pricing-lines
+router.get('/:id/pricing-lines', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT pl.*, cm.name as source_item_name, bm.name as benchmark_name
+      FROM contract_pricing_lines pl
+      LEFT JOIN commodities cm ON cm.code = pl.source_item_code
+      LEFT JOIN commodities bm ON bm.code = pl.benchmark_code
+      WHERE pl.contract_id = $1
+      ORDER BY pl.line_no
+    `, [req.params.id]);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});

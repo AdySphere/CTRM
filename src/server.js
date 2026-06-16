@@ -11,7 +11,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
 
-const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter, buyLegsRouter } = require('./routes/deals');
+const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter, buyLegsRouter, dealEnqRouter, adjLinesRouter, penaltiesRouter } = require('./routes/deals');
 const { invoiceRouter, masterRouter } = require('./routes/invoices');
 
 app.use('/api/market-prices',   require('./routes/marketPrices'));
@@ -19,6 +19,9 @@ app.use('/api/forward-curve',   require('./routes/forwardCurve'));
 app.use('/api/contracts',       require('./routes/contracts'));
 app.use('/api/deals',           dealsRouter);
 app.use('/api/buy-legs',        buyLegsRouter);
+app.use('/api/deal-enquiries',  dealEnqRouter);
+app.use('/api/adj-lines',       adjLinesRouter);
+app.use('/api/penalties',       penaltiesRouter);
 app.use('/api/enquiries',       enquiriesRouter);
 app.use('/api/quotations',      quotationsRouter);
 app.use('/api/logistics',       logRouter);

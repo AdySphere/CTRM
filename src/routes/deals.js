@@ -598,3 +598,85 @@ buyLegsRouter.patch('/:id', async (req, res) => {
 });
 
 module.exports.buyLegsRouter = buyLegsRouter;
+
+// ── QUOTATION ADJUSTMENT LINES ─────────────────────────────────
+const adjLinesRouter = require('express').Router();
+
+adjLinesRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { quotation_id } = req.query;
+    const result = await query(
+      `SELECT * FROM quotation_adjustment_lines WHERE quotation_id=$1 ORDER BY line_no`,
+      [quotation_id]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+adjLinesRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { quotation_id, adj_code, description, adj_type, basis, rate, uom, notes } = req.body;
+    if (!quotation_id) return res.status(400).json({ error: 'quotation_id required' });
+    const cntRes = await query(`SELECT COUNT(*) FROM quotation_adjustment_lines WHERE quotation_id=$1`, [quotation_id]);
+    const lineNo = parseInt(cntRes.rows[0].count) + 1;
+    const result = await query(
+      `INSERT INTO quotation_adjustment_lines (quotation_id, line_no, adj_code, description, adj_type, basis, rate, uom, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [quotation_id, lineNo, adj_code||null, description||null, adj_type||'DEDUCTION', basis||'per-unit', rate||null, uom||'MT', notes||null]
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+adjLinesRouter.delete('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query(`DELETE FROM quotation_adjustment_lines WHERE id=$1`, [req.params.id]);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.adjLinesRouter = adjLinesRouter;
+
+// ── QUOTATION PENALTIES ────────────────────────────────────────
+const penaltiesRouter = require('express').Router();
+
+penaltiesRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { quotation_id } = req.query;
+    const result = await query(
+      `SELECT * FROM quotation_penalties WHERE quotation_id=$1 ORDER BY line_no`,
+      [quotation_id]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+penaltiesRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { quotation_id, penalty_code, penalty_type, element, threshold, rate, direction, notes } = req.body;
+    if (!quotation_id) return res.status(400).json({ error: 'quotation_id required' });
+    const cntRes = await query(`SELECT COUNT(*) FROM quotation_penalties WHERE quotation_id=$1`, [quotation_id]);
+    const lineNo = parseInt(cntRes.rows[0].count) + 1;
+    const result = await query(
+      `INSERT INTO quotation_penalties (quotation_id, line_no, penalty_code, penalty_type, element, threshold, rate, direction, notes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [quotation_id, lineNo, penalty_code||null, penalty_type||'FLAT-RATE', element||null, threshold||null, rate||null, direction||'OUT', notes||null]
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+penaltiesRouter.delete('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query(`DELETE FROM quotation_penalties WHERE id=$1`, [req.params.id]);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.penaltiesRouter = penaltiesRouter;
