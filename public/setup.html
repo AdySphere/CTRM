@@ -426,18 +426,12 @@ html,body{height:100%;margin:0;padding:0}
     </div>
   </div>
   <div class="pc">
-    <div class="page active" id="page-md-commodity" class="page active">
+    <div class="page active" id="page-md-commodity">
       <div class="ph"><div class="ph-l"><div class="pt">Commodity Master</div><div class="ps">Setup · Admin-configurable · Used across deals, contracts, pricing, shipment, exposure and invoicing</div></div>
         <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-commodity')">＋ Add Commodity</button></div></div>
       <div class="card"><div class="ch"><div class="ct">Commodities</div><div class="cs">All commodity codes available to traders in dropdowns</div></div>
         <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Group</th><th>Sub-Group</th><th>Default UOM</th><th>Exchange</th><th>Currency</th><th>ERP Item No.</th><th>Active</th><th></th></tr></thead>
-          <tbody id="md-commodity-tbody">
-<tr><td class="mono ta fw6">CU-MILLBERRY</td><td class="f11 fw6">Copper MillBerry (Scrap)</td><td class="f11">BASE-METAL</td><td class="f11">SCRAP</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-010</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">CU-BERRY</td><td class="f11 fw6">Copper Berry (Lower Grade)</td><td class="f11">BASE-METAL</td><td class="f11">SCRAP</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-011</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">CU-CATHODE-A</td><td class="f11 fw6">Copper Cathode Grade A</td><td class="f11">BASE-METAL</td><td class="f11">REFINED</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-001</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">PB-SN-INGOT</td><td class="f11 fw6">Lead-Tin Ingots (PbSnSb)</td><td class="f11">BASE-METAL</td><td class="f11">ALLOY</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-020</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">STEEL-HMS1</td><td class="f11 fw6">Steel Scrap HMS 1&amp;2</td><td class="f11">FERROUS</td><td class="f11">SCRAP</td><td class="mono f10">MT</td><td class="mono f10">CFR</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-006</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">ZN-SHG-995</td><td class="f11 fw6">Zinc SHG 99.995%</td><td class="f11">BASE-METAL</td><td class="f11">REFINED</td><td class="mono f10">MT</td><td class="mono f10">LME</td><td class="mono f10">USD</td><td class="mono f10 ta">100%</td><td class="mono f10 ta" style="font-weight:600">100%</td><td class="mono f10 tdim">ITEM-003</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+          <tbody id="md-commodity-tbody"><tr><td colspan="10" style="text-align:center;padding:16px;color:#888;font-size:11px">Loading…</td></tr></tbody></table></div></div>
     </div>
 
     <!-- COUNTERPARTY MASTER -->
@@ -446,12 +440,7 @@ html,body{height:100%;margin:0;padding:0}
         <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-cp')">＋ Add Counterparty</button></div></div>
       <div class="card"><div class="ch"><div class="ct">Counterparties</div></div>
         <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Type</th><th>Country</th><th>Currency</th><th>Payment Terms</th><th>Tax Reg No.</th><th>ERP Ref</th><th>KYC</th><th>Active</th><th></th></tr></thead>
-          <tbody id="md-cp-tbody">
-<tr><td class="mono ta fw6">GLEN-AG</td><td class="f11 fw6">Glencore AG</td><td><span class="badge bd-act" style="font-size:7px">VENDOR</span></td><td class="f11">Switzerland</td><td class="mono f10">USD</td><td class="f10">LC-SIGHT-100</td><td class="mono f10 tdim">CHE-123456</td><td class="mono f10 tdim">V-001</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">TATA-MET</td><td class="f11 fw6">Tata Metals Ltd</td><td><span class="badge bd-confirmed" style="font-size:7px">CUSTOMER</span></td><td class="f11">India</td><td class="mono f10">USD</td><td class="f10">TT-90-10</td><td class="mono f10 tdim">IN-MUM-001</td><td class="mono f10 tdim">C-001</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">AURUBIS</td><td class="f11 fw6">Aurubis Beerse NV</td><td><span class="badge bd-confirmed" style="font-size:7px">CUSTOMER</span></td><td class="f11">Belgium</td><td class="mono f10">USD</td><td class="f10">70-30-ADVANCE</td><td class="mono f10 tdim">BE0403075580</td><td class="mono f10 tdim">C-003</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">NOBLE-SG</td><td class="f11 fw6">Noble Resources Pte Ltd</td><td><span class="badge bd-act" style="font-size:7px">VENDOR</span></td><td class="f11">Singapore</td><td class="mono f10">USD</td><td class="f10">LC-SIGHT-100</td><td class="mono f10 tdim">SG-789012</td><td class="mono f10 tdim">V-002</td><td><span class="badge bd-ship">PENDING</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">HANWA-SG</td><td class="f11 fw6">Hanwa Singapore PTE Ltd</td><td><span class="badge" style="background:var(--purple-dim);color:var(--purple);border:1px solid var(--purple-dim);font-size:7px">AGENT</span></td><td class="f11">Singapore</td><td class="mono f10">USD</td><td class="f10">COMMISSION</td><td class="mono f10 tdim">SG-AGT-001</td><td class="mono f10 tdim">A-001</td><td><span class="badge bd-confirmed">APPROVED</span></td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+          <tbody id="md-cp-tbody"><tr><td colspan="8" style="text-align:center;padding:16px;color:#888;font-size:11px">Loading…</td></tr></tbody></table></div></div>
     </div>
 
     <!-- LOCATIONS & PORTS MASTER -->
@@ -958,7 +947,7 @@ html,body{height:100%;margin:0;padding:0}
     <div class="page" id="page-md-other">
       <div class="ph"><div class="ph-l"><div class="pt">Currency · UOM · Tax Codes</div><div class="ps">Setup · Foundation masters · Required before any pricing, invoicing or ERP posting</div></div></div>
       <div class="three-col">
-        <div class="card"><div class="ch"><div class="ct">Currencies</div><div class="ca" onclick="toast('Currency','Add new currency','info')">+ Add</div></div>
+        <div class="card"><div class="ch"><div class="ct">Currencies</div><div class="ca" onclick="openModal('modal-add-currency')">+ Add</div></div>
           <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Symbol</th><th>Decimals</th><th>Base</th></tr></thead>
             <tbody id="md-curr-tbody">
 <tr><td class="mono ta fw6">USD</td><td class="f11">US Dollar</td><td class="mono f10">$</td><td class="mono f10">2</td><td><span class="badge bd-act">BASE</span></td></tr>
@@ -966,14 +955,9 @@ html,body{height:100%;margin:0;padding:0}
 <tr><td class="mono ta fw6">GBP</td><td class="f11">Pound Sterling</td><td class="mono f10">£</td><td class="mono f10">2</td><td><span class="badge bd-draft">NO</span></td></tr>
 <tr><td class="mono ta fw6">AED</td><td class="f11">UAE Dirham</td><td class="mono f10">د.إ</td><td class="mono f10">2</td><td><span class="badge bd-draft">NO</span></td></tr>
 <tr><td class="mono ta fw6">INR</td><td class="f11">Indian Rupee</td><td class="mono f10">₹</td><td class="mono f10">2</td><td><span class="badge bd-draft">NO</span></td></tr></tbody></table></div></div>
-        <div class="card"><div class="ch"><div class="ct">Units of Measure</div><div class="ca" onclick="toast('UOM','Add new UOM','info')">+ Add</div></div>
+        <div class="card"><div class="ch"><div class="ct">Units of Measure</div><div class="ca" onclick="openModal('modal-add-uom')">+ Add</div></div>
           <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Conversion</th></tr></thead>
-            <tbody id="md-uom-tbody">
-<tr><td class="mono ta fw6">MT</td><td class="f11">Metric Tonne</td><td class="f11">Weight</td><td class="mono f10">1.000 MT</td></tr>
-<tr><td class="mono ta fw6">DMT</td><td class="f11">Dry Metric Tonne</td><td class="f11">Weight</td><td class="mono f10">—</td></tr>
-<tr><td class="mono ta fw6">KG</td><td class="f11">Kilogram</td><td class="f11">Weight</td><td class="mono f10">0.001 MT</td></tr>
-<tr><td class="mono ta fw6">LT</td><td class="f11">Long Tonne (Imperial)</td><td class="f11">Weight</td><td class="mono f10">1.01605 MT</td></tr>
-<tr><td class="mono ta fw6">BBL</td><td class="f11">Barrel (Oil)</td><td class="f11">Volume</td><td class="mono f10">—</td></tr></tbody></table></div></div>
+            <tbody id="md-uom-tbody"><tr><td colspan="4" style="text-align:center;padding:16px;color:#888;font-size:11px">Loading…</td></tr></tbody></table></div></div>
         <div class="card"><div class="ch"><div class="ct">Tax Codes</div><div class="ca" onclick="toast('Tax','Add new tax code','info')">+ Add</div></div>
           <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Description</th><th>Rate %</th><th>Jurisdiction</th><th>Applies To</th></tr></thead>
             <tbody id="md-tax-tbody">
@@ -1212,13 +1196,6 @@ function openSODetail(){
 }
 
 // Wire everything on load - MINIMAL, no content generation
-document.addEventListener('DOMContentLoaded',function(){
-  try{const saved=localStorage.getItem('ctrm-theme');if(saved==='light'){document.body.classList.add('light-mode');const i=document.getElementById('theme-icon');const l=document.getElementById('theme-label');if(i)i.textContent='🌙';if(l)l.textContent='Dark';}}catch(e){}
-  // Wire setup tab groups
-  ['mpt'].forEach(wireTabs);
-  // Show first page
-  nav('md-commodity');
-});
 </script>
 
 
@@ -1379,6 +1356,9 @@ document.addEventListener('DOMContentLoaded', function() {
   try { const saved = localStorage.getItem('ctrm-theme'); if(saved==='light') { document.body.classList.add('light-mode'); const i=document.getElementById('theme-icon'); const l=document.getElementById('theme-label'); if(i)i.textContent='🌙'; if(l)l.textContent='Dark'; }} catch(e) {}
   ['mpt'].forEach(wireTabs);
   nav('md-commodity');
+  loadMDCommodities();
+  loadMDCounterparties();
+  loadMDUOM();
 });
 
 function openTierModal(tier) {
@@ -1393,7 +1373,7 @@ function addPTLine() {
     + '<td><input type="number" class="fi" style="width:50px;font-size:10px" placeholder="%"></td>'
     + '<td><select class="fs" style="font-size:10px"><option>BL_DATE</option><option>ETA</option><option>ASSAY_RECEIPT</option><option>FINAL_INVOICE</option></select></td>'
     + '<td><input type="number" class="fi" style="width:45px;font-size:10px" placeholder="Days"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bd" onclick="this.closest(&quot;tr&quot;).remove()">✕</button></td>';
   tb.appendChild(tr);
 }
 function saveQPPeriod() {
@@ -1406,5 +1386,145 @@ function removeCalcParam(btn) {
 
 </script>
 
+<!-- UOM Add Modal -->
+<div class="mo" id="modal-add-uom" style="display:none">
+  <div class="md" style="max-width:420px">
+    <div class="mh"><div class="mt">Add Unit of Measure</div><button class="mc" onclick="closeModal('modal-add-uom')">✕</button></div>
+    <div class="mb">
+      <div class="f"><div class="fl">UOM Code <span class="req">*</span></div><input type="text" class="fi" id="new-uom-code" placeholder="e.g. BBL, GAL, TOZ"></div>
+      <div class="f"><div class="fl">Full Name <span class="req">*</span></div><input type="text" class="fi" id="new-uom-name" placeholder="e.g. Barrel (Oil)"></div>
+      <div class="f"><div class="fl">Category</div>
+        <select class="fs" id="new-uom-category">
+          <option value="Weight">Weight</option>
+          <option value="Volume">Volume</option>
+          <option value="Energy">Energy</option>
+          <option value="Count">Count</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Conversion to MT (if applicable)</div><input type="text" class="fi" id="new-uom-conversion" placeholder="e.g. 0.001 MT or —"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-add-uom')">Cancel</button>
+      <button class="btn bp" onclick="saveNewUOM()">Add UOM →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+
+// ── LOAD COMMODITIES ────────────────────────────────────────────
+async function loadMDCommodities() {
+  const tbody = document.getElementById('md-commodity-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API + '/api/master/commodities');
+    const json = await res.json();
+    const cms = json.data || [];
+    if (!cms.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#888">No commodities found — run seed.js</td></tr>'; return; }
+    tbody.innerHTML = cms.map(function(c) {
+      return '<tr>'
+        + '<td class="mono ta fw6">' + c.code + '</td>'
+        + '<td class="f11 fw6">' + c.name + '</td>'
+        + '<td class="f11">' + (c.category||'—') + '</td>'
+        + '<td class="f11">' + (c.type||'—') + '</td>'
+        + '<td class="mono f10 fw7" style="color:var(--accent)">' + (c.uom||'MT') + '</td>'
+        + '<td class="mono f10">' + (c.exchange_code||'—') + '</td>'
+        + '<td class="mono f10">' + (c.currency||'USD') + '</td>'
+        + '<td class="mono f10">' + (c.erp_item_ref||'—') + '</td>'
+        + '<td><span class="badge ' + (c.active!==false?'bd-confirmed':'bd-draft') + '">' + (c.active!==false?'YES':'NO') + '</span></td>'
+        + '<td><button class="btn bxs bg" onclick="editCommodity('+c.id+')">Edit</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:#e05252;font-size:11px">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+// ── LOAD COUNTERPARTIES ─────────────────────────────────────────
+async function loadMDCounterparties() {
+  const tbody = document.getElementById('md-cp-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API + '/api/master/counterparties');
+    const json = await res.json();
+    const cps = json.data || [];
+    if (!cps.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:16px;color:#888">No counterparties found</td></tr>'; return; }
+    tbody.innerHTML = cps.map(function(c) {
+      const typeClass = c.type==='VENDOR'?'bd-ship':c.type==='CUSTOMER'?'bd-act':'bd-confirmed';
+      return '<tr>'
+        + '<td class="mono ta fw6">' + (c.code||'—') + '</td>'
+        + '<td class="f11 fw6">' + c.name + '</td>'
+        + '<td><span class="badge ' + typeClass + ' " style="font-size:8px">' + (c.type||'BOTH') + '</span></td>'
+        + '<td class="f11">' + (c.country||'—') + '</td>'
+        + '<td class="mono f10">' + (c.erp_code||'—') + '</td>'
+        + '<td class="f11">' + (c.credit_limit ? 'USD '+Number(c.credit_limit).toLocaleString() : '—') + '</td>'
+        + '<td><span class="badge ' + (c.active!==false?'bd-confirmed':'bd-draft') + '">' + (c.active!==false?'ACTIVE':'INACTIVE') + '</span></td>'
+        + '<td><button class="btn bxs bg" onclick="editCP('+c.id+')">Edit</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:16px;color:#e05252;font-size:11px">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+// ── LOAD UOMs ───────────────────────────────────────────────────
+const ALL_UOMS = [
+  {code:'MT',   name:'Metric Tonne',           category:'Weight', conv:'1.000 MT (base)'},
+  {code:'DMT',  name:'Dry Metric Tonne',        category:'Weight', conv:'~1 MT (moisture-adjusted)'},
+  {code:'KG',   name:'Kilogram',               category:'Weight', conv:'0.001 MT'},
+  {code:'LB',   name:'Pound',                  category:'Weight', conv:'0.000454 MT'},
+  {code:'LT',   name:'Long Tonne (Imperial)',   category:'Weight', conv:'1.01605 MT'},
+  {code:'ST',   name:'Short Tonne (US)',        category:'Weight', conv:'0.907185 MT'},
+  {code:'BBL',  name:'Barrel (Oil, 42 US gal)',category:'Volume', conv:'~0.136 MT (crude)'},
+  {code:'GAL',  name:'US Gallon',              category:'Volume', conv:'0.003785 L'},
+  {code:'L',    name:'Litre',                  category:'Volume', conv:'~0.0008 MT'},
+  {code:'M3',   name:'Cubic Metre',            category:'Volume', conv:'—'},
+  {code:'TOZ',  name:'Troy Ounce',             category:'Weight', conv:'0.0000311035 MT'},
+  {code:'BU',   name:'Bushel (CBOT)',          category:'Volume', conv:'~0.02722 MT (wheat)'},
+  {code:'MMBTU',name:'Million British Thermal Units', category:'Energy', conv:'—'},
+  {code:'GJ',   name:'Gigajoule',             category:'Energy', conv:'0.947817 MMBTU'},
+];
+
+function loadMDUOM() {
+  const tbody = document.getElementById('md-uom-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = ALL_UOMS.map(function(u) {
+    return '<tr>'
+      + '<td class="mono ta fw6" style="color:var(--accent)">' + u.code + '</td>'
+      + '<td class="f11 fw6">' + u.name + '</td>'
+      + '<td class="f11">' + u.category + '</td>'
+      + '<td class="mono f10">' + u.conv + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function saveNewUOM() {
+  const code = document.getElementById('new-uom-code')?.value?.trim().toUpperCase();
+  const name = document.getElementById('new-uom-name')?.value?.trim();
+  const cat = document.getElementById('new-uom-category')?.value;
+  const conv = document.getElementById('new-uom-conversion')?.value?.trim() || '—';
+  if (!code || !name) { showSetupToast('Required', 'Code and name are required', 'warning'); return; }
+  if (ALL_UOMS.find(function(u){ return u.code===code; })) { showSetupToast('Exists', code + ' already defined', 'warning'); return; }
+  ALL_UOMS.push({code, name, category: cat, conv});
+  loadMDUOM();
+  closeModal('modal-add-uom');
+  ['new-uom-code','new-uom-name','new-uom-conversion'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  showSetupToast('UOM Added', code + ' — ' + name + ' added to master', 'success');
+}
+
+function editCommodity(id) { showSetupToast('Edit Commodity', 'Edit functionality coming in next build', 'info'); }
+function editCP(id) { showSetupToast('Edit Counterparty', 'Edit functionality coming in next build', 'info'); }
+
+// Reload data when navigating to setup sections
+const _origNav = window.nav;
+window.nav = function(pageId, navEl) {
+  if (typeof _origNav === 'function') _origNav(pageId, navEl);
+  if (pageId === 'md-commodity') loadMDCommodities();
+  else if (pageId === 'md-counterparty') loadMDCounterparties();
+  else if (pageId === 'md-other') loadMDUOM();
+};
+</script>
 </body>
 </html>
