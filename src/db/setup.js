@@ -270,6 +270,12 @@ async function setupDatabase() {
   // Add pricing_formula column if it doesn't exist (migration)
   try {
     await query(`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS pricing_formula TEXT`);
+    await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS pricing_source TEXT`);
+    await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS qp_window TEXT`);
+    await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS version INT DEFAULT 1`);
+    await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS parent_quotation_id INT REFERENCES quotations(id)`);
+    await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS quote_type VARCHAR(5) DEFAULT 'SQ'`);
+    await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS direction VARCHAR(10) DEFAULT 'BUY'`);
   } catch(e) {}
   console.log('✓ contracts');
 

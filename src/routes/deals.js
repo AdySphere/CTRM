@@ -396,15 +396,16 @@ quotationsRouter.get('/', async (req, res) => {
     const result = await query(`
       SELECT q.*,
         c.name as customer_name,
-        cm.name as commodity_name,
-        e.enquiry_no,
-        d.deal_no
+        cm.name as commodity_name, cm.uom as commodity_uom,
+        e.enquiry_no, e.direction as enquiry_direction,
+        d.deal_no,
+        COALESCE(q.quote_type, CASE WHEN q.quotation_no LIKE 'PQ-%' THEN 'PQ' ELSE 'SQ' END) as quote_type_resolved
       FROM quotations q
       LEFT JOIN counterparties c ON c.id = q.customer_id
       LEFT JOIN commodities cm ON cm.code = q.commodity_code
       LEFT JOIN enquiries e ON e.id = q.enquiry_id
       LEFT JOIN deals d ON d.id = q.deal_id
-      ORDER BY q.quotation_date DESC
+      ORDER BY q.created_at DESC
     `);
     res.json({ success: true, data: result.rows });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -434,23 +435,36 @@ quotationsRouter.get('/:id', async (req, res) => {
 quotationsRouter.post('/', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const { enquiry_id, quotation_date, commodity_code, customer_id, qty_mt,
+    const { enquiry_id, quotation_date, commodity_code, customer_id, supplier_id, qty_mt,
       incoterms, port_of_discharge, delivery_from, delivery_to, validity_date,
-      pricing_template, provisional_price, provisional_value, quoted_by, notes } = req.body;
+      pricing_template, provisional_price, provisional_value, quoted_by, notes,
+      quote_type = 'SQ' } = req.body;
 
-    // Auto-generate quotation_no
-    const countRes = await query(`SELECT COUNT(*) FROM quotations`);
-    const nextNo = 'QT-' + new Date().getFullYear() + '-' + String(parseInt(countRes.rows[0].count) + 1).padStart(3, '0');
+    // Auto-generate quotation_no with separate series per type
+    // PQ = Purchase Quote (buying), SQ = Sales Quote (selling)
+    const prefix = quote_type === 'PQ' ? 'PQ' : 'SQ';
+    const yr = new Date().getFullYear();
+    const countRes = await query(
+      `SELECT COUNT(*) FROM quotations WHERE quote_type=$1 AND quotation_no LIKE $2`,
+      [prefix, prefix + '-' + yr + '-%']
+    );
+    const nextNum = String(parseInt(countRes.rows[0].count) + 1).padStart(3, '0');
+    const nextNo = prefix + '-' + yr + '-' + nextNum;
+
+    // For PQ, counterparty is supplier; for SQ, counterparty is customer
+    const cpId = quote_type === 'PQ' ? (supplier_id || customer_id) : (customer_id || supplier_id);
 
     const result = await query(`
       INSERT INTO quotations (quotation_no, enquiry_id, quotation_date, commodity_code,
         customer_id, qty_mt, incoterms, port_of_discharge, delivery_from, delivery_to,
-        validity_date, pricing_template, provisional_price, provisional_value, quoted_by, status, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'OPEN',$16) RETURNING *
+        validity_date, pricing_template, provisional_price, provisional_value,
+        quoted_by, status, quote_type, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'OPEN',$16,$17) RETURNING *
     `, [nextNo, enquiry_id||null, quotation_date||new Date().toISOString().split('T')[0],
-        commodity_code, customer_id||null, qty_mt, incoterms, port_of_discharge,
+        commodity_code, cpId||null, qty_mt, incoterms, port_of_discharge,
         delivery_from, delivery_to, validity_date, pricing_template,
-        provisional_price, provisional_value, quoted_by||'A. Mallick', notes]);
+        provisional_price, provisional_value, quoted_by||'A. Mallick',
+        prefix, notes]);
 
     // Mark enquiry as QUOTED if linked
     if (enquiry_id) {

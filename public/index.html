@@ -682,7 +682,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ch"><div class="ct">Quotation List</div><div class="cs">Accept a quotation to confirm the deal and trigger ERP sync</div></div>
         <div class="cbf">
           <table class="dt">
-            <thead><tr><th>Quotation No.</th><th>Enquiry No.</th><th>Commodity</th><th>Qty (MT)</th><th>Customer</th><th>Pricing Template</th><th>Prov. Price</th><th>Prov. Value</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Quotation No.</th><th>Type</th><th>Enquiry No.</th><th>Commodity</th><th>Qty</th><th>Counterparty</th><th>Pricing Template</th><th>Prov. Price</th><th>Status</th><th></th></tr></thead>
             <tbody id="quot-list"><tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading quotations...</td></tr></tbody>
           </table>
         </div>
@@ -3803,15 +3803,20 @@ async function loadQuotationList() {
 
     tbody.innerHTML = data.map(q => {
       const uom = (window._commodityCache[q.commodity_code]?.uom)||'MT';
+      const qtype = q.quote_type || (q.quotation_no.startsWith('PQ-')?'PQ':'SQ');
+      const typeClass = qtype==='PQ' ? 'bd-ship' : 'bd-act';
+      const typeLabel = qtype==='PQ' ? 'PURCHASE' : 'SALES';
+      const cp = qtype==='PQ' ? (q.supplier_name||q.customer_name||'TBD') : (q.customer_name||'TBD');
+      const ver = q.version && q.version > 1 ? ' v'+q.version : '';
       return `<tr onclick="openQuotationDetail('${q.quotation_no}')" style="cursor:pointer">
-      <td class="mono ta fw6" style="color:var(--accent)">${q.quotation_no}</td>
+      <td class="mono ta fw6" style="color:var(--accent)">${q.quotation_no}${ver}</td>
+      <td><span class="badge ${typeClass}" style="font-size:8px">${typeLabel}</span></td>
       <td class="mono f10">${q.enquiry_no || '—'}</td>
       <td class="f11 fw6">${q.commodity_name || q.commodity_code || '—'}</td>
       <td class="mono">${q.qty_mt ? parseFloat(q.qty_mt).toLocaleString() + ' ' + uom : '—'}</td>
-      <td class="f11">${q.customer_name || 'TBD'}</td>
+      <td class="f11">${cp}</td>
       <td class="mono f10">${q.pricing_template || '—'}</td>
-      <td class="mono ta">${q.provisional_price ? 'USD ' + parseFloat(q.provisional_price).toLocaleString() + '/' + uom : '—'}</td>
-      <td class="mono ta">${q.provisional_value ? 'USD ' + parseFloat(q.provisional_value).toLocaleString() : '—'}</td>
+      <td class="mono ta">${q.provisional_price ? 'USD ' + parseFloat(q.provisional_price).toLocaleString() : '—'}</td>
       <td>${statusBadge(q.status)}</td>
       <td><button class="btn bxs bg" onclick="event.stopPropagation();openQuotationDetail('${q.quotation_no}')">Open</button></td>
     </tr>`; }).join('');
@@ -4076,6 +4081,35 @@ async function acceptQuotation() {
   finally { if (btn) { btn.textContent = 'Accept → Confirm Deal'; btn.disabled = false; } }
 }
 
+function onNqTypeChange(radio) {
+  const isSQ = radio.value === 'SQ';
+  // Update label styling
+  const sqLabel = document.getElementById('qt-sq-label');
+  const pqLabel = document.getElementById('qt-pq-label');
+  if (sqLabel) sqLabel.style.borderColor = isSQ ? 'var(--accent)' : 'var(--border)';
+  if (sqLabel) sqLabel.style.background = isSQ ? 'rgba(var(--accent-rgb),.08)' : '';
+  if (pqLabel) pqLabel.style.borderColor = !isSQ ? 'var(--accent)' : 'var(--border)';
+  if (pqLabel) pqLabel.style.background = !isSQ ? 'rgba(var(--accent-rgb),.08)' : '';
+  // Update counterparty field label
+  const cpLabel = document.getElementById('nq-cp-field-label');
+  const cpLabel2 = document.getElementById('nq-cp-label');
+  if (cpLabel) cpLabel.innerHTML = (isSQ ? 'Customer' : 'Vendor / Supplier') + ' <span class="req">*</span>';
+  if (cpLabel2) cpLabel2.textContent = isSQ ? 'Enquiry & Customer' : 'Enquiry & Vendor';
+  // Update modal title
+  const title = document.querySelector('#modal-new-quotation .modal-title');
+  if (title) title.textContent = isSQ ? 'New Sales Quote (SQ)' : 'New Purchase Quote (PQ)';
+  // Filter counterparty dropdown by type
+  const cpSel = document.getElementById('nq-customer-sel');
+  if (cpSel && window._allCPs) {
+    const filtered = isSQ
+      ? window._allCPs.filter(function(c){ return !c.type || c.type==='CUSTOMER' || c.type==='BOTH'; })
+      : window._allCPs.filter(function(c){ return !c.type || c.type==='VENDOR' || c.type==='BOTH'; });
+    const all = filtered.length ? filtered : window._allCPs;
+    cpSel.innerHTML = '<option value="">— Select ' + (isSQ?'Customer':'Vendor') + ' —</option>' +
+      all.map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+  }
+}
+
 async function openNewQuotation() {
   openModal('modal-new-quotation');
   // Load dropdowns
@@ -4094,10 +4128,11 @@ async function openNewQuotation() {
         `${e.enquiry_no} · ${e.commodity_name||e.commodity_code||'—'} · ${e.qty_mt||'—'} MT · ${e.customer_name||'—'}</option>`
       ).join('');
   }
+  window._allCPs = cpRes.data || [];
   if (cpSel && cpRes.data) {
+    // Default to SQ (Sales) - show customers
     cpSel.innerHTML = '<option value="">— Select Customer —</option>' +
-      cpRes.data.filter(c => c.type === 'CUSTOMER').map(c =>
-        `<option value="${c.id}">${c.name} (${c.code})</option>`).join('');
+      cpRes.data.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
   }
   if (cmSel && cmRes.data) {
     cmSel.innerHTML = '<option value="">— Select Commodity —</option>' +
@@ -4134,10 +4169,13 @@ function onNqCommodityChange() {
 
 async function submitNewQuotation() {
   const g = id => document.getElementById(id)?.value;
+  const qtype = document.querySelector('input[name="nq-quote-type"]:checked')?.value || 'SQ';
+  const cpId = g('nq-customer-sel') || null;
   const payload = {
     enquiry_id: g('nq-enquiry-sel') || null,
     commodity_code: g('nq-commodity-sel'),
-    customer_id: g('nq-customer-sel') || null,
+    customer_id: qtype === 'SQ' ? cpId : null,
+    supplier_id: qtype === 'PQ' ? cpId : null,
     qty_mt: parseFloat(g('nq-qty')) || null,
     incoterms: g('nq-incoterms') || null,
     port_of_discharge: g('nq-pod') || null,
@@ -4146,6 +4184,7 @@ async function submitNewQuotation() {
     validity_date: g('nq-validity') || null,
     pricing_template: g('nq-template') || null,
     provisional_price: parseFloat(g('nq-prov-price')) || null,
+    quote_type: qtype,
   };
   if (!payload.commodity_code) { toast('Required', 'Please select a commodity', 'warning'); return; }
   const btn = document.querySelector('#modal-new-quotation .btn.bp');
@@ -6059,16 +6098,33 @@ async function loadAllocationTable() {
       <button class="btn bxs bd" onclick="closeModal('modal-new-quotation')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="divl">Enquiry & Customer</div>
+      <div class="fg" style="margin-bottom:12px">
+        <div class="f cs2">
+          <div class="fl">Quote Type <span class="req">*</span></div>
+          <div style="display:flex;gap:8px">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border-radius:var(--r);border:2px solid var(--accent);background:rgba(var(--accent-rgb),.08);flex:1;justify-content:center" id="qt-sq-label">
+              <input type="radio" name="nq-quote-type" id="nq-type-sq" value="SQ" checked onchange="onNqTypeChange(this)">
+              <span><strong>SQ</strong> — Sales Quote</span>
+              <span style="font-size:9px;color:var(--text3);margin-left:4px">We sell to customer</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 16px;border-radius:var(--r);border:2px solid var(--border);flex:1;justify-content:center" id="qt-pq-label">
+              <input type="radio" name="nq-quote-type" id="nq-type-pq" value="PQ" onchange="onNqTypeChange(this)">
+              <span><strong>PQ</strong> — Purchase Quote</span>
+              <span style="font-size:9px;color:var(--text3);margin-left:4px">We buy from vendor</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="divl" id="nq-cp-label">Enquiry & Counterparty</div>
       <div class="fg">
         <div class="f"><div class="fl">Source Enquiry</div>
           <select class="fs" id="nq-enquiry-sel" onchange="onNqEnquiryChange()">
             <option value="">— None (standalone quotation) —</option>
           </select>
         </div>
-        <div class="f"><div class="fl">Customer <span class="req">*</span></div>
+        <div class="f"><div class="fl" id="nq-cp-field-label">Customer <span class="req">*</span></div>
           <select class="fs" id="nq-customer-sel">
-            <option value="">— Select Customer —</option>
+            <option value="">— Select Counterparty —</option>
           </select>
         </div>
         <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
