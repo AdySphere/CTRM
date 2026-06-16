@@ -680,3 +680,53 @@ penaltiesRouter.delete('/:id', async (req, res) => {
 });
 
 module.exports.penaltiesRouter = penaltiesRouter;
+
+// ── DEAL-ENQUIRY LINKS ─────────────────────────────────────────
+const dealEnqRouter = require('express').Router();
+
+dealEnqRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { deal_id } = req.query;
+    const result = await query(`
+      SELECT de.*, e.enquiry_no, e.direction, e.commodity_code, e.qty_mt,
+        e.incoterms, e.status as enq_status,
+        s.name as supplier_name, c.name as customer_name,
+        cm.name as commodity_name, cm.uom
+      FROM deal_enquiries de
+      JOIN enquiries e ON e.id = de.enquiry_id
+      LEFT JOIN counterparties s ON s.id = e.supplier_id
+      LEFT JOIN counterparties c ON c.id = e.customer_id
+      LEFT JOIN commodities cm ON cm.code = e.commodity_code
+      WHERE de.deal_id = $1
+      ORDER BY de.leg_role, de.added_at
+    `, [deal_id]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+dealEnqRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { deal_id, enquiry_id, leg_role } = req.body;
+    if (!deal_id || !enquiry_id) return res.status(400).json({ error: 'deal_id and enquiry_id required' });
+    const result = await query(`
+      INSERT INTO deal_enquiries (deal_id, enquiry_id, leg_role)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (deal_id, enquiry_id) DO UPDATE SET leg_role = $3
+      RETURNING *
+    `, [deal_id, enquiry_id, leg_role || 'BUY']);
+    await query(`UPDATE enquiries SET status='CONVERTED' WHERE id=$1`, [enquiry_id]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+dealEnqRouter.delete('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query(`DELETE FROM deal_enquiries WHERE id=$1`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.dealEnqRouter = dealEnqRouter;
