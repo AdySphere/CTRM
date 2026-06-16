@@ -3734,6 +3734,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Load all live data on startup
   setTimeout(async () => {
+    await loadCommodityDropdowns();
     await loadEnquiryList();
     await loadDealList();
     await loadLogisticsList();
@@ -3831,7 +3832,7 @@ async function openQuotationDetail(quotNo) {
     document.getElementById('qd-enq').textContent = q.enquiry_no || '—';
     document.getElementById('qd-customer').textContent = q.customer_name || '—';
     document.getElementById('qd-commodity').textContent = (q.commodity_code || '') + (q.commodity_name ? ' — ' + q.commodity_name : '');
-    document.getElementById('qd-qty').textContent = q.qty_mt ? parseFloat(q.qty_mt).toLocaleString() + ' MT' : '—';
+    document.getElementById('qd-qty').textContent = q.qty_mt ? parseFloat(q.qty_mt).toLocaleString() + ' ' + ((window._commodityCache[q.commodity_code]?.uom)||'MT') : '—';
     document.getElementById('qd-inco').textContent = [q.incoterms, q.port_of_discharge].filter(Boolean).join(' · ') || '—';
     document.getElementById('qd-delivery').textContent = q.delivery_from && q.delivery_to ? q.delivery_from + ' → ' + q.delivery_to : '—';
     document.getElementById('qd-status').textContent = q.status;
@@ -4414,6 +4415,8 @@ function openNewPCContract(){
   if(dt)dt.value=new Date().toISOString().split('T')[0];
   openModal('modal-new-contract');
   loadNewContractDropdowns();
+  // After dropdowns load, wire onchange for commodity UOM
+  setTimeout(function(){ var s=document.getElementById('nc-commodity'); if(s) s.onchange=function(){ var uom=s.options[s.selectedIndex]?.dataset?.uom||(window._commodityCache[s.value]?.uom)||'MT'; var lbl=document.getElementById('nc-qty-label'); if(lbl) lbl.innerHTML='Quantity ('+uom+') <span class="req">*</span>'; }; }, 400);
 }
 function openNewSCContract(){
   document.getElementById('new-contract-type-label').textContent='Sales Contract';
@@ -4908,6 +4911,89 @@ async function confirmDeal(id, dealNo) {
 }
 
 // ── DYNAMIC ENQUIRY LIST ──────────────────────────────────────
+// ── COMMODITY UOM MASTER ─────────────────────────────────────
+window._commodityCache = {}; // code -> {name, uom, category}
+
+const UOM_LABELS = {
+  'MT':    'Metric Tonnes (MT)',
+  'BBL':   'Barrels (BBL)',
+  'L':     'Litres (L)',
+  'GAL':   'Gallons (GAL)',
+  'KG':    'Kilograms (KG)',
+  'LB':    'Pounds (LB)',
+  'TOZ':   'Troy Ounces (TOZ)',
+  'BU':    'Bushels (BU)',
+  'MMBTU': 'MMBtu',
+  'MT':    'Metric Tonnes (MT)'
+};
+
+const UOM_SHORT = {
+  'MT':'MT','BBL':'BBL','L':'L','GAL':'GAL','KG':'KG',
+  'LB':'LB','TOZ':'TOZ','BU':'BU','MMBTU':'MMBTU'
+};
+
+async function loadCommodityDropdowns() {
+  try {
+    const res = await fetch(API_BASE + '/api/master/commodities');
+    const json = await res.json();
+    const cms = json.data || [];
+    // Build cache
+    cms.forEach(function(c){ window._commodityCache[c.code] = c; });
+    // Group by category for optgroups
+    const groups = {};
+    cms.forEach(function(c){
+      const cat = c.category || 'OTHER';
+      if(!groups[cat]) groups[cat] = [];
+      groups[cat].push(c);
+    });
+    const catLabels = {
+      'BASE-METAL':'Base Metals','FERROUS':'Ferrous','PRECIOUS':'Precious Metals',
+      'ENERGY':'Energy','AGRICULTURAL':'Agricultural','FERTILIZER':'Fertilizers',
+      'POLYMER':'Polymers','OTHER':'Other'
+    };
+    let opts = '<option value="">— Select Commodity —</option>';
+    Object.keys(catLabels).forEach(function(cat){
+      if(!groups[cat]) return;
+      opts += '<optgroup label="'+catLabels[cat]+'">';
+      groups[cat].forEach(function(c){
+        opts += '<option value="'+c.code+'" data-uom="'+(c.uom||'MT')+'">'+c.name+' ('+(c.uom||'MT')+')</option>';
+      });
+      opts += '</optgroup>';
+    });
+    // Apply to all commodity dropdowns
+    ['enq-commodity','nc-commodity'].forEach(function(id){
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = opts;
+    });
+  } catch(e) { console.warn('Could not load commodities:', e); }
+}
+
+function onEnqCommodityChange(sel) {
+  const code = sel.value;
+  const uom = sel.options[sel.selectedIndex]?.dataset?.uom
+    || (window._commodityCache[code]?.uom) || 'MT';
+  updateQtyLabels(uom);
+}
+
+function updateQtyLabels(uom) {
+  const short = UOM_SHORT[uom] || uom;
+  const long = UOM_LABELS[uom] || uom;
+  // Enquiry form
+  const label = document.getElementById('enq-qty-label');
+  if(label) label.innerHTML = 'Quantity ('+short+') <span class="req">*</span>';
+  const input = document.getElementById('enq-qty');
+  if(input) input.placeholder = 'e.g. 100 '+short;
+  // Show UOM badge next to input if it exists
+  const badge = document.getElementById('enq-qty-uom-badge');
+  if(badge) { badge.textContent = long; badge.style.display = 'block'; }
+  // Buy leg modal
+  const blLabel = document.getElementById('bl-qty-label');
+  if(blLabel) blLabel.innerHTML = 'Quantity ('+short+') <span class="req">*</span>';
+  // New contract modal
+  const ncLabel = document.getElementById('nc-qty-label');
+  if(ncLabel) ncLabel.innerHTML = 'Quantity ('+short+') <span class="req">*</span>';
+}
+
 async function loadEnquiryList() {
   const tbody = document.getElementById('enq-list');
   if (!tbody) return;
@@ -5097,7 +5183,7 @@ async function loadQPDealOptions() {
 // Called after nav() to load data for the destination page
 function afterNav(pageId) {
   setTimeout(() => {
-    if (pageId === 'enquiry') loadEnquiryList();
+    if (pageId === 'enquiry') { loadEnquiryList(); loadCommodityDropdowns(); }
     else if (pageId === 'quotation') loadQuotationList();
     else if (pageId === 'deals') loadDealList();
     else if (pageId === 'purchase-contracts') loadContractList('PC');
@@ -5706,10 +5792,14 @@ async function loadAllocationTable() {
       <div class="divl">Deal Details</div>
       <div class="fg">
         <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
-          <select class="fs" id="enq-commodity"><option value="">— Select —</option><option value="CU-MILLBERRY">Copper MillBerry</option><option value="CU-CATHODE-A">Copper Cathode Grade A</option><option value="PB-SN-INGOT">Lead-Tin Ingots</option><option value="STEEL-HMS1">Steel HMS 1&2</option><option value="ICE-BRENT">ICE Brent Crude</option><option value="CBOT-WHEAT">CBOT Wheat</option></select></div>
+          <select class="fs" id="enq-commodity" onchange="onEnqCommodityChange(this)"><option value="">— Loading commodities… —</option></select></div>
         <div class="f"><div class="fl">Deal Type <span class="req">*</span></div>
           <select class="fs" id="enq-deal-type"><option value="BACK-TO-BACK">BACK-TO-BACK</option><option value="OPEN-BUY">OPEN BUY</option><option value="OPEN-SELL">OPEN SELL</option></select></div>
-        <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div><input type="number" class="fi" id="enq-qty" placeholder="e.g. 100"></div>
+        <div class="f"><div class="fl" id="enq-qty-label">Quantity (MT) <span class="req">*</span></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="number" class="fi" id="enq-qty" placeholder="e.g. 100" style="flex:1">
+            <span id="enq-qty-uom-badge" class="badge bd-act" style="display:none;white-space:nowrap;font-size:9px;padding:4px 8px;"></span>
+          </div></div>
         <div class="f"><div class="fl">Tolerance (%)</div><input type="number" class="fi" id="enq-tolerance" placeholder="e.g. 5" value="5"></div>
       </div>
       <div class="divl mt12">Counterparties</div>
@@ -5941,7 +6031,7 @@ async function loadAllocationTable() {
       <div class="f"><div class="fl">Commodity Code <span class="req">*</span></div>
         <input type="text" class="fi" id="bl-commodity" placeholder="e.g. CU-CATHODE-A">
       </div>
-      <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
+      <div class="f"><div class="fl" id="bl-qty-label">Quantity (MT) <span class="req">*</span></div>
         <input type="number" class="fi" id="bl-qty" placeholder="0.000" step="0.001" min="0">
       </div>
       <div class="f"><div class="fl">Incoterms</div>
@@ -6040,7 +6130,7 @@ async function loadAllocationTable() {
       <div class="f"><div class="fl">Contract Date</div>
         <input type="date" class="fi" id="nc-contract-date">
       </div>
-      <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
+      <div class="f"><div class="fl" id="nc-qty-label">Quantity (MT) <span class="req">*</span></div>
         <input type="number" class="fi" id="nc-qty" placeholder="0.000" step="0.001" min="0">
       </div>
       <div class="f"><div class="fl">Incoterms</div>

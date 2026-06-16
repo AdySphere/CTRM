@@ -16,7 +16,25 @@ async function seed() {
       ('ICE-BRENT',     'ICE Brent Crude',               'ENERGY',     'CRUDE',       'BBL','ICE',   'USD', 100.00, NULL),
       ('PLATTS-DUBAI',  'Dubai Crude (Platts)',          'ENERGY',     'CRUDE',       'BBL','PLATTS','USD', 100.00, NULL),
       ('CBOT-WHEAT',    'CBOT Wheat SRW',                'AGRICULTURAL','GRAIN',      'BU', 'CBOT',  'USD', 100.00, NULL),
-      ('CBOT-SOY',      'CBOT Soybeans',                 'AGRICULTURAL','OILSEED',    'BU', 'CBOT',  'USD', 100.00, NULL)
+      ('CBOT-SOY',      'CBOT Soybeans',                 'AGRICULTURAL','OILSEED',    'BU', 'CBOT',  'USD', 100.00, NULL),
+      ('PALM-OIL',      'Crude Palm Oil',                'AGRICULTURAL','VEGETABLE-OIL','MT','BMD',  'USD', 100.00, NULL),
+      ('GASOIL-ICE',    'ICE Gasoil',                    'ENERGY',     'REFINED-PRODUCT','MT','ICE', 'USD', 100.00, NULL),
+      ('JET-FUEL',      'Jet Fuel (Platts)',             'ENERGY',     'REFINED-PRODUCT','L', 'PLATTS','USD',100.00, NULL),
+      ('DIESEL-EN590',  'Diesel EN590',                  'ENERGY',     'REFINED-PRODUCT','L', 'PLATTS','USD',100.00, NULL),
+      ('MOGAS-RON95',   'Gasoline RON 95',               'ENERGY',     'REFINED-PRODUCT','GAL','NYMEX','USD',100.00,NULL),
+      ('LNG-NE-ASIA',   'LNG (NE Asia Spot)',            'ENERGY',     'GAS',           'MMBTU','PLATTS','USD',100.00,NULL),
+      ('GOLD-LBMA',     'Gold (LBMA)',                   'PRECIOUS',   'REFINED',       'TOZ','LBMA', 'USD', 100.00, NULL),
+      ('SILVER-LBMA',   'Silver (LBMA)',                 'PRECIOUS',   'REFINED',       'TOZ','LBMA', 'USD', 100.00, NULL),
+      ('AL-INGOT',      'Aluminium Ingot (LME)',         'BASE-METAL', 'REFINED',       'MT', 'LME',  'USD', 100.00, NULL),
+      ('ZN-REFINED',    'Zinc Refined (LME)',            'BASE-METAL', 'REFINED',       'MT', 'LME',  'USD', 100.00, NULL),
+      ('NI-REFINED',    'Nickel Refined (LME)',          'BASE-METAL', 'REFINED',       'MT', 'LME',  'USD', 100.00, NULL),
+      ('COTTON-ICE',    'Cotton No. 2 (ICE)',            'AGRICULTURAL','FIBRE',        'LB', 'ICE',  'USD', 100.00, NULL),
+      ('SUGAR-11',      'Sugar No. 11 (ICE)',            'AGRICULTURAL','SOFT',         'LB', 'ICE',  'USD', 100.00, NULL),
+      ('COFFEE-C',      'Coffee C (ICE)',                'AGRICULTURAL','SOFT',         'LB', 'ICE',  'USD', 100.00, NULL),
+      ('UREA-BULK',     'Urea (Bulk)',                   'FERTILIZER', 'GRANULAR',      'MT', 'FERTECON','USD',100.00,NULL),
+      ('DAP-BULK',      'DAP Fertilizer',                'FERTILIZER', 'GRANULAR',      'MT', 'FERTECON','USD',100.00,NULL),
+      ('HDPE-GRANULE',  'HDPE Granules',                 'POLYMER',    'PLASTIC',       'KG', 'PLATTS','USD',100.00,NULL),
+      ('PP-GRANULE',    'Polypropylene Granules',        'POLYMER',    'PLASTIC',       'KG', 'PLATTS','USD',100.00,NULL)
     ON CONFLICT (code) DO NOTHING;
   `);
   console.log('✓ commodities seeded');
