@@ -3788,18 +3788,20 @@ async function loadQuotationList() {
       return `<span class="badge ${m[s]||'bd-draft'}">${s}</span>`;
     };
 
-    tbody.innerHTML = data.map(q => `<tr onclick="openQuotationDetail('${q.quotation_no}')" style="cursor:pointer">
+    tbody.innerHTML = data.map(q => {
+      const uom = (window._commodityCache[q.commodity_code]?.uom)||'MT';
+      return `<tr onclick="openQuotationDetail('${q.quotation_no}')" style="cursor:pointer">
       <td class="mono ta fw6" style="color:var(--accent)">${q.quotation_no}</td>
       <td class="mono f10">${q.enquiry_no || '—'}</td>
       <td class="f11 fw6">${q.commodity_name || q.commodity_code || '—'}</td>
-      <td class="mono">${q.qty_mt ? parseFloat(q.qty_mt).toLocaleString() + ' MT' : '—'}</td>
+      <td class="mono">${q.qty_mt ? parseFloat(q.qty_mt).toLocaleString() + ' ' + uom : '—'}</td>
       <td class="f11">${q.customer_name || 'TBD'}</td>
       <td class="mono f10">${q.pricing_template || '—'}</td>
-      <td class="mono ta">${q.provisional_price ? 'USD ' + parseFloat(q.provisional_price).toLocaleString() : '—'}</td>
+      <td class="mono ta">${q.provisional_price ? 'USD ' + parseFloat(q.provisional_price).toLocaleString() + '/' + uom : '—'}</td>
       <td class="mono ta">${q.provisional_value ? 'USD ' + parseFloat(q.provisional_value).toLocaleString() : '—'}</td>
       <td>${statusBadge(q.status)}</td>
       <td><button class="btn bxs bg" onclick="event.stopPropagation();openQuotationDetail('${q.quotation_no}')">Open</button></td>
-    </tr>`).join('');
+    </tr>`; }).join('');
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--danger);font-family:var(--font-mono);font-size:11px">Error: ${err.message}</td></tr>`;
   }
@@ -4027,7 +4029,7 @@ function addAdjLine() {
     <td><input type="text" class="fi" style="width:100px;font-size:10px" placeholder="Description"></td>
     <td><select class="fs" style="font-size:10px"><option>FLAT-RATE</option><option>PCT-OF-PRICE</option><option>FORMULA</option></select></td>
     <td><input type="number" class="fi" style="width:65px;font-size:10px" placeholder="0.00"></td>
-    <td><select class="fs" style="font-size:10px"><option>USD/MT</option><option>%</option><option>USD</option></select></td>
+    <td><select class="fs" style="font-size:10px"><option>USD/MT</option><option>USD/BBL</option><option>USD/TOZ</option><option>USD/KG</option><option>%</option><option>USD</option></select></td>
     <td><select class="fs" style="font-size:10px"><option>PRE-INVOICE</option><option>PRE-PRICE</option><option>POST-SETTLEMENT</option></select></td>
     <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>`;
   tbody.appendChild(tr);
@@ -4158,17 +4160,8 @@ function addTypeBSlab(){
 }
 
 // Adjustment / penalty functions
-function addAdjLine(){
-  toast('Adjustment','New adjustment line added · Select code and enter value','info');
-}
-function addPenLineAdv(){
-  toast('Penalty Line','Advanced penalty line added','info');
-}
 function viewPenCalc(){
   toast('Penalty Calc','Opening penalty calculator · Enter actual assay values','info');
-}
-function loadTemplateAdj(){
-  toast('Template','Adjustment template loaded from contract','success');
 }
 
 // ── END COMPLETE FUNCTION LIST ────────────────────────────────
@@ -4265,38 +4258,40 @@ async function submitNewEnquiry(){
   if(!commodity){ toast('Required','Please select a commodity','warning'); return; }
   if(!qty || qty <= 0){ toast('Required','Please enter a valid quantity','warning'); return; }
 
-  const enqNo = 'ENQ-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*900)+100);
-  
   const btn = document.querySelector('#modal-new-enquiry .btn.bp');
   if(btn){ btn.textContent = 'Saving...'; btn.disabled = true; }
 
   try {
-    const res = await fetch(API_BASE + '/api/deals', {
+    // Post to enquiries endpoint (auto-generates sequential ENQ number)
+    const res = await fetch(API_BASE + '/api/enquiries', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        deal_no: enqNo,
-        deal_date: new Date().toISOString(),
+        enquiry_date: new Date().toISOString().split('T')[0],
         commodity_code: commodity,
         deal_type: g('enq-deal-type') || 'BACK-TO-BACK',
         qty_mt: qty,
         supplier_id: parseInt(g('enq-supplier')) || null,
         customer_id: parseInt(g('enq-customer')) || null,
+        incoterms: g('enq-incoterms') || 'CIF',
+        origin: g('enq-origin') || null,
+        destination: g('enq-destination') || null,
+        pricing_intent: g('enq-pricing-intent') || null,
         notes: g('enq-notes') || null,
+        status: 'OPEN'
       })
     });
     const data = await res.json();
     if(data.success){
+      const enqNo = data.data.enquiry_no;
       closeModal('modal-new-enquiry');
-      toast('Enquiry Created', enqNo + ' · ' + commodity + ' · ' + qty + ' MT', 'success');
+      toast('Enquiry Created', enqNo + ' · ' + commodity + ' · ' + qty, 'success');
       // Reset form
       ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-      // Navigate to enquiry page first
+      document.getElementById('enq-qty-label').innerHTML = 'Quantity (MT) <span class="req">*</span>';
+      document.getElementById('enq-qty-uom-badge').style.display = 'none';
       nav('enquiry', document.querySelector('[data-page=enquiry]'));
-      // Then load the list (now that page is visible)
       await loadEnquiryList();
-      // Then open the new record
-      setTimeout(() => openEnquiryDetail(enqNo), 500);
     } else {
       toast('Save Failed', data.error || 'Unknown error — check server logs', 'warning');
     }
@@ -4934,12 +4929,17 @@ const UOM_SHORT = {
 
 async function loadCommodityDropdowns() {
   try {
-    const res = await fetch(API_BASE + '/api/master/commodities');
-    const json = await res.json();
-    const cms = json.data || [];
-    // Build cache
+    const [cmRes, cpRes] = await Promise.all([
+      fetch(API_BASE + '/api/master/commodities'),
+      fetch(API_BASE + '/api/master/counterparties')
+    ]);
+    const cms = (await cmRes.json()).data || [];
+    const cps = (await cpRes.json()).data || [];
+
+    // Build commodity cache
     cms.forEach(function(c){ window._commodityCache[c.code] = c; });
-    // Group by category for optgroups
+
+    // Commodity optgroups
     const groups = {};
     cms.forEach(function(c){
       const cat = c.category || 'OTHER';
@@ -4951,21 +4951,37 @@ async function loadCommodityDropdowns() {
       'ENERGY':'Energy','AGRICULTURAL':'Agricultural','FERTILIZER':'Fertilizers',
       'POLYMER':'Polymers','OTHER':'Other'
     };
-    let opts = '<option value="">— Select Commodity —</option>';
+    let cmOpts = '<option value="">— Select Commodity —</option>';
     Object.keys(catLabels).forEach(function(cat){
       if(!groups[cat]) return;
-      opts += '<optgroup label="'+catLabels[cat]+'">';
+      cmOpts += '<optgroup label="'+catLabels[cat]+'">';
       groups[cat].forEach(function(c){
-        opts += '<option value="'+c.code+'" data-uom="'+(c.uom||'MT')+'">'+c.name+' ('+(c.uom||'MT')+')</option>';
+        cmOpts += '<option value="'+c.code+'" data-uom="'+(c.uom||'MT')+'">'+c.name+' ('+(c.uom||'MT')+')</option>';
       });
-      opts += '</optgroup>';
+      cmOpts += '</optgroup>';
     });
-    // Apply to all commodity dropdowns
     ['enq-commodity','nc-commodity'].forEach(function(id){
       const el = document.getElementById(id);
-      if(el) el.innerHTML = opts;
+      if(el) el.innerHTML = cmOpts;
     });
-  } catch(e) { console.warn('Could not load commodities:', e); }
+
+    // Counterparty dropdowns - split by type
+    const vendors = cps.filter(function(c){ return !c.type || c.type==='VENDOR' || c.type==='BOTH'; });
+    const customers = cps.filter(function(c){ return !c.type || c.type==='CUSTOMER' || c.type==='BOTH'; });
+    const allCps = cps;
+
+    const mkOpts = function(arr, placeholder) {
+      return '<option value="">'+placeholder+'</option>' + arr.map(function(c){
+        return '<option value="'+c.id+'">'+c.name+'</option>';
+      }).join('');
+    };
+
+    const supEl = document.getElementById('enq-supplier');
+    if(supEl) supEl.innerHTML = mkOpts(vendors.length ? vendors : allCps, '— Select Vendor —');
+    const custEl = document.getElementById('enq-customer');
+    if(custEl) custEl.innerHTML = mkOpts(customers.length ? customers : allCps, '— Select Customer —');
+
+  } catch(e) { console.warn('Could not load master dropdowns:', e); }
 }
 
 function onEnqCommodityChange(sel) {
@@ -4999,33 +5015,39 @@ async function loadEnquiryList() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--text3);font-family:var(--font-mono);font-size:11px">Loading...</td></tr>';
   try {
-    const res = await fetch(API_BASE + '/api/deals');
+    const res = await fetch(API_BASE + '/api/enquiries');
     const json = await res.json();
     if (!res.ok || !json.success) throw new Error(json.error || 'API returned ' + res.status);
-    const deals = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
+    const deals = Array.isArray(json.data) ? json.data : [];
     if (!deals.length) {
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">No enquiries yet · Click + New Enquiry to create one</td></tr>';
       return;
     }
-    tbody.innerHTML = deals.map(d => '<tr onclick="openEnquiryDetail(\'' + d.deal_no + '\')" style="cursor:pointer">'
-      + '<td class="mono ta fw6" style="color:var(--accent)">' + d.deal_no + '</td>'
-      + '<td class="mono f10">' + (d.deal_date||'').split('T')[0] + '</td>'
-      + '<td class="f11 fw6">' + (d.commodity_name || d.commodity_code || '—') + '</td>'
-      + '<td><span class="badge ' + (d.deal_type==='BACK-TO-BACK'?'bd-act':'bd-ship') + '">' + (d.deal_type||'—') + '</span></td>'
-      + '<td class="mono">' + (d.qty_mt||'—') + '</td>'
-      + '<td class="f11">' + (d.supplier_name||'—') + '</td>'
-      + '<td class="f11">' + (d.customer_name||'—') + '</td>'
-      + '<td class="f10">' + (d.incoterms||'—') + '</td>'
-      + '<td><span class="badge ' + (d.confirmed?'bd-confirmed':'bd-draft') + '">' + (d.status||'DRAFT') + '</span></td>'
-      + '<td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail(\'' + d.deal_no + '\')">Open</button></td>'
-      + '</tr>'
-    ).join('');
+    tbody.innerHTML = deals.map(function(d) {
+      const uom = (window._commodityCache[d.commodity_code]?.uom) || 'MT';
+      const dtClass = d.deal_type==='BACK-TO-BACK'?'bd-act':d.deal_type==='OPEN-BUY'?'bd-ship':'bd-draft';
+      const cp = d.deal_type==='OPEN-BUY' ? (d.supplier_name||'—') : d.deal_type==='OPEN-SELL' ? (d.customer_name||'—') : [d.supplier_name,d.customer_name].filter(Boolean).join(' / ') || '—';
+      const stClass = d.status==='QUOTED'?'bd-act':d.status==='CONVERTED'?'bd-confirmed':d.status==='CLOSED'?'bd-ship':'bd-draft';
+      const ref = d.enquiry_no || d.deal_no;
+      return '<tr onclick="openEnquiryDetail(\'' + ref + '\')" style="cursor:pointer">'
+        + '<td class="mono ta fw6" style="color:var(--accent)">' + ref + '</td>'
+        + '<td class="mono f10">' + (d.enquiry_date||d.deal_date||'').split('T')[0] + '</td>'
+        + '<td><span class="badge ' + dtClass + '">' + (d.deal_type||'—').replace(/-/g,' ') + '</span></td>'
+        + '<td class="f11 fw6">' + (d.commodity_name || d.commodity_code || '—') + '</td>'
+        + '<td class="mono">' + (d.qty_mt||'—') + ' ' + uom + '</td>'
+        + '<td class="f11">' + cp + '</td>'
+        + '<td class="f10 tdim">' + (d.incoterms||'—') + '</td>'
+        + '<td><span class="badge ' + stClass + '">' + (d.status||'OPEN') + '</span></td>'
+        + '<td class="tdim f10">' + (d.created_by||'—') + '</td>'
+        + '<td><button class="btn bxs bg" onclick="event.stopPropagation();openEnquiryDetail(\'' + ref + '\')">Open</button></td>'
+        + '</tr>';
+    }).join('');
     // Update stat chips
     const chips = document.querySelectorAll('#page-enquiry .sr .scv');
     if (chips[0]) chips[0].textContent = deals.length;
-    if (chips[1]) chips[1].textContent = deals.filter(d=>d.status==='OPEN'||d.status==='DRAFT').length;
+    if (chips[1]) chips[1].textContent = deals.filter(d=>d.status==='OPEN').length;
     if (chips[2]) chips[2].textContent = deals.filter(d=>d.status==='QUOTED').length;
-    if (chips[3]) chips[3].textContent = deals.filter(d=>d.status==='CONFIRMED'||d.confirmed).length;
+    if (chips[3]) chips[3].textContent = deals.filter(d=>d.status==='CONVERTED').length;
     const badge = document.querySelector('.ni[data-page=enquiry] .nb');
     if (badge) badge.textContent = deals.length;
   } catch(err) {
@@ -5794,7 +5816,7 @@ async function loadAllocationTable() {
         <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
           <select class="fs" id="enq-commodity" onchange="onEnqCommodityChange(this)"><option value="">— Loading commodities… —</option></select></div>
         <div class="f"><div class="fl">Deal Type <span class="req">*</span></div>
-          <select class="fs" id="enq-deal-type"><option value="BACK-TO-BACK">BACK-TO-BACK</option><option value="OPEN-BUY">OPEN BUY</option><option value="OPEN-SELL">OPEN SELL</option></select></div>
+          <select class="fs" id="enq-deal-type"><option value="BACK-TO-BACK">Back-to-Back</option><option value="OPEN-BUY">Open Buy</option><option value="OPEN-SELL">Open Sell</option><option value="STOCK-TO-SELL">Stock to Sell</option><option value="CONSIGNMENT">Consignment</option></select></div>
         <div class="f"><div class="fl" id="enq-qty-label">Quantity (MT) <span class="req">*</span></div>
           <div style="display:flex;gap:8px;align-items:center;">
             <input type="number" class="fi" id="enq-qty" placeholder="e.g. 100" style="flex:1">
@@ -5805,9 +5827,9 @@ async function loadAllocationTable() {
       <div class="divl mt12">Counterparties</div>
       <div class="fg">
         <div class="f"><div class="fl">Supplier / Vendor</div>
-          <select class="fs" id="enq-supplier"><option value="">— Select —</option><option value="1">Glencore AG</option><option value="4">Noble Resources Pte</option></select></div>
+          <select class="fs" id="enq-supplier"><option value="">— Select Vendor —</option></select></div>
         <div class="f"><div class="fl">Customer / Buyer</div>
-          <select class="fs" id="enq-customer"><option value="">— Select —</option><option value="2">Tata Metals Ltd</option><option value="3">Aurubis Beerse NV</option></select></div>
+          <select class="fs" id="enq-customer"><option value="">— Select Customer —</option></select></div>
       </div>
       <div class="divl mt12">Route & Pricing</div>
       <div class="fg">

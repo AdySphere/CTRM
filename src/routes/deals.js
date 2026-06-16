@@ -343,13 +343,33 @@ enquiriesRouter.post('/', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
     const { enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
-      supplier_id, customer_id, incoterms, status, created_by, notes } = req.body;
+      supplier_id, customer_id, incoterms, origin, destination,
+      pricing_intent, status, created_by, notes } = req.body;
+    // Auto-generate sequential enquiry number if not provided
+    let enqNo = enquiry_no;
+    if (!enqNo) {
+      const yr = new Date().getFullYear();
+      const cntRes = await query(
+        `SELECT COUNT(*) FROM enquiries WHERE enquiry_no LIKE $1`, [`ENQ-${yr}-%`]
+      );
+      const nextNum = String(parseInt(cntRes.rows[0].count) + 1).padStart(3, '0');
+      enqNo = `ENQ-${yr}-${nextNum}`;
+      // Ensure unique (in case of race)
+      const existRes = await query(`SELECT id FROM enquiries WHERE enquiry_no=$1`, [enqNo]);
+      if (existRes.rows.length) {
+        enqNo = `ENQ-${yr}-${String(parseInt(cntRes.rows[0].count) + 2).padStart(3,'0')}`;
+      }
+    }
     const result = await query(`
       INSERT INTO enquiries (enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
-        supplier_id, customer_id, incoterms, status, created_by, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,COALESCE($9,'OPEN'),$10,$11) RETURNING *
-    `, [enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
-        supplier_id||null, customer_id||null, incoterms, status, created_by, notes]);
+        supplier_id, customer_id, incoterms, origin, destination,
+        pricing_intent, status, created_by, notes)
+      VALUES ($1,COALESCE($2::date,CURRENT_DATE),$3,$4,$5,$6,$7,$8,$9,$10,$11,
+              COALESCE($12,'OPEN'),$13,$14) RETURNING *
+    `, [enqNo, enquiry_date||null, commodity_code, deal_type||'BACK-TO-BACK', qty_mt,
+        supplier_id||null, customer_id||null, incoterms||null,
+        origin||null, destination||null, pricing_intent||null,
+        status, created_by||null, notes||null]);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
