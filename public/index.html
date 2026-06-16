@@ -1207,10 +1207,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="fg mb12">
             <div class="f"><div class="fl">Whose Weights Govern</div><select class="fs"><option>BUYER'S WEIGHTS</option><option>SELLER'S WEIGHTS</option><option>JOINT SURVEY</option><option>DRAFT SURVEY</option></select></div>
             <div class="f"><div class="fl">Whose Assays Govern</div><select class="fs"><option>BUYER'S ASSAYS</option><option>SELLER'S ASSAYS</option><option>AVERAGE OF BOTH</option><option>END-USER RESULT — FINAL</option></select></div>
-            <div class="f"><div class="fl">Umpire Lab (if dispute)</div><input type="text" class="fi" value="Alfred H. Knight (AHK) UK"></div>
-            <div class="f"><div class="fl">Umpire Trigger Condition</div><input type="text" class="fi" placeholder="e.g. Important discrepancy between Buyer and Seller analyses"></div>
-            <div class="f"><div class="fl">Umpire Cost Borne By</div><div class="fc">Losing party</div></div>
-            <div class="f"><div class="fl">Assay Report Due</div><input type="text" class="fi" value="Within 30 days of delivery at port of destination"></div>
+            <div class="f"><div class="fl">Umpire Lab (if dispute)</div><input type="text" class="fi" id="pcd-umpire-lab" placeholder="e.g. Alfred H. Knight (AHK)"></div>
+            <div class="f"><div class="fl">Umpire Trigger Condition</div><input type="text" class="fi" id="pcd-umpire-trigger" placeholder="e.g. Discrepancy > 0.05% Cu between buyer and seller analyses"></div>
+            <div class="f"><div class="fl">Umpire Cost Borne By</div><select class="fs" id="pcd-umpire-cost"><option value="losing">Losing Party</option><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="split">Split 50/50</option></select></div>
+            <div class="f"><div class="fl">Assay Report Due</div><input type="text" class="fi" id="pcd-assay-due" placeholder="e.g. Within 30 days of delivery at POD"></div>
             <div class="f"><div class="fl">Assay Basis</div><select class="fs"><option>FINAL ASSAY AT DESTINATION</option><option>PROVISIONAL ASSAY AT ORIGIN</option><option>END-USER RESULT</option></select></div>
             <div class="f"><div class="fl">Test Sample Disposition</div><input type="text" class="fi" placeholder="e.g. Provisional assay samples sent to Seller. End-user sample kept at Buyer."></div>
           </div>
@@ -1248,6 +1248,11 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Commission to Agent</div><input type="text" class="fi" placeholder="e.g. 1.5% of invoice — deducted from final payment"></div>
           <div class="f"><div class="fl">Commission Beneficiary</div><input type="text" class="fi" placeholder="Agent / broker name"></div>
           <div class="f"><div class="fl">IJCEPA / FTA Certificate</div><select class="fs"><option>NOT REQUIRED</option><option>REQUIRED — IJCEPA</option><option>REQUIRED — Other FTA</option></select></div>
+            <div class="f"><div class="fl">Radioactive Contamination Clause</div><select class="fs" id="pcd-radioactive"><option value="standard">Standard — Seller warrants material is free from radioactive contamination</option><option value="enhanced">Enhanced — With independent survey at loading port</option><option value="none">Not applicable</option></select></div>
+            <div class="f"><div class="fl">Hazardous Waste / Basel Convention</div><select class="fs" id="pcd-basel"><option value="compliant">Compliant — Seller confirms compliance with Basel Convention</option><option value="na">Not applicable</option></select></div>
+            <div class="f"><div class="fl">Anti-Bribery & Corruption</div><select class="fs" id="pcd-abc"><option value="standard">Standard ABC clause applies</option><option value="enhanced">Enhanced — with compliance certificate</option></select></div>
+            <div class="f"><div class="fl">Sanctions Clause</div><select class="fs" id="pcd-sanctions"><option value="standard">Standard — Neither party is a sanctioned entity</option><option value="enhanced">Enhanced OFAC / EU / UN</option></select></div>
+            <div class="f csf"><div class="fl">Special Conditions / Other Clauses</div><textarea class="fta" id="pcd-special-conditions" placeholder="Any additional terms agreed between the parties..." style="min-height:60px"></textarea></div>
           <div class="f"><div class="fl">Radioactivity Clause</div><div class="fc">Material to be free from radioactivity — rejection applies</div></div>
           <div class="f cs2"><div class="fl">Special Remarks</div><textarea class="fta" style="min-height:48px"></textarea></div>
         </div></div>
@@ -3427,7 +3432,19 @@ async function renderQPWindow(dealId) {
   set('qp-deal-label', dealId);
   set('qp-days-display', `${qp.days} / ${qp.total} business days`);
   set('qp-avg-display', qp.average !== null ? `${fmt(qp.average)} (${qp.days} days)` : '—');
-  set('qp-status-display', qp.status);
+  const statusLabel = qp.status === 'CLOSED'
+    ? 'CLOSED (' + qp.days + '/' + qp.total + ' days priced)'
+    : qp.status === 'OPEN'
+    ? 'OPEN — ' + qp.days + ' of ' + qp.total + ' days elapsed'
+    : qp.status === 'PRE_QP'
+    ? 'NOT YET STARTED — QP window in future'
+    : qp.status;
+  set('qp-status-display', statusLabel);
+  // Color the status
+  const statusEl = document.getElementById('qp-status-display');
+  if (statusEl) {
+    statusEl.style.color = qp.status === 'OPEN' ? 'var(--green)' : qp.status === 'CLOSED' ? 'var(--text2)' : 'var(--accent)';
+  }
 
   // Get fixation state from exposure
   const expData = await api(`/api/exposure?deal_id=${dealId}`);
@@ -3436,11 +3453,20 @@ async function renderQPWindow(dealId) {
     set('qp-rule-display', '—');
     set('qp-start-display', r.qp_start);
     set('qp-end-display', r.qp_end);
-    set('qp-state-display', r.state.replace('_',' '));
+    const fixState = r.state || 'UNPRICED';
+    const fixLabel = fixState === 'FULLY_PRICED' ? 'FULLY PRICED'
+      : fixState === 'PARTIALLY_PRICED' ? 'PARTIAL — ' + fmt(r.E,0) + ' / ' + fmt((r.E||0)+(r.F||0),0) + ' MT priced'
+      : fixState === 'UNPRICED' ? 'UNPRICED — no fixations yet'
+      : fixState.replace(/_/g,' ');
+    set('qp-state-display', fixLabel);
+    const stateEl = document.getElementById('qp-state-display');
+    if (stateEl) {
+      stateEl.style.color = fixState === 'FULLY_PRICED' ? 'var(--green)' : fixState === 'PARTIALLY_PRICED' ? 'var(--accent)' : 'var(--text3)';
+    }
     set('qp-priced-qty', fmt(r.E,2) + ' MT');
     set('qp-unpriced-qty', fmt(r.F,2) + ' MT');
-    set('qp-trade-price', r.I !== null ? fmt(r.I) : 'No fixation yet');
-    set('qp-today-price', r.J !== null ? fmt(r.J) + ' (Settlement)' : '—');
+    set('qp-trade-price', r.I !== null ? fmt(r.I) + ' (avg of fixations)' : 'No fixations yet');
+    set('qp-today-price', r.J !== null ? fmt(r.J) + ' (latest settlement — not fixed)' : '— (no market price for today)');
   }
 
   // Render daily price table
@@ -5210,6 +5236,24 @@ async function openEnquiryDetail(ref) {
 
     // Populate vendor/customer dropdowns
     await populateEnqCPDropdowns(enq);
+
+    // Populate approvals tab from existing counterparty
+    const existingCpId = dir2 === 'BUY' ? enq.supplier_id : enq.customer_id;
+    if (existingCpId && window._cpCache && window._cpCache[existingCpId]) {
+      const side = dir2 === 'BUY' ? 'buy' : 'sell';
+      // Simulate CP change to update KYC/credit
+      const fakeSel = { value: existingCpId };
+      onEnqCPChange(fakeSel, side);
+    } else if (existingCpId) {
+      // CP not in cache yet — fetch and update
+      fetch(API_BASE + '/api/master/counterparties').then(function(r){return r.json();}).then(function(json){
+        const cps = json.data || [];
+        window._cpCache = window._cpCache || {};
+        cps.forEach(function(c){ window._cpCache[c.id] = c; });
+        const fakeSel = { value: existingCpId };
+        onEnqCPChange(fakeSel, dir2 === 'BUY' ? 'buy' : 'sell');
+      }).catch(function(){});
+    }
 
     // Pricing intent
     const pricingSel = document.querySelector('#enq-price .sel-template');
