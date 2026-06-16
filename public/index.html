@@ -595,11 +595,27 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <!-- COUNTERPARTY -->
         <div id="enq-cp" class="ftc hidden">
           <div class="ban bi"><span>ℹ</span>Counterparty is optional in DRAFT. Becomes mandatory on move to OPEN depending on direction.</div>
+          <!-- Direction indicator -->
+          <div class="ban bi mb12" id="enq-cp-direction-banner"><span>ℹ</span>Enquiry direction: <strong id="enq-cp-dir-label">BUY</strong> — showing vendor field only. One counterparty per enquiry.</div>
           <div class="fg">
-            <div class="f"><div class="fl">Buy Counterparty (Vendor)</div><select class="fs sel-vendor" onchange="onEnqCPChange(this,'buy')"></select></div>
-            <div class="f"><div class="fl">Buy CP KYC Status</div><div class="fc" id="enq-buy-kyc"><span class="badge bd-draft">— select vendor —</span></div></div>
-            <div class="f"><div class="fl">Sell Counterparty (Customer)</div><select class="fs sel-customer" onchange="onEnqCPChange(this,'sell')"></select></div>
-            <div class="f"><div class="fl">Sell CP KYC Status</div><div class="fc" id="enq-sell-kyc"><span class="badge bd-draft">— select customer —</span></div></div>
+            <!-- BUY side - vendor -->
+            <div class="f" id="enq-vendor-row">
+              <div class="fl">Vendor / Supplier</div>
+              <select class="fs sel-vendor" onchange="onEnqCPChange(this,'buy')"></select>
+            </div>
+            <div class="f" id="enq-vendor-kyc-row">
+              <div class="fl">Vendor KYC Status</div>
+              <div class="fc" id="enq-buy-kyc"><span class="badge bd-draft">— select vendor —</span></div>
+            </div>
+            <!-- SELL side - customer -->
+            <div class="f" id="enq-customer-row" style="display:none">
+              <div class="fl">Customer</div>
+              <select class="fs sel-customer" onchange="onEnqCPChange(this,'sell')"></select>
+            </div>
+            <div class="f" id="enq-customer-kyc-row" style="display:none">
+              <div class="fl">Customer KYC Status</div>
+              <div class="fc" id="enq-sell-kyc"><span class="badge bd-draft">— select customer —</span></div>
+            </div>
             <div class="f"><div class="fl">Broker</div><input type="text" class="fi" placeholder="Optional — broker name"></div>
             <div class="f"><div class="fl">Brokerage Type</div><select class="fs" id="enq-brokerage-type"><option value="">— None —</option><option value="per-unit">Per Unit (USD/MT or USD/BBL)</option><option value="pct">% of Invoice Value</option><option value="flat">Flat Fee (USD)</option></select></div>
             <div class="f"><div class="fl">Brokerage Rate</div><input type="number" class="fi" id="enq-brokerage-rate" placeholder="e.g. 2.50" step="0.01"></div>
@@ -988,7 +1004,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="pc-gen" class="ftc active"><div class="fg">
           <div class="f"><div class="fl">Contract No.</div><div class="fc mono" id="pcd-no">—</div></div>
-          <div class="f"><div class="fl">Linked Deal</div><div class="fc mono ta" id="pcd-deal">—</div></div>
+          <div class="f"><div class="fl">Linked Deal</div><div class="fc mono ta fw6" id="pcd-deal" style="color:var(--accent)">—</div></div>
           <div class="f"><div class="fl">Contract Date</div><div class="fc mono" id="pcd-date">—</div></div>
           <div class="f"><div class="fl">Status</div><div class="fc fw6" id="pcd-status">—</div></div>
           <div class="f"><div class="fl">Direction</div><div class="fc">PURCHASE — we are the BUYER</div></div>
@@ -3803,7 +3819,7 @@ async function loadQuotationList() {
 
     tbody.innerHTML = data.map(q => {
       const uom = (window._commodityCache[q.commodity_code]?.uom)||'MT';
-      const qtype = q.quote_type || (q.quotation_no.startsWith('PQ-')?'PQ':'SQ');
+      const qtype = q.quote_type_resolved || q.quote_type || (q.quotation_no.startsWith('PQ-')?'PQ':'SQ');
       const typeClass = qtype==='PQ' ? 'bd-ship' : 'bd-act';
       const typeLabel = qtype==='PQ' ? 'PURCHASE' : 'SALES';
       const cp = qtype==='PQ' ? (q.supplier_name||q.customer_name||'TBD') : (q.customer_name||'TBD');
@@ -4492,6 +4508,8 @@ async function submitNewEnquiry(){
       // Reset form
       ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
       document.getElementById('enq-qty-label').innerHTML = 'Quantity (MT) <span class="req">*</span>';
+      document.getElementById('enq-dir-buy').checked = true;
+      onEnqDirChange();
       document.getElementById('enq-qty-uom-badge').style.display = 'none';
       nav('enquiry', document.querySelector('[data-page=enquiry]'));
       await loadEnquiryList();
@@ -5095,11 +5113,15 @@ async function openEnquiryDetail(ref) {
 
     // ── Commodity & Qty tab ──────────────────────────────────
     // Populate commodity dropdown from cache
+    // Ensure commodity cache is loaded before populating dropdown
+    if (Object.keys(window._commodityCache||{}).length === 0) {
+      await loadCommodityDropdowns();
+    }
     const commSel = document.querySelector('#enq-comm .sel-commodity');
     if (commSel) {
-      if (commSel.options.length <= 1) {
-        // Build options from cache
-        const cms = Object.values(window._commodityCache);
+      // Always rebuild from cache to ensure fresh
+      const cms = Object.values(window._commodityCache);
+      if (cms.length > 0) {
         const groups = {};
         cms.forEach(function(c){ const g=c.category||'OTHER'; if(!groups[g]) groups[g]=[]; groups[g].push(c); });
         const catLabels = {'BASE-METAL':'Base Metals','FERROUS':'Ferrous','PRECIOUS':'Precious Metals','ENERGY':'Energy','AGRICULTURAL':'Agricultural','FERTILIZER':'Fertilizers','POLYMER':'Polymers','OTHER':'Other'};
@@ -5113,7 +5135,6 @@ async function openEnquiryDetail(ref) {
         commSel.innerHTML = opts;
       }
       commSel.value = enq.commodity_code || '';
-      // Trigger UOM update
       if (enq.commodity_code) onEnqCommodity(commSel);
     }
 
@@ -5160,6 +5181,43 @@ async function populateEnqCPDropdowns(enq) {
     if (vendorSel) vendorSel.innerHTML = mkOpts('— Select Vendor —', enq.supplier_id);
     if (custSel) custSel.innerHTML = mkOpts('— Select Customer —', enq.customer_id);
   } catch(e) { console.warn('Could not load CPs:', e); }
+}
+
+function onEnqDirChange() {
+  const isBuy = document.getElementById('enq-dir-buy')?.checked;
+  const dir = isBuy ? 'BUY' : 'SELL';
+
+  // Update label styles
+  const buyLabel = document.getElementById('enq-buy-label');
+  const sellLabel = document.getElementById('enq-sell-label');
+  if (buyLabel) { buyLabel.style.borderColor = isBuy ? 'var(--accent)' : 'var(--border)'; buyLabel.style.background = isBuy ? 'rgba(16,185,129,.08)' : ''; }
+  if (sellLabel) { sellLabel.style.borderColor = !isBuy ? 'var(--accent)' : 'var(--border)'; sellLabel.style.background = !isBuy ? 'rgba(16,185,129,.08)' : ''; }
+
+  // Show/hide CP fields on the NEW ENQUIRY FORM (supplier vs customer)
+  const supRow = document.getElementById('enq-supplier-row');
+  const custRow = document.getElementById('enq-customer-row-form');
+  if (supRow) supRow.style.display = isBuy ? '' : 'none';
+  if (custRow) custRow.style.display = !isBuy ? '' : 'none';
+
+  // Also update CP tab direction if open
+  updateEnqCPTab(dir);
+}
+
+function updateEnqCPTab(dir) {
+  const isBuy = dir === 'BUY';
+  const banner = document.getElementById('enq-cp-direction-banner');
+  const dirLabel = document.getElementById('enq-cp-dir-label');
+  const vendorRow = document.getElementById('enq-vendor-row');
+  const vendorKyc = document.getElementById('enq-vendor-kyc-row');
+  const custRow = document.getElementById('enq-customer-row');
+  const custKyc = document.getElementById('enq-customer-kyc-row');
+
+  if (dirLabel) dirLabel.textContent = dir;
+  if (vendorRow) vendorRow.style.display = isBuy ? '' : 'none';
+  if (vendorKyc) vendorKyc.style.display = isBuy ? '' : 'none';
+  if (custRow) custRow.style.display = !isBuy ? '' : 'none';
+  if (custKyc) custKyc.style.display = !isBuy ? '' : 'none';
+  if (banner) banner.innerHTML = '<span>ℹ</span>Direction: <strong>' + dir + '</strong> — showing ' + (isBuy ? 'vendor' : 'customer') + ' field only. One counterparty per enquiry.';
 }
 
 function onEnqCPChange(sel, side) {
@@ -5217,17 +5275,33 @@ function updateEnqDealValue() {
 function onEnqCommodity(sel) {
   const code = sel.value;
   const opt = sel.options[sel.selectedIndex];
-  const uom = opt?.dataset?.uom || (window._commodityCache[code]?.uom) || 'MT';
-  const cat = opt?.dataset?.cat || (window._commodityCache[code]?.category) || '';
-  const grp = opt?.dataset?.group || (window._commodityCache[code]?.type) || '';
+  const cm = window._commodityCache[code] || {};
+  const uom = opt?.dataset?.uom || cm.uom || 'MT';
+  const cat = opt?.dataset?.cat || cm.category || '';
+  const grp = opt?.dataset?.group || cm.type || '';
 
-  // Update UOM display
+  // Update UOM display badge
   const uomEl = document.getElementById('enq-comm-uom');
   if (uomEl) uomEl.textContent = uom;
 
   // Update group display
   const grpEl = document.getElementById('enq-comm-group');
-  if (grpEl) grpEl.textContent = cat + (grp ? ' · ' + grp : '') || '—';
+  if (grpEl) grpEl.textContent = (cat ? cat : '') + (grp ? ' · ' + grp : '') || '—';
+
+  // Update quantity label with correct UOM everywhere
+  document.querySelectorAll('#enq-comm .f').forEach(function(f){
+    const lbl = f.querySelector('.fl');
+    const inp = f.querySelector('input[type="number"]');
+    if (lbl && inp && (lbl.textContent.includes('Quantity') || lbl.textContent.includes('Qty'))) {
+      lbl.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
+    }
+  });
+
+  // Also update the main creation form UOM badge if present
+  const mainBadge = document.getElementById('enq-qty-uom-badge');
+  if (mainBadge) { mainBadge.textContent = uom; mainBadge.style.display = 'inline'; }
+  const mainLabel = document.getElementById('enq-qty-label');
+  if (mainLabel) mainLabel.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
 
   // Show/hide conditional fields
   const bulkFields = document.getElementById('enq-bulk-fields');
@@ -5235,16 +5309,11 @@ function onEnqCommodity(sel) {
   if (bulkFields) bulkFields.classList.toggle('hidden', cat !== 'AGRICULTURAL' && cat !== 'FERROUS');
   if (energyFields) energyFields.classList.toggle('hidden', cat !== 'ENERGY');
 
-  // Update quantity label UOM
-  const qtyLbl = document.querySelector('#enq-comm .fl');
-  // Find the qty field label specifically
-  document.querySelectorAll('#enq-comm .f').forEach(function(f){
-    const lbl = f.querySelector('.fl');
-    const inp = f.querySelector('input[type="number"]');
-    if (lbl && inp && lbl.textContent.includes('Quantity')) {
-      lbl.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
-    }
-  });
+  // Auto-populate weight basis from commodity type
+  const wbEl = document.getElementById('enq-weight-basis');
+  if (wbEl && !wbEl.value) {
+    wbEl.value = cat === 'ENERGY' ? 'FLOW-METER' : 'SHIPPED-WEIGHT';
+  }
 }
 
 async function confirmDeal(id, dealNo) {
@@ -5478,7 +5547,8 @@ async function openContractDetail(contractId, type) {
       s('pcd-status', c.status||'DRAFT');
       s('pcd-vendor', c.counterparty_name||'—');
       s('pcd-commodity', (c.commodity_name||c.commodity_code)||'—');
-      s('pcd-qty', c.qty_mt ? c.qty_mt + ' MT' : '—');
+      const pcdUom = (window._commodityCache[c.commodity_code]?.uom) || 'MT';
+      s('pcd-qty', c.qty_mt ? c.qty_mt + ' ' + pcdUom : '—');
       s('pcd-incoterms', c.incoterms||'—');
       s('pcd-pricing', c.pricing_formula||'—');
       sv('pcd-remarks', 'Further to our discussions, ' + (c.counterparty_name||'Vendor') + ' confirms sale of ' + (c.commodity_name||c.commodity_code||'commodity') + ' to Trading Company DMCC at the following terms and conditions.');
@@ -6195,8 +6265,17 @@ async function loadAllocationTable() {
       <div class="fg">
         <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
           <select class="fs" id="enq-commodity" onchange="onEnqCommodityChange(this)"><option value="">— Loading commodities… —</option></select></div>
-        <div class="f"><div class="fl">Deal Type <span class="req">*</span></div>
-          <select class="fs" id="enq-deal-type"><option value="BACK-TO-BACK">Back-to-Back</option><option value="OPEN-BUY">Open Buy</option><option value="OPEN-SELL">Open Sell</option><option value="STOCK-TO-SELL">Stock to Sell</option><option value="CONSIGNMENT">Consignment</option></select></div>
+        <div class="f"><div class="fl">Direction <span class="req">*</span></div>
+          <div style="display:flex;gap:8px">
+            <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--accent);border-radius:var(--r);cursor:pointer;background:rgba(16,185,129,.08)" id="enq-buy-label">
+              <input type="radio" name="enq-dir" id="enq-dir-buy" value="BUY" checked onchange="onEnqDirChange()">
+              <div><div style="font-weight:700;font-size:12px">BUY</div><div style="font-size:9px;color:var(--text3)">We buy from vendor</div></div>
+            </label>
+            <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--border);border-radius:var(--r);cursor:pointer" id="enq-sell-label">
+              <input type="radio" name="enq-dir" id="enq-dir-sell" value="SELL" onchange="onEnqDirChange()">
+              <div><div style="font-weight:700;font-size:12px">SELL</div><div style="font-size:9px;color:var(--text3)">We sell to customer</div></div>
+            </label>
+          </div></div>
         <div class="f"><div class="fl" id="enq-qty-label">Quantity (MT) <span class="req">*</span></div>
           <div style="display:flex;gap:8px;align-items:center;">
             <input type="number" class="fi" id="enq-qty" placeholder="e.g. 100" style="flex:1">
@@ -6206,7 +6285,7 @@ async function loadAllocationTable() {
       </div>
       <div class="divl mt12">Counterparties</div>
       <div class="fg">
-        <div class="f"><div class="fl">Supplier / Vendor</div>
+        <div class="f" id="enq-supplier-row"><div class="fl">Supplier / Vendor</div>
           <select class="fs" id="enq-supplier"><option value="">— Select Vendor —</option></select></div>
         <div class="f"><div class="fl">Customer / Buyer</div>
           <select class="fs" id="enq-customer"><option value="">— Select Customer —</option></select></div>
