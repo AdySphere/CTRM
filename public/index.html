@@ -3463,8 +3463,9 @@ async function renderQPWindow(dealId) {
     if (stateEl) {
       stateEl.style.color = fixState === 'FULLY_PRICED' ? 'var(--green)' : fixState === 'PARTIALLY_PRICED' ? 'var(--accent)' : 'var(--text3)';
     }
-    set('qp-priced-qty', fmt(r.E,2) + ' MT');
-    set('qp-unpriced-qty', fmt(r.F,2) + ' MT');
+    const qpUom = (window._commodityCache && window._activeDeal?.commodity_code && window._commodityCache[window._activeDeal.commodity_code]?.uom) || 'MT';
+    set('qp-priced-qty', fmt(r.E,2) + ' ' + qpUom);
+    set('qp-unpriced-qty', fmt(r.F,2) + ' ' + qpUom);
     set('qp-trade-price', r.I !== null ? fmt(r.I) + ' (avg of fixations)' : 'No fixations yet');
     set('qp-today-price', r.J !== null ? fmt(r.J) + ' (latest settlement — not fixed)' : '— (no market price for today)');
   }
@@ -4792,7 +4793,7 @@ function buildContractHTML(c, type) {
   const vendor = type==='PC' ? (c.counterparty_name||'—') : 'Trading Company DMCC';
   const customer = type==='PC' ? 'Trading Company DMCC' : (c.counterparty_name||'—');
   const commodity = c.commodity_name || c.commodity_code || '—';
-  const qty = (c.qty_mt||'—') + ' MT';
+  const qty = (c.qty_mt||'—') + ' ' + ((window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT');
   const incoterms = c.incoterms || '—';
   const deal = c.deal_no || '—';
   const pricing = c.pricing_formula || '—';
@@ -5717,7 +5718,8 @@ async function openContractDetail(contractId, type) {
       const title = document.getElementById('pcd-title');
       if (title) title.textContent = c.contract_no + ' — Purchase Contract';
       const summary = document.getElementById('pcd-summary');
-      if (summary) summary.textContent = [c.deal_no, c.counterparty_name, c.commodity_name||c.commodity_code, (c.qty_mt||'—')+' MT', c.incoterms].filter(Boolean).join(' · ');
+      const pcUom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
+      if (summary) summary.textContent = [c.deal_no, c.counterparty_name, c.commodity_name||c.commodity_code, (c.qty_mt||'—')+' '+pcUom, c.incoterms].filter(Boolean).join(' · ');
       const badge = document.getElementById('pcd-status-badge');
       if (badge) { badge.textContent = c.status||'DRAFT'; badge.className = 'badge ' + (c.status==='CONTRACTED'?'bd-confirmed':c.status==='DRAFT'?'bd-draft':'bd-act'); }
       // Lifecycle
@@ -5749,7 +5751,8 @@ async function openContractDetail(contractId, type) {
       const title = document.getElementById('scd-title');
       if (title) title.textContent = c.contract_no + ' — Sales Contract';
       const summary = document.getElementById('scd-summary');
-      if (summary) summary.textContent = [c.deal_no, c.counterparty_name, c.commodity_name||c.commodity_code, (c.qty_mt||'—')+' MT', c.incoterms].filter(Boolean).join(' · ');
+      const scUom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
+      if (summary) summary.textContent = [c.deal_no, c.counterparty_name, c.commodity_name||c.commodity_code, (c.qty_mt||'—')+' '+scUom, c.incoterms].filter(Boolean).join(' · ');
       const badge = document.getElementById('scd-status-badge');
       if (badge) { badge.textContent = c.status||'DRAFT'; badge.className = 'badge ' + (c.status==='CONTRACTED'?'bd-confirmed':c.status==='DRAFT'?'bd-draft':'bd-act'); }
       const card = document.getElementById('sc-detail-card');
@@ -5885,7 +5888,8 @@ async function loadDealList() {
     setStat('deal-stat-confirmed', confirmed);
     setStat('deal-stat-draft', draft);
     setStat('deal-stat-exec', exec);
-    setStat('deal-stat-value', totalQty.toLocaleString() + ' MT');
+    // Show total qty with mixed UOMs
+    setStat('deal-stat-value', totalQty.toLocaleString() + ' MT (mixed)');
   } catch (err) {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--accent2);font-size:11px">Error loading deals</td></tr>';
   }
@@ -6040,7 +6044,7 @@ async function loadBuyLegs(dealId) {
         <td class="mono f11 ta3">${bl.leg_ref || '—'}</td>
         <td class="f11">${bl.supplier_name || '—'}</td>
         <td class="f11">${bl.commodity_code || '—'}</td>
-        <td class="mono f11">${bl.qty_mt ? Number(bl.qty_mt).toLocaleString() + ' MT' : '—'}</td>
+        <td class="mono f11">${bl.qty_mt ? Number(bl.qty_mt).toLocaleString() + ' ' + ((window._commodityCache && bl.commodity_code && window._commodityCache[bl.commodity_code]?.uom)||'MT') : '—'}</td>
         <td class="mono f11">${bl.pricing_template || '—'}</td>
         <td class="mono f11 ta2">${cost}</td>
         <td><span class="badge ${statusCls}">${bl.status || 'DRAFT'}</span></td>
@@ -6099,7 +6103,8 @@ function openBuyLegDetail(legRef) {
   if (_activeDeal) {
     set('bld-vendor', _activeDeal.supplier_name || 'Glencore AG');
     set('bld-comm', _activeDeal.commodity_code || 'CU-CATHODE-A');
-    set('bld-qty', (_activeDeal.qty_mt || 500) + ' MT');
+    const bldUom = (_activeDeal.commodity_code && window._commodityCache && window._commodityCache[_activeDeal.commodity_code]?.uom) || 'MT';
+    set('bld-qty', (_activeDeal.qty_mt || 500) + ' ' + bldUom);
   }
   wireTabs('blt');
   openModal('modal-buy-leg-detail');
