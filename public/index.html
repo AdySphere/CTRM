@@ -596,12 +596,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div id="enq-cp" class="ftc hidden">
           <div class="ban bi"><span>ℹ</span>Counterparty is optional in DRAFT. Becomes mandatory on move to OPEN depending on direction.</div>
           <div class="fg">
-            <div class="f"><div class="fl">Buy Counterparty (Vendor)</div><select class="fs sel-vendor"></select></div>
-            <div class="f"><div class="fl">Buy CP KYC Status</div><div class="fc" style="color:var(--green)">APPROVED</div></div>
-            <div class="f"><div class="fl">Sell Counterparty (Customer)</div><select class="fs sel-customer"></select></div>
-            <div class="f"><div class="fl">Sell CP KYC Status</div><div class="fc" style="color:var(--green)">APPROVED</div></div>
+            <div class="f"><div class="fl">Buy Counterparty (Vendor)</div><select class="fs sel-vendor" onchange="onEnqCPChange(this,'buy')"></select></div>
+            <div class="f"><div class="fl">Buy CP KYC Status</div><div class="fc" id="enq-buy-kyc"><span class="badge bd-draft">— select vendor —</span></div></div>
+            <div class="f"><div class="fl">Sell Counterparty (Customer)</div><select class="fs sel-customer" onchange="onEnqCPChange(this,'sell')"></select></div>
+            <div class="f"><div class="fl">Sell CP KYC Status</div><div class="fc" id="enq-sell-kyc"><span class="badge bd-draft">— select customer —</span></div></div>
             <div class="f"><div class="fl">Broker</div><input type="text" class="fi" placeholder="Optional — broker name"></div>
-            <div class="f"><div class="fl">Brokerage Rate</div><input type="number" class="fi" placeholder="USD/MT or %"></div>
+            <div class="f"><div class="fl">Brokerage Type</div><select class="fs" id="enq-brokerage-type"><option value="">— None —</option><option value="per-unit">Per Unit (USD/MT or USD/BBL)</option><option value="pct">% of Invoice Value</option><option value="flat">Flat Fee (USD)</option></select></div>
+            <div class="f"><div class="fl">Brokerage Rate</div><input type="number" class="fi" id="enq-brokerage-rate" placeholder="e.g. 2.50" step="0.01"></div>
             <div class="f"><div class="fl">Incoterms</div><select class="fs"><option>—</option><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option><option>EXW</option></select></div>
             <div class="f"><div class="fl">Port of Loading</div><input type="text" class="fi" placeholder=""></div>
             <div class="f"><div class="fl">Port of Discharge</div><input type="text" class="fi" placeholder=""></div>
@@ -636,10 +637,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <!-- APPROVALS -->
         <div id="enq-approval" class="ftc hidden">
           <div class="fg">
-            <div class="f"><div class="fl">Credit Check Status</div><div class="fc tg">PASSED</div></div>
-            <div class="f"><div class="fl">Credit Limit Available</div><div class="fc">USD 5,000,000</div></div>
-            <div class="f"><div class="fl">Estimated Deal Value</div><div class="fc ta">USD 4,710,000</div></div>
-            <div class="f"><div class="fl">Approval Required</div><div class="fc ta2">YES — Above desk threshold</div></div>
+            <div class="f"><div class="fl">Credit Check Status</div><div class="fc" id="enq-credit-status"><span class="badge bd-draft">—</span></div></div>
+            <div class="f"><div class="fl">Credit Limit Available</div><div class="fc" id="enq-credit-limit">— select counterparty first</div></div>
+            <div class="f"><div class="fl">Estimated Deal Value</div><div class="fc ta mono" id="enq-deal-value">—</div></div>
+            <div class="f"><div class="fl">Approval Required</div><div class="fc" id="enq-approval-req">—</div></div>
             <div class="f"><div class="fl">Approval Status</div><select class="fs"><option>PENDING</option><option>APPROVED</option><option>REJECTED</option><option>NOT-REQUIRED</option></select></div>
             <div class="f"><div class="fl">Approved By</div><input type="text" class="fi" placeholder="Username"></div>
             <div class="f"><div class="fl">Approval Date</div><input type="date" class="fi"></div>
@@ -701,17 +702,29 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="qt-general" class="ftc active">
           <div class="fg">
-            <div class="f"><div class="fl">Quotation No.</div><div class="fc" id="qd-no">—</div></div>
-            <div class="f"><div class="fl">Source Enquiry</div><div class="fc ta" id="qd-enq">—</div></div>
-            <div class="f"><div class="fl">Customer</div><div class="fc" id="qd-customer">—</div></div>
-            <div class="f"><div class="fl">Commodity</div><div class="fc" id="qd-commodity">—</div></div>
-            <div class="f"><div class="fl">Quantity</div><div class="fc mono" id="qd-qty">—</div></div>
-            <div class="f"><div class="fl">Incoterms / Port</div><div class="fc" id="qd-inco">—</div></div>
-            <div class="f"><div class="fl">Delivery Window</div><div class="fc mono" id="qd-delivery">—</div></div>
-            <div class="f"><div class="fl">Status</div><div class="fc tg" id="qd-status">—</div></div>
-            <div class="f"><div class="fl">Validity</div><div class="fc mono" id="qd-validity">—</div></div>
-            <div class="f"><div class="fl">Quoted By</div><div class="fc" id="qd-quotedby">—</div></div>
+            <div class="f"><div class="fl">Quotation No.</div><div class="fc mono fw6" id="qd-no">—</div></div>
+            <div class="f"><div class="fl">Source Enquiry</div><div class="fc mono ta" id="qd-enq">—</div></div>
+            <div class="f"><div class="fl">Status</div><div class="fc" id="qd-status">—</div></div>
+            <div class="f"><div class="fl">Customer <span class="req">*</span></div><select class="fs" id="qd-customer-sel"><option value="">— Select Customer —</option></select></div>
+            <div class="f"><div class="fl">Commodity <span class="req">*</span></div><select class="fs" id="qd-commodity-sel"><option value="">— Select Commodity —</option></select></div>
+            <div class="f"><div class="fl">Quantity <span class="req">*</span></div><input type="number" class="fi" id="qd-qty-input" placeholder="e.g. 500" step="0.001" oninput="recalcProvValue()"></div>
+            <div class="f"><div class="fl">Quantity UOM</div><div class="fc"><span class="badge bd-act" id="qd-uom-badge" style="font-size:10px">MT</span></div></div>
+            <div class="f"><div class="fl">Incoterms</div><select class="fs" id="qd-incoterms-sel"><option value="">—</option><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option><option>EXW</option><option>DAP</option></select></div>
+            <div class="f"><div class="fl">Port of Discharge</div><input type="text" class="fi" id="qd-pod-input" placeholder="e.g. Nhava Sheva, IN"></div>
+            <div class="f"><div class="fl">Delivery From</div><input type="date" class="fi" id="qd-delivery-from"></div>
+            <div class="f"><div class="fl">Delivery To</div><input type="date" class="fi" id="qd-delivery-to"></div>
+            <div class="f"><div class="fl">Validity Date</div><input type="date" class="fi" id="qd-validity-input"></div>
+            <div class="f"><div class="fl">Quoted By</div><input type="text" class="fi" id="qd-quotedby-input" placeholder="Trader name"></div>
+            <div class="f"><div class="fl">Quotation Date</div><div class="fc mono" id="qd-date">—</div></div>
           </div>
+          <!-- Hidden display-only IDs kept for backward compat -->
+          <span id="qd-customer" style="display:none"></span>
+          <span id="qd-commodity" style="display:none"></span>
+          <span id="qd-qty" style="display:none"></span>
+          <span id="qd-inco" style="display:none"></span>
+          <span id="qd-delivery" style="display:none"></span>
+          <span id="qd-validity" style="display:none"></span>
+          <span id="qd-quotedby" style="display:none"></span>
         </div>
         <div id="qt-pricing" class="ftc hidden">
           <div class="fg">
@@ -724,10 +737,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
                 <option value="FIXED-PRICE">FIXED-PRICE · Fixed Price</option>
               </select>
             </div>
-            <div class="f"><div class="fl">Price Source</div><div class="fc" id="qd-price-source">—</div></div>
-            <div class="f"><div class="fl">QP Window</div><div class="fc" id="qd-qp-window">—</div></div>
-            <div class="f"><div class="fl">Aggregation</div><div class="fc">AVERAGE (business days only)</div></div>
-            <div class="f"><div class="fl">Current LME Price (provisional)</div><div class="fc ta" id="qd-lme-price">USD —/MT</div></div>
+            <div class="f"><div class="fl">Price Source / Index</div><input type="text" class="fi" id="qd-price-source" placeholder="e.g. LME Official Settlement, Platts TSI"></div>
+            <div class="f"><div class="fl">QP Window</div><input type="text" class="fi" id="qd-qp-window" placeholder="e.g. M+1 average, Month of shipment"></div>
+            <div class="f"><div class="fl">Aggregation Method</div><select class="fs" id="qd-aggregation"><option>AVERAGE (business days only)</option><option>AVERAGE (all days)</option><option>MONTH-END</option><option>SPOT</option><option>FIXED</option></select></div>
+            <div class="f"><div class="fl">Reference Price (indicative)</div><div class="fc ta mono" id="qd-lme-price">USD —</div></div>
             <div class="f"><div class="fl">Provisional Price</div><input type="number" class="fi" id="qd-prov-price" placeholder="USD/MT" step="0.01" oninput="recalcProvValue()"></div>
             <div class="f"><div class="fl">Provisional Total Value</div><div class="fc tg fw7" id="qd-prov-value">USD —</div></div>
           </div>
@@ -3844,6 +3857,124 @@ async function openQuotationDetail(quotNo) {
     // Pricing tab
     const tmplSel = document.getElementById('qd-template-sel');
     if (tmplSel) { tmplSel.value = q.pricing_template || ''; onQdTemplateChange(q.pricing_template || ''); }
+
+    // Populate new editable quotation fields
+    const setInp = function(id, v) { const el=document.getElementById(id); if(el) el.value=v||''; };
+    const incoSel = document.getElementById('qd-incoterms-sel');
+    if (incoSel) incoSel.value = q.incoterms || '';
+    setInp('qd-pod-input', q.port_of_discharge);
+    setInp('qd-delivery-from', q.delivery_from ? q.delivery_from.split('T')[0] : '');
+    setInp('qd-delivery-to', q.delivery_to ? q.delivery_to.split('T')[0] : '');
+    setInp('qd-validity-input', q.validity_date ? q.validity_date.split('T')[0] : '');
+    setInp('qd-quotedby-input', q.quoted_by || q.created_by || '');
+    const dateEl2 = document.getElementById('qd-date');
+    if (dateEl2) dateEl2.textContent = q.quotation_date ? q.quotation_date.split('T')[0] : '—';
+
+    // Customer dropdown
+    const custSel = document.getElementById('qd-customer-sel');
+    if (custSel) {
+      if (custSel.options.length <= 1) {
+        try {
+          const cpRes = await fetch(API_BASE + '/api/master/counterparties');
+          const cps = (await cpRes.json()).data || [];
+          custSel.innerHTML = '<option value="">— Select Customer —</option>' +
+            cps.map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+        } catch(e) {}
+      }
+      if (q.customer_id) custSel.value = q.customer_id;
+    }
+
+    // Commodity dropdown
+    const commSel2 = document.getElementById('qd-commodity-sel');
+    if (commSel2) {
+      if (commSel2.options.length <= 1) {
+        const cms = Object.values(window._commodityCache);
+        commSel2.innerHTML = '<option value="">— Select Commodity —</option>' +
+          cms.map(function(c){ return '<option value="'+c.code+'" data-uom="'+(c.uom||'MT')+'">'+c.name+' ('+(c.uom||'MT')+')</option>'; }).join('');
+      }
+      if (q.commodity_code) commSel2.value = q.commodity_code;
+      const selOpt = commSel2.options[commSel2.selectedIndex];
+      const uom2 = (selOpt && selOpt.dataset.uom) || (window._commodityCache[q.commodity_code] && window._commodityCache[q.commodity_code].uom) || 'MT';
+      const uomBadge2 = document.getElementById('qd-uom-badge');
+      if (uomBadge2) uomBadge2.textContent = uom2;
+      commSel2.onchange = function() {
+        const opt = commSel2.options[commSel2.selectedIndex];
+        const badge = document.getElementById('qd-uom-badge');
+        if (badge) badge.textContent = (opt && opt.dataset.uom) || 'MT';
+      };
+    }
+
+    // Qty input
+    setInp('qd-qty-input', q.qty_mt);
+
+    // Pricing tab: also populate free-text fields
+    const srcEl = document.getElementById('qd-price-source');
+    const qpEl = document.getElementById('qd-qp-window');
+    if (srcEl && srcEl.tagName === 'INPUT' && !srcEl.value) {
+      // Only set if not already changed by template selector
+      const tData = {
+        'LME-CU-QP-M1': {src:'LME Official Settlement', qp:'M+1 — Next month after BL date'},
+        'LME-CU-QP-M':  {src:'LME Official Settlement', qp:'M — Current month average'},
+        'PLATTS-STEEL-CFR': {src:'Platts TSI CFR Turkey', qp:'Month of shipment'},
+        'FIXED-PRICE': {src:'Fixed (no index)', qp:'N/A'}
+      };
+      const td = tData[q.pricing_template];
+      if (td) { if(srcEl) srcEl.value = td.src; if(qpEl) qpEl.value = td.qp; }
+    }
+
+    // Populate new editable fields
+    const setInput = (id, v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+    const setInco = document.getElementById('qd-incoterms-sel');
+    if (setInco) setInco.value = q.incoterms || '';
+    setInput('qd-pod-input', q.port_of_discharge);
+    setInput('qd-delivery-from', q.delivery_from?.split('T')[0]);
+    setInput('qd-delivery-to', q.delivery_to?.split('T')[0]);
+    setInput('qd-validity-input', q.validity_date?.split('T')[0]);
+    setInput('qd-quotedby-input', q.quoted_by || q.created_by || '');
+    // Date display
+    const dateEl = document.getElementById('qd-date');
+    if (dateEl) dateEl.textContent = q.quotation_date?.split('T')[0] || '—';
+
+    // Populate customer dropdown
+    const custSelA = document.getElementById('qd-customer-sel');
+    if (custSelA) {
+      if (custSelA.options.length <= 1) {
+        try {
+          const cpResA = await fetch(API_BASE + '/api/master/counterparties');
+          const cpJsonA = await cpResA.json();
+          const cpsA = cpJsonA.data || [];
+          custSelA.innerHTML = '<option value="">— Select Customer —</option>' +
+            cpsA.map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+        } catch(e) {}
+      }
+      custSelA.value = q.customer_id || '';
+    }
+
+    // Populate commodity dropdown
+    const commSel = document.getElementById('qd-commodity-sel');
+    if (commSel) {
+      if (commSel.options.length <= 1) {
+        const cms = Object.values(window._commodityCache);
+        commSel.innerHTML = '<option value="">— Select Commodity —</option>' +
+          cms.map(function(c){ return '<option value="'+c.code+'" data-uom="'+(c.uom||'MT')+'">'+c.name+' ('+(c.uom||'MT')+')</option>'; }).join('');
+      }
+      commSel.value = q.commodity_code || '';
+      const selOpt = commSel.options[commSel.selectedIndex];
+      const uom = selOpt?.dataset?.uom || (window._commodityCache[q.commodity_code]?.uom) || 'MT';
+      const uomBadge = document.getElementById('qd-uom-badge');
+      if (uomBadge) uomBadge.textContent = uom;
+    }
+
+    // Qty input
+    setInput('qd-qty-input', q.qty_mt);
+
+    // Wire commodity change to update UOM badge
+    if (commSel) commSel.onchange = function() {
+      const opt = commSel.options[commSel.selectedIndex];
+      const uom = opt?.dataset?.uom || 'MT';
+      const badge = document.getElementById('qd-uom-badge');
+      if (badge) badge.textContent = uom;
+    };
     const pp = document.getElementById('qd-prov-price');
     if (pp) pp.value = q.provisional_price || '';
     recalcProvValue();
@@ -3871,14 +4002,18 @@ function onQdTemplateChange(tmpl) {
   const qpEl = document.getElementById('qd-qp-window');
   const lmeEl = document.getElementById('qd-lme-price');
   const templates = {
-    'LME-CU-QP-M1':      { src:'LME Official Settlement', qp:'M+1 — Next month after BL date', lme:'USD 9,240/MT' },
-    'LME-CU-QP-M':       { src:'LME Official Settlement', qp:'M — Current month average', lme:'USD 9,240/MT' },
-    'PLATTS-STEEL-CFR':  { src:'Platts TSI CFR Turkey', qp:'Month of shipment', lme:'USD 440/MT' },
-    'FIXED-PRICE':        { src:'Fixed (no index)', qp:'N/A', lme:'—' },
+    'LME-CU-QP-M1':     { src:'LME Official Settlement', qp:'M+1 — Next month after BL date', lme:'USD 9,240/MT' },
+    'LME-CU-QP-M':      { src:'LME Official Settlement', qp:'M — Current month average',       lme:'USD 9,240/MT' },
+    'PLATTS-STEEL-CFR': { src:'Platts TSI CFR Turkey',   qp:'Month of shipment',               lme:'USD 440/MT'   },
+    'ICE-BRENT-M1':     { src:'ICE Brent Crude Official', qp:'M+1 — Next month after BL',      lme:'USD 83.20/BBL'},
+    'PLATTS-DUBAI':     { src:'Platts Dubai Crude',       qp:'Month of loading',                lme:'USD 82.10/BBL'},
+    'CBOT-WHEAT-NM':    { src:'CBOT Wheat Nearby',        qp:'Nearest active contract',         lme:'USD 520/BU'   },
+    'FIXED-PRICE':      { src:'Fixed (no index)',          qp:'N/A',                            lme:'—'            },
   };
-  const t = templates[tmpl] || { src:'—', qp:'—', lme:'—' };
-  if (srcEl) srcEl.textContent = t.src;
-  if (qpEl) qpEl.textContent = t.qp;
+  const t = templates[tmpl] || { src:'', qp:'', lme:'—' };
+  // Write to input fields (now editable — only pre-fill if empty or if template changed)
+  if (srcEl) { if (srcEl.tagName === 'INPUT') { if (!srcEl.value || tmpl) srcEl.value = t.src; } else srcEl.textContent = t.src; }
+  if (qpEl)  { if (qpEl.tagName === 'INPUT')  { if (!qpEl.value  || tmpl) qpEl.value  = t.qp;  } else qpEl.textContent  = t.qp;  }
   if (lmeEl) lmeEl.textContent = t.lme;
 }
 
@@ -3893,7 +4028,22 @@ async function saveQuotation() {
     const res = await fetch(API_BASE + '/api/quotations/' + _activeQuotId, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pricing_template: template, provisional_price: price, provisional_value: value, updated_at: new Date().toISOString() })
+      body: JSON.stringify({
+        pricing_template: template,
+        provisional_price: price,
+        provisional_value: value,
+        customer_id: document.getElementById('qd-customer-sel')?.value || null,
+        commodity_code: document.getElementById('qd-commodity-sel')?.value || null,
+        qty_mt: parseFloat(document.getElementById('qd-qty-input')?.value) || null,
+        incoterms: document.getElementById('qd-incoterms-sel')?.value || null,
+        port_of_discharge: document.getElementById('qd-pod-input')?.value || null,
+        delivery_from: document.getElementById('qd-delivery-from')?.value || null,
+        delivery_to: document.getElementById('qd-delivery-to')?.value || null,
+        validity_date: document.getElementById('qd-validity-input')?.value || null,
+        pricing_source: document.getElementById('qd-price-source')?.value || null,
+        qp_window: document.getElementById('qd-qp-window')?.value || null,
+        updated_at: new Date().toISOString()
+      })
     });
     const data = await res.json();
     if (data.success) {
@@ -3959,13 +4109,27 @@ function onNqEnquiryChange() {
   const sel = document.getElementById('nq-enquiry-sel');
   const opt = sel?.options[sel.selectedIndex];
   if (!opt || !opt.value) return;
-  // Pre-fill fields from enquiry
   const cpSel = document.getElementById('nq-customer-sel');
   const cmSel = document.getElementById('nq-commodity-sel');
   const qtyEl = document.getElementById('nq-qty');
+  const incoEl = document.getElementById('nq-incoterms');
+  const podEl = document.getElementById('nq-pod');
+  const uomBadge = document.getElementById('nq-uom-badge');
   if (cpSel && opt.dataset.cid) cpSel.value = opt.dataset.cid;
-  if (cmSel && opt.dataset.comm) cmSel.value = opt.dataset.comm;
+  if (cmSel && opt.dataset.comm) { cmSel.value = opt.dataset.comm; onNqCommodityChange(); }
   if (qtyEl && opt.dataset.qty) qtyEl.value = opt.dataset.qty;
+  if (incoEl && opt.dataset.inco) incoEl.value = opt.dataset.inco;
+  if (podEl && opt.dataset.dest) podEl.value = opt.dataset.dest;
+}
+function onNqCommodityChange() {
+  const cmSel = document.getElementById('nq-commodity-sel');
+  const code = cmSel?.value;
+  if (!code) return;
+  const uom = (window._commodityCache[code]?.uom) || 'MT';
+  const badge = document.getElementById('nq-uom-badge');
+  if (badge) badge.textContent = uom;
+  const lbl = document.getElementById('nq-qty-label');
+  if (lbl) lbl.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
 }
 
 async function submitNewQuotation() {
@@ -4959,6 +5123,58 @@ async function populateEnqCPDropdowns(enq) {
   } catch(e) { console.warn('Could not load CPs:', e); }
 }
 
+function onEnqCPChange(sel, side) {
+  const cpId = sel.value;
+  const cp = cpId && window._cpCache ? window._cpCache[cpId] : null;
+  const kycId = side === 'buy' ? 'enq-buy-kyc' : 'enq-sell-kyc';
+  const kycEl = document.getElementById(kycId);
+  if (kycEl) {
+    if (!cpId) {
+      kycEl.innerHTML = '<span class="badge bd-draft">— select counterparty —</span>';
+    } else if (cp) {
+      const kyc = cp.kyc_status || 'APPROVED';
+      const cls = kyc === 'APPROVED' ? 'bd-confirmed' : kyc === 'PENDING' ? 'bd-ship' : 'bd-danger';
+      kycEl.innerHTML = '<span class="badge ' + cls + '">' + kyc + '</span>';
+    } else {
+      kycEl.innerHTML = '<span class="badge bd-confirmed">APPROVED</span>';
+    }
+  }
+  // Update credit limit and deal value in approvals tab
+  const creditEl = document.getElementById('enq-credit-limit');
+  const creditStatusEl = document.getElementById('enq-credit-status');
+  const approvalEl = document.getElementById('enq-approval-req');
+  if (cp && creditEl) {
+    const limit = cp.credit_limit ? 'USD ' + Number(cp.credit_limit).toLocaleString() : 'Not set';
+    creditEl.textContent = limit;
+  } else if (creditEl && !cpId) {
+    creditEl.textContent = '— select counterparty first';
+  }
+  if (creditStatusEl) {
+    const hasLimit = cp && cp.credit_limit;
+    creditStatusEl.innerHTML = hasLimit
+      ? '<span class="badge bd-confirmed">PASSED</span>'
+      : '<span class="badge bd-draft">PENDING REVIEW</span>';
+  }
+  if (approvalEl) {
+    approvalEl.innerHTML = cp
+      ? '<span class="badge bd-ship">CHECK REQUIRED</span>'
+      : '—';
+  }
+  // Update deal value estimate if qty is available
+  updateEnqDealValue();
+}
+
+function updateEnqDealValue() {
+  const qty = parseFloat(document.getElementById('enq-comm-qty')?.value || document.querySelector('#enq-comm input[type=number]')?.value || 0);
+  const dealValueEl = document.getElementById('enq-deal-value');
+  if (!dealValueEl) return;
+  if (qty > 0) {
+    dealValueEl.textContent = qty + ' units × market price (indicative only)';
+  } else {
+    dealValueEl.textContent = '— enter quantity first';
+  }
+}
+
 function onEnqCommodity(sel) {
   const code = sel.value;
   const opt = sel.options[sel.selectedIndex];
@@ -5861,7 +6077,10 @@ async function loadAllocationTable() {
           </select>
         </div>
         <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
-          <input type="number" class="fi" id="nq-qty" placeholder="e.g. 100" step="0.001">
+          <div style="display:flex;gap:8px;align-items:center">
+              <input type="number" class="fi" id="nq-qty" placeholder="e.g. 100" step="0.001" style="flex:1">
+              <span class="badge bd-act" id="nq-uom-badge" style="font-size:9px;white-space:nowrap">MT</span>
+            </div>
         </div>
       </div>
       <div class="divl mt12">Commercial Terms</div>
