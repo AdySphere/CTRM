@@ -690,6 +690,154 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
     </div>
 
+    <!-- PAGE: RFQ -->
+    <div class="page" id="page-rfq">
+      <div class="ph">
+        <div class="ph-l">
+          <div class="pt">Request for Quotation (RFQ)</div>
+          <div class="ps">Sent to vendors (buy side) and customers (sell side) · Tracks responses · Links to enquiry</div>
+        </div>
+        <div class="ph-r">
+          <button class="btn bp" onclick="openNewRFQ()">+ New RFQ</button>
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="sr">
+        <div class="sc"><div class="scl">Total RFQs</div><div class="scv" id="rfq-stat-total">—</div></div>
+        <div class="sc"><div class="scl">Draft</div><div class="scv tdim" id="rfq-stat-draft">—</div></div>
+        <div class="sc"><div class="scl">Sent</div><div class="scv ta" id="rfq-stat-sent">—</div></div>
+        <div class="sc"><div class="scl">Responded</div><div class="scv tg" id="rfq-stat-responded">—</div></div>
+        <div class="sc"><div class="scl">Responses Logged</div><div class="scv ta3" id="rfq-stat-responses">—</div></div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="fts" style="margin-bottom:12px">
+        <div class="ft rfq-filter active" data-filter="ALL" onclick="filterRFQ(this)">All</div>
+        <div class="ft rfq-filter" data-filter="VENDOR" onclick="filterRFQ(this)">Vendor RFQs</div>
+        <div class="ft rfq-filter" data-filter="CUSTOMER" onclick="filterRFQ(this)">Customer RFQs</div>
+        <div class="ft rfq-filter" data-filter="SENT" onclick="filterRFQ(this)">Sent</div>
+        <div class="ft rfq-filter" data-filter="RESPONDED" onclick="filterRFQ(this)">Responded</div>
+      </div>
+
+      <!-- RFQ list -->
+      <div class="card">
+        <div class="ch">
+          <div class="ct">RFQ List</div>
+          <div class="cs">Click any row to open · Vendor RFQs (RFQ-V) and Customer RFQs (RFQ-S)</div>
+        </div>
+        <div class="cbf">
+          <table class="lt">
+            <thead>
+              <tr>
+                <th>RFQ No.</th>
+                <th>Direction</th>
+                <th>Enquiry Ref</th>
+                <th>Counterparty</th>
+                <th>Commodity</th>
+                <th>Qty</th>
+                <th>Required By</th>
+                <th>Validity</th>
+                <th>Responses</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rfq-list-tbody">
+              <tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text3);font-size:11px">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RFQ Detail card -->
+      <div class="card mt14" id="rfq-detail-card" style="display:none">
+        <div class="ch">
+          <div class="ct" id="rfqd-no">RFQ Detail</div>
+          <div class="cs" id="rfqd-summary">—</div>
+          <span class="badge" id="rfqd-status-badge" style="margin-left:auto">DRAFT</span>
+          <span class="badge" id="rfqd-dir-badge" style="margin-left:8px;font-size:9px">VENDOR</span>
+          <button class="btn bp bsm" id="rfqd-send-btn" style="margin-left:8px" onclick="sendRFQ()">Send RFQ →</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="openLogResponse()">+ Log Response</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('rfq-detail-card').style.display='none'">✕</button>
+        </div>
+
+        <!-- Lifecycle bar -->
+        <div class="lcb">
+          <div class="lcs" id="rfqd-lcs-draft">DRAFT</div>
+          <div class="lcs" id="rfqd-lcs-sent">SENT</div>
+          <div class="lcs" id="rfqd-lcs-responded">RESPONDED</div>
+          <div class="lcs" id="rfqd-lcs-selected">SELECTED</div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="fts">
+          <div class="ft rfqt active" data-tab="rfqd-general">RFQ Details</div>
+          <div class="ft rfqt" data-tab="rfqd-responses">Responses Received</div>
+          <div class="ft rfqt" data-tab="rfqd-comparison">Comparison</div>
+        </div>
+
+        <!-- General tab -->
+        <div id="rfqd-general" class="ftc active">
+          <div class="fg">
+            <div class="f"><div class="fl">RFQ No.</div><div class="fc mono fw6" id="rfqd-no-field">—</div></div>
+            <div class="f"><div class="fl">Direction</div><div class="fc" id="rfqd-direction">—</div></div>
+            <div class="f"><div class="fl">Linked Enquiry</div><div class="fc mono ta" id="rfqd-enquiry" style="color:var(--accent)">—</div></div>
+            <div class="f"><div class="fl">Counterparty</div><div class="fc fw6" id="rfqd-cp">—</div></div>
+            <div class="f"><div class="fl">Commodity</div><div class="fc fw6" id="rfqd-commodity">—</div></div>
+            <div class="f"><div class="fl">Quantity Required</div><div class="fc mono fw7" id="rfqd-qty">—</div></div>
+            <div class="f"><div class="fl">Incoterms</div><div class="fc" id="rfqd-incoterms">—</div></div>
+            <div class="f"><div class="fl">Origin</div><div class="fc" id="rfqd-origin">—</div></div>
+            <div class="f"><div class="fl">Destination</div><div class="fc" id="rfqd-destination">—</div></div>
+            <div class="f"><div class="fl">Required Delivery</div><div class="fc mono" id="rfqd-delivery">—</div></div>
+            <div class="f"><div class="fl">Pricing Basis</div><div class="fc" id="rfqd-pricing">—</div></div>
+            <div class="f"><div class="fl">Payment Terms</div><div class="fc" id="rfqd-payment">—</div></div>
+            <div class="f"><div class="fl">Validity Date</div><div class="fc mono" id="rfqd-validity">—</div></div>
+            <div class="f csf"><div class="fl">Notes</div><div class="fc" id="rfqd-notes">—</div></div>
+          </div>
+        </div>
+
+        <!-- Responses tab -->
+        <div id="rfqd-responses" class="ftc hidden">
+          <div class="ch" style="margin-bottom:10px">
+            <div class="ct" style="font-size:12px">Quote Responses</div>
+            <div class="cs">Responses received from counterparty · Select best to proceed to deal</div>
+            <button class="btn bp bsm" style="margin-left:auto" onclick="openLogResponse()">+ Log Response</button>
+          </div>
+          <table class="lt">
+            <thead>
+              <tr>
+                <th>Response No.</th>
+                <th>Type</th>
+                <th>Counterparty</th>
+                <th>Offered Qty</th>
+                <th>Offered Price</th>
+                <th>Delivery</th>
+                <th>Payment Terms</th>
+                <th>Incoterms</th>
+                <th>Validity</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rfqd-responses-tbody">
+              <tr><td colspan="11" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">No responses yet — click + Log Response when vendor/customer replies</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Comparison tab -->
+        <div id="rfqd-comparison" class="ftc hidden">
+          <div class="ban bi mb12"><span>ℹ</span>Select responses to compare side by side · See margin and delivery feasibility</div>
+          <div id="rfqd-comparison-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+            <div style="padding:16px;background:var(--surface2);border-radius:var(--r);color:var(--text3);font-size:11px;text-align:center">
+              No responses to compare yet
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- PAGE: QUOTATION LIST -->
     <div class="page" id="page-quotation">
       <div class="ph">
@@ -5764,6 +5912,7 @@ function afterNav(pageId) {
     else if (pageId === 'logistics') loadLogisticsList();
     else if (pageId === 'qpwindow') { loadQPDealOptions(); renderQPWindow(); }
     else if (pageId === 'exposure') renderExposureTable();
+    else if (pageId === 'rfq') { loadRFQList(); loadCommodityDropdowns(); }
     else if (pageId === 'allocation') loadAllocationPage();
     else if (pageId === 'purchase-orders') loadOrdersList('PO');
     else if (pageId === 'sales-orders') loadOrdersList('SO');
@@ -6123,6 +6272,440 @@ async function loadOrdersList(type) {
         + '</tr>';
     }).join('');
   } catch(e) {}
+}
+
+// ── RFQ MODULE ────────────────────────────────────────────────
+window._activeRFQ = null;
+
+async function loadRFQList(filterDir) {
+  const tbody = document.getElementById('rfq-list-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">Loading…</td></tr>';
+  try {
+    let url = API_BASE + '/api/rfqs';
+    if (filterDir && filterDir !== 'ALL' && filterDir !== 'SENT' && filterDir !== 'RESPONDED') {
+      url += '?direction=' + filterDir;
+    } else if (filterDir === 'SENT' || filterDir === 'RESPONDED') {
+      url += '?status=' + filterDir;
+    }
+    const res = await fetch(url);
+    const data = await res.json();
+    const rfqs = data.data || [];
+
+    // Update stat cards
+    const set = function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; };
+    set('rfq-stat-total', rfqs.length);
+    set('rfq-stat-draft', rfqs.filter(function(r){return r.status==='DRAFT';}).length);
+    set('rfq-stat-sent', rfqs.filter(function(r){return r.status==='SENT';}).length);
+    set('rfq-stat-responded', rfqs.filter(function(r){return r.status==='RESPONDED';}).length);
+    const badge = document.getElementById('rfq-nav-badge');
+    if (badge) badge.textContent = rfqs.length;
+
+    // Load response counts
+    const respRes = await fetch(API_BASE + '/api/quote-responses');
+    const respData = await respRes.json();
+    const responses = respData.data || [];
+    set('rfq-stat-responses', responses.length);
+
+    if (!rfqs.length) {
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:20px;color:var(--text3);font-size:11px">No RFQs yet — click + New RFQ to send your first request</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rfqs.map(function(r) {
+      const isVendor = r.direction === 'VENDOR';
+      const dirClass = isVendor ? 'bd-ship' : 'bd-act';
+      const dirLabel = isVendor ? 'VENDOR' : 'CUSTOMER';
+      const stClass = r.status==='DRAFT'?'bd-draft':r.status==='SENT'?'bd-ship':r.status==='RESPONDED'?'bd-confirmed':'bd-act';
+      const uom = (window._commodityCache && r.commodity_code && window._commodityCache[r.commodity_code]?.uom) || r.uom || 'MT';
+      const respCount = responses.filter(function(rp){return rp.rfq_id == r.id;}).length;
+      return '<tr data-rfqno="' + r.rfq_no + '" style="cursor:pointer" onclick="openRFQDetail(this.dataset.rfqno)">'
+        + '<td class="mono ta fw6" style="color:var(--accent)">' + r.rfq_no + '</td>'
+        + '<td><span class="badge ' + dirClass + '" style="font-size:8px">' + dirLabel + '</span></td>'
+        + '<td class="mono f10">' + (r.enquiry_no||'—') + '</td>'
+        + '<td class="f11 fw6">' + (r.counterparty_name||'—') + '</td>'
+        + '<td class="f11">' + (r.commodity_name||r.commodity_code||'—') + '</td>'
+        + '<td class="mono">' + (r.qty_mt||'—') + ' ' + uom + '</td>'
+        + '<td class="mono f10">' + (r.required_delivery?new Date(r.required_delivery).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—') + '</td>'
+        + '<td class="mono f10">' + (r.validity_date?new Date(r.validity_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—') + '</td>'
+        + '<td class="mono ta">' + (respCount > 0 ? '<span class="badge bd-confirmed" style="font-size:8px">'+respCount+' received</span>' : '<span class="tdim" style="font-size:11px">—</span>') + '</td>'
+        + '<td><span class="badge ' + stClass + '">' + r.status + '</span></td>'
+        + '<td><button class="btn bxs bg" onclick="event.stopPropagation();openRFQDetail(this.closest(&quot;[data-rfqno]&quot;).dataset.rfqno)">Open</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:var(--accent2);font-size:11px">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+function filterRFQ(tab) {
+  document.querySelectorAll('.rfq-filter').forEach(function(t){t.classList.remove('active');});
+  tab.classList.add('active');
+  loadRFQList(tab.dataset.filter);
+}
+
+async function openRFQDetail(rfqNo) {
+  try {
+    const res = await fetch(API_BASE + '/api/rfqs');
+    const data = await res.json();
+    const rfqs = data.data || [];
+    const r = rfqs.find(function(x){return x.rfq_no === rfqNo;});
+    if (!r) { toast('Not Found', rfqNo + ' not found', 'warning'); return; }
+    window._activeRFQ = r;
+
+    const s = function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v||'—'; };
+    const uom = (window._commodityCache && r.commodity_code && window._commodityCache[r.commodity_code]?.uom) || r.uom || 'MT';
+    const isVendor = r.direction === 'VENDOR';
+
+    s('rfqd-no', r.rfq_no);
+    document.getElementById('rfqd-no').textContent = r.rfq_no;
+    s('rfqd-summary', [r.counterparty_name, r.commodity_name||r.commodity_code, (r.qty_mt||'—')+' '+uom, r.status].filter(Boolean).join(' · '));
+
+    const badge = document.getElementById('rfqd-status-badge');
+    if (badge) { badge.className = 'badge ' + (r.status==='DRAFT'?'bd-draft':r.status==='SENT'?'bd-ship':r.status==='RESPONDED'?'bd-confirmed':'bd-act'); badge.textContent = r.status; }
+    const dirBadge = document.getElementById('rfqd-dir-badge');
+    if (dirBadge) { dirBadge.className = 'badge ' + (isVendor?'bd-ship':'bd-act'); dirBadge.textContent = isVendor?'VENDOR RFQ':'CUSTOMER RFQ'; }
+
+    // Lifecycle
+    const stages = ['DRAFT','SENT','RESPONDED','SELECTED'];
+    const curIdx = stages.indexOf(r.status);
+    ['rfqd-lcs-draft','rfqd-lcs-sent','rfqd-lcs-responded','rfqd-lcs-selected'].forEach(function(id,i){
+      const el = document.getElementById(id);
+      if (el) el.className = 'lcs ' + (i < curIdx ? 'done' : i === curIdx ? 'cur' : 'fut');
+    });
+
+    // Send button visibility
+    const sendBtn = document.getElementById('rfqd-send-btn');
+    if (sendBtn) sendBtn.style.display = r.status === 'DRAFT' ? '' : 'none';
+
+    // General fields
+    s('rfqd-no-field', r.rfq_no);
+    s('rfqd-direction', isVendor ? 'VENDOR — Asking vendor to supply (will receive Purchase Quote)' : 'CUSTOMER — Asking customer to buy (will receive Sales Quote)');
+    s('rfqd-enquiry', r.enquiry_no || '—');
+    s('rfqd-cp', r.counterparty_name || '—');
+    s('rfqd-commodity', (r.commodity_name||r.commodity_code||'—') + ' (' + uom + ')');
+    s('rfqd-qty', (r.qty_mt||'—') + ' ' + uom);
+    s('rfqd-incoterms', r.incoterms || '—');
+    s('rfqd-origin', r.origin || '—');
+    s('rfqd-destination', r.destination || '—');
+    s('rfqd-delivery', r.required_delivery ? new Date(r.required_delivery).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—');
+    s('rfqd-pricing', r.pricing_basis || '—');
+    s('rfqd-payment', r.payment_terms || '—');
+    s('rfqd-validity', r.validity_date ? new Date(r.validity_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—');
+    s('rfqd-notes', r.notes || '—');
+
+    // Load responses
+    await loadRFQResponses(r.id, isVendor, uom);
+
+    // Show detail card
+    const card = document.getElementById('rfq-detail-card');
+    if (card) { card.style.display = 'block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
+    wireTabs('rfqt');
+
+    toast('Opened', r.rfq_no + ' · ' + (r.counterparty_name||''), 'info');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function loadRFQResponses(rfqId, isVendor, uom) {
+  const tbody = document.getElementById('rfqd-responses-tbody');
+  const grid = document.getElementById('rfqd-comparison-grid');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/quote-responses?rfq_id=' + rfqId);
+    const data = await res.json();
+    const responses = data.data || [];
+
+    if (!responses.length) {
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">No responses yet — click + Log Response when counterparty replies</td></tr>';
+      if (grid) grid.innerHTML = '<div style="padding:16px;background:var(--surface2);border-radius:var(--r);color:var(--text3);font-size:11px;text-align:center">No responses to compare yet</div>';
+      return;
+    }
+
+    // Responses table
+    tbody.innerHTML = responses.map(function(qr) {
+      const stClass = qr.status==='SELECTED'?'bd-confirmed':qr.status==='DECLINED'?'bd-danger':'bd-act';
+      return '<tr>'
+        + '<td class="mono ta fw6" style="color:var(--accent)">' + qr.response_no + '</td>'
+        + '<td><span class="badge ' + (qr.quote_type==='PQ'?'bd-ship':'bd-act') + '" style="font-size:8px">' + qr.quote_type + '</span></td>'
+        + '<td class="f11 fw6">' + (qr.counterparty_name||'—') + '</td>'
+        + '<td class="mono">' + (qr.offered_qty||'—') + ' ' + uom + '</td>'
+        + '<td class="mono ta fw7">' + (qr.offered_price ? 'USD ' + parseFloat(qr.offered_price).toLocaleString() + '/' + uom : '—') + '</td>'
+        + '<td class="mono f10">' + (qr.delivery_window||qr.delivery_date||'—') + '</td>'
+        + '<td class="f10">' + (qr.payment_terms||'—') + '</td>'
+        + '<td class="f10">' + (qr.incoterms||'—') + '</td>'
+        + '<td class="mono f10">' + (qr.validity_date?new Date(qr.validity_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—') + '</td>'
+        + '<td><span class="badge ' + stClass + '">' + qr.status + '</span></td>'
+        + '<td style="display:flex;gap:4px">'
+        + (qr.status !== 'SELECTED' ? '<button class="btn bxs bg" onclick="selectResponse('+qr.id+')">Select</button>' : '<span class="badge bd-confirmed" style="font-size:8px">SELECTED</span>')
+        + (qr.status !== 'DECLINED' ? '<button class="btn bxs bd" onclick="declineResponse('+qr.id+')">✕</button>' : '')
+        + '</td>'
+        + '</tr>';
+    }).join('');
+
+    // Comparison grid
+    if (grid) {
+      grid.innerHTML = responses.map(function(qr) {
+        const totalValue = qr.offered_qty && qr.offered_price ? (qr.offered_qty * qr.offered_price).toFixed(0) : null;
+        const stClass = qr.status==='SELECTED'?'bd-confirmed':qr.status==='DECLINED'?'bd-danger':'bd-act';
+        return '<div style="padding:16px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);position:relative">'
+          + '<div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">' + qr.quote_type + ' · ' + qr.response_no + '</div>'
+          + '<div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:4px">' + (qr.counterparty_name||'—') + '</div>'
+          + '<div style="font-size:11px;margin-bottom:8px">'
+          + '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Qty</span><span class="mono fw6">' + (qr.offered_qty||'—') + ' ' + uom + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Price</span><span class="mono fw7">USD ' + (qr.offered_price?parseFloat(qr.offered_price).toLocaleString():'—') + '/' + uom + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Total</span><span class="mono fw7 tg">USD ' + (totalValue?parseInt(totalValue).toLocaleString():'—') + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Delivery</span><span>' + (qr.delivery_window||'—') + '</span></div>'
+          + '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--text3)">Payment</span><span>' + (qr.payment_terms||'—') + '</span></div>'
+          + '</div>'
+          + '<div style="display:flex;gap:6px;margin-top:8px">'
+          + (qr.status!=='SELECTED'?'<button class="btn bp bsm" style="flex:1" onclick="selectResponse('+qr.id+')">Select</button>':'<span class="badge bd-confirmed" style="font-size:10px;padding:6px;text-align:center;flex:1">SELECTED ✓</span>')
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--accent2);font-size:11px">Error loading responses</td></tr>'; }
+}
+
+async function sendRFQ() {
+  if (!window._activeRFQ) { toast('No RFQ', 'Open an RFQ first', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/rfqs/' + window._activeRFQ.id + '/send', {method:'PATCH', headers:{'Content-Type':'application/json'}});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('RFQ Sent', window._activeRFQ.rfq_no + ' marked as SENT — track responses in the Responses tab', 'success');
+    window._activeRFQ.status = 'SENT';
+    const badge = document.getElementById('rfqd-status-badge');
+    if (badge) { badge.className='badge bd-ship'; badge.textContent='SENT'; }
+    document.getElementById('rfqd-send-btn').style.display = 'none';
+    // Update lifecycle
+    const stages = ['DRAFT','SENT','RESPONDED','SELECTED'];
+    ['rfqd-lcs-draft','rfqd-lcs-sent','rfqd-lcs-responded','rfqd-lcs-selected'].forEach(function(id,i){
+      const el=document.getElementById(id); if(el) el.className='lcs '+(i<1?'done':i===1?'cur':'fut');
+    });
+    await loadRFQList();
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function selectResponse(id) {
+  try {
+    const res = await fetch(API_BASE + '/api/quote-responses/' + id + '/select', {method:'PATCH', headers:{'Content-Type':'application/json'}});
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Selected', 'Response selected — proceed to Deal Feasibility', 'success');
+    if (window._activeRFQ) await loadRFQResponses(window._activeRFQ.id, window._activeRFQ.direction==='VENDOR', 'MT');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function declineResponse(id) {
+  try {
+    await fetch(API_BASE + '/api/quote-responses/' + id + '/decline', {method:'PATCH', headers:{'Content-Type':'application/json'}});
+    toast('Declined', 'Response declined', 'info');
+    if (window._activeRFQ) await loadRFQResponses(window._activeRFQ.id, window._activeRFQ.direction==='VENDOR', 'MT');
+  } catch(e) {}
+}
+
+function onRFQDirChange() {
+  const isVendor = document.getElementById('rfq-dir-vendor').checked;
+  const vLabel = document.getElementById('rfq-vendor-label');
+  const cLabel = document.getElementById('rfq-customer-label');
+  const cpLabel = document.getElementById('rfq-cp-label');
+  const banner = document.getElementById('rfq-dir-banner');
+  if (vLabel) { vLabel.style.borderColor = isVendor?'var(--accent)':'var(--border)'; vLabel.style.background = isVendor?'rgba(16,185,129,.08)':''; }
+  if (cLabel) { cLabel.style.borderColor = !isVendor?'var(--accent)':'var(--border)'; cLabel.style.background = !isVendor?'rgba(16,185,129,.08)':''; }
+  if (cpLabel) cpLabel.innerHTML = (isVendor?'Vendor / Supplier':'Customer') + ' <span class="req">*</span>';
+  if (banner) banner.innerHTML = '<span>ℹ</span>' + (isVendor
+    ? 'Vendor RFQ: You are asking a vendor to supply material. They will respond with a <strong>Purchase Quote (PQ)</strong>.'
+    : 'Customer RFQ: You are asking a customer if they want to buy. They will respond with a <strong>Sales Quote (SQ)</strong>.');
+  // Filter counterparty dropdown
+  const cpSel = document.getElementById('rfq-cp-sel');
+  if (cpSel && window._allCPs) {
+    const filtered = isVendor
+      ? window._allCPs.filter(function(c){return !c.type||c.type==='VENDOR'||c.type==='BOTH';})
+      : window._allCPs.filter(function(c){return !c.type||c.type==='CUSTOMER'||c.type==='BOTH';});
+    const cps = filtered.length ? filtered : window._allCPs;
+    cpSel.innerHTML = '<option value="">— Select ' + (isVendor?'Vendor':'Customer') + ' —</option>'
+      + cps.map(function(c){return '<option value="'+c.id+'">'+c.name+'</option>';}).join('');
+  }
+}
+
+function onRFQCommodityChange() {
+  const sel = document.getElementById('rfq-commodity-sel');
+  const uom = (window._commodityCache && sel.value && window._commodityCache[sel.value]?.uom) || 'MT';
+  const badge = document.getElementById('rfq-uom-badge');
+  const label = document.getElementById('rfq-qty-label');
+  if (badge) badge.textContent = uom;
+  if (label) label.innerHTML = 'Quantity Required (' + uom + ') <span class="req">*</span>';
+}
+
+function onRFQEnquiryChange() {
+  const sel = document.getElementById('rfq-enquiry-sel');
+  const opt = sel?.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  const d = opt.dataset;
+  // Pre-fill from enquiry
+  const commSel = document.getElementById('rfq-commodity-sel');
+  if (commSel && d.comm) { commSel.value = d.comm; onRFQCommodityChange(); }
+  const qtyEl = document.getElementById('rfq-qty');
+  if (qtyEl && d.qty) qtyEl.value = d.qty;
+  const incoEl = document.getElementById('rfq-incoterms');
+  if (incoEl && d.inco) incoEl.value = d.inco;
+  const originEl = document.getElementById('rfq-origin');
+  if (originEl && d.origin) originEl.value = d.origin;
+  const destEl = document.getElementById('rfq-destination');
+  if (destEl && d.dest) destEl.value = d.dest;
+  // Auto-set direction from enquiry direction
+  const enqDir = d.dir;
+  if (enqDir === 'BUY') {
+    document.getElementById('rfq-dir-vendor').checked = true;
+  } else if (enqDir === 'SELL') {
+    document.getElementById('rfq-dir-vendor').checked = true; // SELL enquiry → ask vendors
+  }
+  onRFQDirChange();
+}
+
+async function openNewRFQ() {
+  // Ensure dropdowns loaded
+  if (!window._allCPs || !window._allCPs.length) await loadCommodityDropdowns();
+  // Populate enquiry dropdown
+  const enqSel = document.getElementById('rfq-enquiry-sel');
+  if (enqSel) {
+    const res = await fetch(API_BASE + '/api/enquiries');
+    const data = await res.json();
+    const enqs = (data.data||[]).filter(function(e){return e.status==='OPEN'||e.status==='QUOTED';});
+    enqSel.innerHTML = '<option value="">— None (standalone RFQ) —</option>'
+      + enqs.map(function(e){
+        const uom=(window._commodityCache&&e.commodity_code&&window._commodityCache[e.commodity_code]?.uom)||'MT';
+        return '<option value="'+e.id+'" data-comm="'+(e.commodity_code||'')+'" data-qty="'+(e.qty_mt||'')+'" data-uom="'+uom+'" data-inco="'+(e.incoterms||'')+'" data-origin="'+(e.origin||'')+'" data-dest="'+(e.destination||'')+'" data-dir="'+(e.direction||'BUY')+'">'
+          + e.enquiry_no + ' · ' + (e.direction||'BUY') + ' · ' + (e.commodity_name||e.commodity_code||'—') + ' · ' + (e.qty_mt||'—') + ' ' + uom
+          + '</option>';
+      }).join('');
+  }
+  // Populate commodity dropdown
+  const cmSel = document.getElementById('rfq-commodity-sel');
+  if (cmSel && window._commodityCache) {
+    const cms = Object.values(window._commodityCache);
+    const groups = {};
+    cms.forEach(function(c){const g=c.category||'OTHER';if(!groups[g])groups[g]=[];groups[g].push(c);});
+    const catLabels={'BASE-METAL':'Base Metals','FERROUS':'Ferrous','PRECIOUS':'Precious Metals','ENERGY':'Energy','AGRICULTURAL':'Agricultural','FERTILIZER':'Fertilizers','POLYMER':'Polymers','OTHER':'Other'};
+    let opts='<option value="">— Select Commodity —</option>';
+    Object.keys(catLabels).forEach(function(cat){
+      if(!groups[cat])return;
+      opts+='<optgroup label="'+catLabels[cat]+'">';
+      groups[cat].forEach(function(c){opts+='<option value="'+c.code+'">'+c.name+' ('+(c.uom||'MT')+')</option>';});
+      opts+='</optgroup>';
+    });
+    cmSel.innerHTML = opts;
+  }
+  // Set default validity to 7 days from now
+  const valEl = document.getElementById('rfq-validity');
+  if (valEl) { const d = new Date(); d.setDate(d.getDate()+7); valEl.value = d.toISOString().split('T')[0]; }
+  onRFQDirChange();
+  openModal('modal-new-rfq');
+}
+
+async function submitNewRFQ(saveStatus) {
+  const dir = document.querySelector('input[name="rfq-dir"]:checked')?.value || 'VENDOR';
+  const cpId = document.getElementById('rfq-cp-sel')?.value;
+  const commCode = document.getElementById('rfq-commodity-sel')?.value;
+  const qty = document.getElementById('rfq-qty')?.value;
+  if (!cpId || !commCode || !qty) { toast('Required', 'Counterparty, commodity and quantity are required', 'warning'); return; }
+  const g = function(id){return document.getElementById(id)?.value||null;};
+  try {
+    const res = await fetch(API_BASE + '/api/rfqs', {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        direction: dir,
+        enquiry_id: g('rfq-enquiry-sel') ? parseInt(g('rfq-enquiry-sel')) : null,
+        counterparty_id: parseInt(cpId),
+        commodity_code: commCode,
+        qty_mt: parseFloat(qty),
+        incoterms: g('rfq-incoterms'),
+        origin: g('rfq-origin'),
+        destination: g('rfq-destination'),
+        required_delivery: g('rfq-delivery'),
+        pricing_basis: g('rfq-pricing'),
+        payment_terms: g('rfq-payment'),
+        validity_date: g('rfq-validity'),
+        notes: g('rfq-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const rfq = data.data;
+    // If SENT, mark as sent
+    if (saveStatus === 'SENT') {
+      await fetch(API_BASE + '/api/rfqs/' + rfq.id + '/send', {method:'PATCH', headers:{'Content-Type':'application/json'}});
+    }
+    toast(saveStatus==='SENT'?'RFQ Sent':'RFQ Saved', rfq.rfq_no + (saveStatus==='SENT'?' sent to counterparty':' saved as draft'), 'success');
+    closeModal('modal-new-rfq');
+    await loadRFQList();
+    await openRFQDetail(rfq.rfq_no);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+function openLogResponse() {
+  const rfq = window._activeRFQ;
+  if (!rfq) { toast('No RFQ', 'Open an RFQ first', 'warning'); return; }
+  const isVendor = rfq.direction === 'VENDOR';
+  const uom = (window._commodityCache && rfq.commodity_code && window._commodityCache[rfq.commodity_code]?.uom) || 'MT';
+  // Set modal content
+  const title = document.getElementById('log-response-title');
+  const typeEl = document.getElementById('log-response-type');
+  const cpEl = document.getElementById('log-response-cp');
+  const banner = document.getElementById('log-response-banner');
+  const uomBadge = document.getElementById('resp-uom-badge');
+  if (title) title.textContent = 'Log Response — ' + rfq.rfq_no;
+  if (typeEl) typeEl.textContent = (isVendor ? 'PQ — Purchase Quote from Vendor' : 'SQ — Sales Quote from Customer');
+  if (cpEl) cpEl.textContent = rfq.counterparty_name || '—';
+  if (uomBadge) uomBadge.textContent = uom;
+  if (banner) banner.innerHTML = '<span>ℹ</span>Log the ' + (isVendor?'Purchase Quote (PQ)':'Sales Quote (SQ)') + ' received from <strong>' + (rfq.counterparty_name||'counterparty') + '</strong> in response to ' + rfq.rfq_no;
+  // Pre-fill qty from RFQ
+  const qtyEl = document.getElementById('resp-qty');
+  if (qtyEl && rfq.qty_mt) qtyEl.value = rfq.qty_mt;
+  // Pre-fill incoterms
+  const incoEl = document.getElementById('resp-incoterms');
+  if (incoEl && rfq.incoterms) incoEl.value = rfq.incoterms;
+  openModal('modal-log-response');
+}
+
+async function submitLogResponse() {
+  const rfq = window._activeRFQ;
+  if (!rfq) return;
+  const isVendor = rfq.direction === 'VENDOR';
+  const g = function(id){return document.getElementById(id)?.value||null;};
+  const qty = g('resp-qty');
+  const price = g('resp-price');
+  if (!qty || !price) { toast('Required', 'Quantity and price are required', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/quote-responses', {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        rfq_id: rfq.id,
+        enquiry_id: rfq.enquiry_id || null,
+        quote_type: isVendor ? 'PQ' : 'SQ',
+        counterparty_id: rfq.counterparty_id,
+        commodity_code: rfq.commodity_code,
+        offered_qty: parseFloat(qty),
+        offered_price: parseFloat(price),
+        price_basis: g('resp-price-basis'),
+        delivery_date: g('resp-delivery-date'),
+        delivery_window: g('resp-delivery-window'),
+        incoterms: g('resp-incoterms'),
+        payment_terms: g('resp-payment'),
+        validity_date: g('resp-validity'),
+        notes: g('resp-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const uom = (window._commodityCache && rfq.commodity_code && window._commodityCache[rfq.commodity_code]?.uom) || 'MT';
+    toast('Response Logged', data.data.response_no + ' — ' + qty + ' ' + uom + ' @ USD ' + parseFloat(price).toLocaleString() + '/' + uom, 'success');
+    closeModal('modal-log-response');
+    // Clear fields
+    ['resp-qty','resp-price','resp-price-basis','resp-delivery-date','resp-delivery-window','resp-payment','resp-validity','resp-notes'].forEach(function(id){const el=document.getElementById(id);if(el)el.value='';});
+    await loadRFQResponses(rfq.id, isVendor, uom);
+    await loadRFQList();
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 async function loadBuyLegs(dealId) {
@@ -6929,6 +7512,146 @@ async function loadAllocationTable() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-contract')">Cancel</button>
       <button class="btn bp" onclick="submitNewContract()">Create Contract →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New RFQ -->
+<div class="mo" id="modal-new-rfq">
+  <div class="md" style="max-width:620px">
+    <div class="mh">
+      <div class="mt">New Request for Quotation (RFQ)</div>
+      <button class="mc" onclick="closeModal('modal-new-rfq')">✕</button>
+    </div>
+    <div class="mb">
+      <!-- Direction selector -->
+      <div class="f cs2" style="margin-bottom:4px">
+        <div class="fl">RFQ Direction <span class="req">*</span></div>
+        <div style="display:flex;gap:8px">
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--accent);border-radius:var(--r);cursor:pointer;background:rgba(16,185,129,.08)" id="rfq-vendor-label">
+            <input type="radio" name="rfq-dir" id="rfq-dir-vendor" value="VENDOR" checked onchange="onRFQDirChange()">
+            <div>
+              <div style="font-weight:700;font-size:12px">VENDOR RFQ</div>
+              <div style="font-size:9px;color:var(--text3)">Asking vendor to supply — receive Purchase Quote (PQ)</div>
+            </div>
+          </label>
+          <label style="flex:1;display:flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--border);border-radius:var(--r);cursor:pointer" id="rfq-customer-label">
+            <input type="radio" name="rfq-dir" id="rfq-dir-customer" value="CUSTOMER" onchange="onRFQDirChange()">
+            <div>
+              <div style="font-weight:700;font-size:12px">CUSTOMER RFQ</div>
+              <div style="font-size:9px;color:var(--text3)">Asking customer to buy — receive Sales Quote (SQ)</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="ban bi" id="rfq-dir-banner" style="margin-bottom:12px"><span>ℹ</span>Vendor RFQ: You are asking a vendor to supply material. They will respond with a Purchase Quote (PQ).</div>
+
+      <div class="f"><div class="fl">Linked Enquiry</div>
+        <select class="fs" id="rfq-enquiry-sel" onchange="onRFQEnquiryChange()">
+          <option value="">— None (standalone RFQ) —</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl" id="rfq-cp-label">Vendor / Supplier <span class="req">*</span></div>
+        <select class="fs" id="rfq-cp-sel"><option value="">— Select —</option></select>
+      </div>
+      <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
+        <select class="fs" id="rfq-commodity-sel" onchange="onRFQCommodityChange()"><option value="">— Select —</option></select>
+      </div>
+      <div class="f"><div class="fl" id="rfq-qty-label">Quantity Required (MT) <span class="req">*</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" class="fi" id="rfq-qty" placeholder="e.g. 500" step="0.001" style="flex:1">
+          <span class="badge bd-act" id="rfq-uom-badge" style="font-size:9px">MT</span>
+        </div>
+      </div>
+      <div class="f"><div class="fl">Incoterms</div>
+        <select class="fs" id="rfq-incoterms">
+          <option value="">—</option><option>CIF</option><option>FOB</option>
+          <option>CFR</option><option>DDP</option><option>EXW</option><option>DAP</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Origin</div>
+        <input type="text" class="fi" id="rfq-origin" placeholder="e.g. Shanghai, CN">
+      </div>
+      <div class="f"><div class="fl">Destination</div>
+        <input type="text" class="fi" id="rfq-destination" placeholder="e.g. Nhava Sheva, IN">
+      </div>
+      <div class="f"><div class="fl">Required Delivery By</div>
+        <input type="date" class="fi" id="rfq-delivery">
+      </div>
+      <div class="f"><div class="fl">Pricing Basis</div>
+        <input type="text" class="fi" id="rfq-pricing" placeholder="e.g. LME Official Settlement + premium, FOB basis">
+      </div>
+      <div class="f"><div class="fl">Payment Terms</div>
+        <input type="text" class="fi" id="rfq-payment" placeholder="e.g. TT-60 after BL, 90% provisional against docs">
+      </div>
+      <div class="f"><div class="fl">RFQ Valid Until</div>
+        <input type="date" class="fi" id="rfq-validity">
+      </div>
+      <div class="f csf"><div class="fl">Notes / Special Requirements</div>
+        <textarea class="fta" id="rfq-notes" placeholder="Any special requirements, grade specs, brand restrictions…" style="min-height:50px"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-rfq')">Cancel</button>
+      <button class="btn bs" onclick="submitNewRFQ('DRAFT')">Save as Draft</button>
+      <button class="btn bp" onclick="submitNewRFQ('SENT')">Save & Send RFQ →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Log Quote Response -->
+<div class="mo" id="modal-log-response">
+  <div class="md" style="max-width:560px">
+    <div class="mh">
+      <div class="mt" id="log-response-title">Log Quote Response</div>
+      <button class="mc" onclick="closeModal('modal-log-response')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12" id="log-response-banner"><span>ℹ</span>Log the quote received from the counterparty in response to your RFQ.</div>
+      <div class="f"><div class="fl">Response Type</div>
+        <div class="fc fw6" id="log-response-type">PQ — Purchase Quote from Vendor</div>
+      </div>
+      <div class="f"><div class="fl">Counterparty</div>
+        <div class="fc fw6" id="log-response-cp">—</div>
+      </div>
+      <div class="f"><div class="fl">Offered Quantity <span class="req">*</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" class="fi" id="resp-qty" placeholder="0.000" step="0.001" style="flex:1">
+          <span class="badge bd-act" id="resp-uom-badge" style="font-size:9px">MT</span>
+        </div>
+      </div>
+      <div class="f"><div class="fl">Offered Price (per UOM) <span class="req">*</span></div>
+        <input type="number" class="fi" id="resp-price" placeholder="e.g. 9200.00" step="0.01">
+      </div>
+      <div class="f"><div class="fl">Price Basis</div>
+        <input type="text" class="fi" id="resp-price-basis" placeholder="e.g. LME + $120 premium, CIF basis">
+      </div>
+      <div class="f"><div class="fl">Delivery Date</div>
+        <input type="date" class="fi" id="resp-delivery-date">
+      </div>
+      <div class="f"><div class="fl">Delivery Window</div>
+        <input type="text" class="fi" id="resp-delivery-window" placeholder="e.g. July 15-31, 2026 or prompt">
+      </div>
+      <div class="f"><div class="fl">Incoterms</div>
+        <select class="fs" id="resp-incoterms">
+          <option value="">—</option><option>CIF</option><option>FOB</option>
+          <option>CFR</option><option>DDP</option><option>EXW</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Payment Terms</div>
+        <input type="text" class="fi" id="resp-payment" placeholder="e.g. TT-60 after BL, LC at sight">
+      </div>
+      <div class="f"><div class="fl">Quote Valid Until</div>
+        <input type="date" class="fi" id="resp-validity">
+      </div>
+      <div class="f csf"><div class="fl">Notes</div>
+        <textarea class="fta" id="resp-notes" placeholder="Any conditions, exclusions or additional terms from counterparty…" style="min-height:40px"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-log-response')">Cancel</button>
+      <button class="btn bp" onclick="submitLogResponse()">Log Response →</button>
     </div>
   </div>
 </div>

@@ -170,6 +170,57 @@ async function setupDatabase() {
   `);
   console.log('✓ enquiries');
 
+  // ── RFQs ──────────────────────────────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS rfqs (
+      id                SERIAL PRIMARY KEY,
+      rfq_no            VARCHAR(30) UNIQUE NOT NULL,
+      enquiry_id        INT REFERENCES enquiries(id),
+      direction         VARCHAR(10) NOT NULL DEFAULT 'VENDOR', -- VENDOR or CUSTOMER
+      counterparty_id   INT REFERENCES counterparties(id),
+      commodity_code    VARCHAR(20) REFERENCES commodities(code),
+      qty_mt            DECIMAL(12,3),
+      required_delivery DATE,
+      incoterms         VARCHAR(10),
+      origin            VARCHAR(100),
+      destination       VARCHAR(100),
+      pricing_basis     TEXT,
+      payment_terms     TEXT,
+      validity_date     DATE,
+      notes             TEXT,
+      status            VARCHAR(20) DEFAULT 'DRAFT', -- DRAFT, SENT, RESPONDED, DECLINED, EXPIRED
+      sent_at           TIMESTAMPTZ,
+      created_at        TIMESTAMPTZ DEFAULT NOW()
+    );
+  \`);
+  console.log('✓ rfqs');
+
+  // ── QUOTE RESPONSES (PQ from vendor / SQ from customer) ───────
+  await query(\`
+    CREATE TABLE IF NOT EXISTS quote_responses (
+      id                SERIAL PRIMARY KEY,
+      response_no       VARCHAR(30) UNIQUE NOT NULL,
+      rfq_id            INT REFERENCES rfqs(id),
+      enquiry_id        INT REFERENCES enquiries(id),
+      quote_type        VARCHAR(5) NOT NULL DEFAULT 'PQ', -- PQ or SQ
+      counterparty_id   INT REFERENCES counterparties(id),
+      commodity_code    VARCHAR(20) REFERENCES commodities(code),
+      offered_qty       DECIMAL(12,3),
+      offered_price     DECIMAL(14,4),
+      price_basis       TEXT,
+      delivery_date     DATE,
+      delivery_window   VARCHAR(100),
+      incoterms         VARCHAR(10),
+      payment_terms     TEXT,
+      validity_date     DATE,
+      notes             TEXT,
+      status            VARCHAR(20) DEFAULT 'RECEIVED', -- RECEIVED, SELECTED, DECLINED, EXPIRED
+      received_at       TIMESTAMPTZ DEFAULT NOW(),
+      created_at        TIMESTAMPTZ DEFAULT NOW()
+    );
+  \`);
+  console.log('✓ quote_responses');
+
   await query(`
     CREATE TABLE IF NOT EXISTS quotations (
       id              SERIAL PRIMARY KEY,
@@ -317,6 +368,8 @@ async function setupDatabase() {
     await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS parent_quotation_id INT REFERENCES quotations(id)`);
     await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS quote_type VARCHAR(5) DEFAULT 'SQ'`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS incoterms VARCHAR(10)`);
+    await query(`CREATE TABLE IF NOT EXISTS rfqs (id SERIAL PRIMARY KEY, rfq_no VARCHAR(30) UNIQUE NOT NULL, enquiry_id INT REFERENCES enquiries(id), direction VARCHAR(10) DEFAULT 'VENDOR', counterparty_id INT REFERENCES counterparties(id), commodity_code VARCHAR(20), qty_mt DECIMAL(12,3), required_delivery DATE, incoterms VARCHAR(10), origin VARCHAR(100), destination VARCHAR(100), pricing_basis TEXT, payment_terms TEXT, validity_date DATE, notes TEXT, status VARCHAR(20) DEFAULT 'DRAFT', sent_at TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE TABLE IF NOT EXISTS quote_responses (id SERIAL PRIMARY KEY, response_no VARCHAR(30) UNIQUE NOT NULL, rfq_id INT REFERENCES rfqs(id), enquiry_id INT REFERENCES enquiries(id), quote_type VARCHAR(5) DEFAULT 'PQ', counterparty_id INT REFERENCES counterparties(id), commodity_code VARCHAR(20), offered_qty DECIMAL(12,3), offered_price DECIMAL(14,4), price_basis TEXT, delivery_date DATE, delivery_window VARCHAR(100), incoterms VARCHAR(10), payment_terms TEXT, validity_date DATE, notes TEXT, status VARCHAR(20) DEFAULT 'RECEIVED', received_at TIMESTAMPTZ DEFAULT NOW(), created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS origin VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS destination VARCHAR(100)`);
     await query(\`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)\`);

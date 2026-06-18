@@ -730,3 +730,175 @@ dealEnqRouter.delete('/:id', async (req, res) => {
 });
 
 module.exports.dealEnqRouter = dealEnqRouter;
+
+// ── RFQ ROUTER ─────────────────────────────────────────────────
+const rfqRouter = require('express').Router();
+
+rfqRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { enquiry_id, status, direction } = req.query;
+    let sql = `
+      SELECT r.*,
+        cp.name as counterparty_name, cp.code as counterparty_code,
+        cm.name as commodity_name, cm.uom,
+        e.enquiry_no, e.direction as enquiry_direction
+      FROM rfqs r
+      LEFT JOIN counterparties cp ON cp.id = r.counterparty_id
+      LEFT JOIN commodities cm ON cm.code = r.commodity_code
+      LEFT JOIN enquiries e ON e.id = r.enquiry_id
+      WHERE 1=1`;
+    const params = [];
+    if (enquiry_id) { params.push(enquiry_id); sql += ` AND r.enquiry_id=$${params.length}`; }
+    if (status)     { params.push(status);     sql += ` AND r.status=$${params.length}`; }
+    if (direction)  { params.push(direction);  sql += ` AND r.direction=$${params.length}`; }
+    sql += ' ORDER BY r.created_at DESC';
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+rfqRouter.get('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT r.*,
+        cp.name as counterparty_name, cp.code as counterparty_code,
+        cm.name as commodity_name, cm.uom,
+        e.enquiry_no, e.direction as enquiry_direction,
+        (SELECT json_agg(qr.* ORDER BY qr.created_at)
+         FROM quote_responses qr WHERE qr.rfq_id = r.id) as responses
+      FROM rfqs r
+      LEFT JOIN counterparties cp ON cp.id = r.counterparty_id
+      LEFT JOIN commodities cm ON cm.code = r.commodity_code
+      LEFT JOIN enquiries e ON e.id = r.enquiry_id
+      WHERE r.id=$1 OR r.rfq_no=$1`, [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'RFQ not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+rfqRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { enquiry_id, direction, counterparty_id, commodity_code, qty_mt,
+      required_delivery, incoterms, origin, destination, pricing_basis,
+      payment_terms, validity_date, notes } = req.body;
+    if (!direction || !counterparty_id) return res.status(400).json({ error: 'direction and counterparty_id required' });
+    const prefix = direction === 'CUSTOMER' ? 'RFQ-S' : 'RFQ-V';
+    const yr = new Date().getFullYear();
+    const cnt = await query(`SELECT COUNT(*) FROM rfqs WHERE rfq_no LIKE $1`, [`${prefix}-${yr}-%`]);
+    const rfqNo = `${prefix}-${yr}-${String(parseInt(cnt.rows[0].count)+1).padStart(3,'0')}`;
+    const result = await query(`
+      INSERT INTO rfqs (rfq_no, enquiry_id, direction, counterparty_id, commodity_code,
+        qty_mt, required_delivery, incoterms, origin, destination, pricing_basis,
+        payment_terms, validity_date, notes, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'DRAFT') RETURNING *`,
+      [rfqNo, enquiry_id||null, direction, counterparty_id, commodity_code||null,
+       qty_mt||null, required_delivery||null, incoterms||null, origin||null,
+       destination||null, pricing_basis||null, payment_terms||null, validity_date||null, notes||null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+rfqRouter.patch('/:id/send', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(
+      `UPDATE rfqs SET status='SENT', sent_at=NOW() WHERE id=$1 OR rfq_no=$1 RETURNING *`,
+      [req.params.id]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+rfqRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['status','notes','validity_date','pricing_basis','payment_terms',
+      'incoterms','required_delivery','qty_mt','destination','origin'];
+    const fields = {};
+    Object.keys(req.body).forEach(k => { if(allowed.includes(k)) fields[k]=req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true });
+    const sets = Object.keys(fields).map((k,i) => `${k}=$${i+2}`).join(',');
+    const result = await query(
+      `UPDATE rfqs SET ${sets} WHERE id=$1 OR rfq_no=$1 RETURNING *`,
+      [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.rfqRouter = rfqRouter;
+
+// ── QUOTE RESPONSES ROUTER ────────────────────────────────────
+const quoteResponseRouter = require('express').Router();
+
+quoteResponseRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { rfq_id, enquiry_id, quote_type } = req.query;
+    let sql = `
+      SELECT qr.*,
+        cp.name as counterparty_name,
+        cm.name as commodity_name, cm.uom,
+        r.rfq_no, r.direction
+      FROM quote_responses qr
+      LEFT JOIN counterparties cp ON cp.id = qr.counterparty_id
+      LEFT JOIN commodities cm ON cm.code = qr.commodity_code
+      LEFT JOIN rfqs r ON r.id = qr.rfq_id
+      WHERE 1=1`;
+    const params = [];
+    if (rfq_id)      { params.push(rfq_id);      sql += ` AND qr.rfq_id=$${params.length}`; }
+    if (enquiry_id)  { params.push(enquiry_id);  sql += ` AND qr.enquiry_id=$${params.length}`; }
+    if (quote_type)  { params.push(quote_type);  sql += ` AND qr.quote_type=$${params.length}`; }
+    sql += ' ORDER BY qr.created_at DESC';
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+quoteResponseRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { rfq_id, enquiry_id, quote_type, counterparty_id, commodity_code,
+      offered_qty, offered_price, price_basis, delivery_date, delivery_window,
+      incoterms, payment_terms, validity_date, notes } = req.body;
+    if (!quote_type || !counterparty_id) return res.status(400).json({ error: 'quote_type and counterparty_id required' });
+    const prefix = quote_type === 'SQ' ? 'SQ' : 'PQ';
+    const yr = new Date().getFullYear();
+    const cnt = await query(`SELECT COUNT(*) FROM quote_responses WHERE quote_type=$1 AND response_no LIKE $2`,
+      [quote_type, `${prefix}-${yr}-%`]);
+    const respNo = `${prefix}-${yr}-${String(parseInt(cnt.rows[0].count)+1).padStart(3,'0')}`;
+    const result = await query(`
+      INSERT INTO quote_responses (response_no, rfq_id, enquiry_id, quote_type, counterparty_id,
+        commodity_code, offered_qty, offered_price, price_basis, delivery_date, delivery_window,
+        incoterms, payment_terms, validity_date, notes, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'RECEIVED') RETURNING *`,
+      [respNo, rfq_id||null, enquiry_id||null, quote_type, counterparty_id,
+       commodity_code||null, offered_qty||null, offered_price||null, price_basis||null,
+       delivery_date||null, delivery_window||null, incoterms||null, payment_terms||null,
+       validity_date||null, notes||null]);
+    // Update RFQ status to RESPONDED
+    if (rfq_id) await query(`UPDATE rfqs SET status='RESPONDED' WHERE id=$1 AND status='SENT'`, [rfq_id]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+quoteResponseRouter.patch('/:id/select', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(
+      `UPDATE quote_responses SET status='SELECTED' WHERE id=$1 RETURNING *`, [req.params.id]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+quoteResponseRouter.patch('/:id/decline', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(
+      `UPDATE quote_responses SET status='DECLINED' WHERE id=$1 RETURNING *`, [req.params.id]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.quoteResponseRouter = quoteResponseRouter;
