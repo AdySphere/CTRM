@@ -15,4 +15,16 @@ async function query(text, params) {
   }
 }
 
-module.exports = { pool, query };
+async function logAudit(entityType, entityId, entityRef, action, fieldName, oldValue, newValue, changedBy) {
+  try {
+    await query(`
+      INSERT INTO audit_log (entity_type, entity_id, entity_ref, action, field_name, old_value, new_value, changed_by)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+    `, [entityType, entityId, entityRef || null, action, fieldName || null,
+        oldValue !== undefined && oldValue !== null ? String(oldValue) : null,
+        newValue !== undefined && newValue !== null ? String(newValue) : null,
+        changedBy || 'A. Mallick']);
+  } catch(e) { console.warn('audit log failed:', e.message); }
+}
+
+module.exports = { pool, query, logAudit };

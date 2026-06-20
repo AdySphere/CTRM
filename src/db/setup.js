@@ -403,6 +403,8 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_price DECIMAL(14,4)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_margin DECIMAL(14,2)`);
     await query(`ALTER TABLE quote_responses ADD COLUMN IF NOT EXISTS deal_id INT REFERENCES deals(id)`);
+    await query(`CREATE TABLE IF NOT EXISTS audit_log (id SERIAL PRIMARY KEY, entity_type VARCHAR(30) NOT NULL, entity_id INT NOT NULL, entity_ref VARCHAR(40), action VARCHAR(30) NOT NULL, field_name VARCHAR(60), old_value TEXT, new_value TEXT, changed_by VARCHAR(60) DEFAULT 'A. Mallick', changed_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_locked_at TIMESTAMPTZ`);
     await query(`CREATE TABLE IF NOT EXISTS deal_enquiries (id SERIAL PRIMARY KEY, deal_id INT NOT NULL REFERENCES deals(id) ON DELETE CASCADE, enquiry_id INT NOT NULL REFERENCES enquiries(id), leg_role VARCHAR(20) DEFAULT 'BUY', added_at TIMESTAMPTZ DEFAULT NOW(), UNIQUE(deal_id, enquiry_id))`);
     // Create adj lines tables if missing
@@ -652,6 +654,24 @@ async function setupDatabase() {
     );
   `);
   console.log('✓ allocations');
+
+  // ── AUDIT LOG ──────────────────────────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id              SERIAL PRIMARY KEY,
+      entity_type     VARCHAR(30) NOT NULL,
+      entity_id       INT NOT NULL,
+      entity_ref      VARCHAR(40),
+      action          VARCHAR(30) NOT NULL,
+      field_name      VARCHAR(60),
+      old_value       TEXT,
+      new_value       TEXT,
+      changed_by      VARCHAR(60) DEFAULT 'A. Mallick',
+      changed_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  await query(`CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_log(entity_type, entity_id)`);
+  console.log('✓ audit_log');
 
   // ── INVOICES ────────────────────────────────────────────────────
 

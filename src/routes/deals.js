@@ -1,6 +1,6 @@
 // ── DEALS ─────────────────────────────────────────────────────────
 const dealsRouter = require('express').Router();
-const { query } = require('../db');
+const { query, logAudit } = require('../db');
 
 dealsRouter.get('/', async (req, res) => {
   try {
@@ -37,10 +37,14 @@ dealsRouter.patch('/:id/confirm', async (req, res) => {
   try {
     const { id } = req.params;
     const { notes, confirmed_at } = req.body || {};
+    const before = await query('SELECT status, deal_no FROM deals WHERE id=$1', [id]);
     const result = await query(`
       UPDATE deals SET confirmed=TRUE, confirmed_at=COALESCE($2::timestamptz, NOW()),
         status='CONFIRMED', notes=COALESCE($3, notes) WHERE id=$1 RETURNING *
     `, [id, confirmed_at || null, notes || null]);
+    if (result.rows[0]) {
+      await logAudit('deal', id, result.rows[0].deal_no, 'CONFIRM', 'status', before.rows[0]?.status, 'CONFIRMED');
+    }
     res.json({ success: true, data: result.rows[0] });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -519,6 +523,9 @@ quotationsRouter.post('/:id/new-version', async (req, res) => {
       q.quoted_by, newVersion, q.id, q.quote_type, req.body.notes || q.notes
     ]);
 
+    await logAudit('quotation', q.id, q.quotation_no, 'NEW_VERSION', 'status', 'OPEN', 'SUPERSEDED');
+    await logAudit('quotation', result.rows[0].id, newNo, 'CREATE', null, null, 'v'+newVersion+' created from '+q.quotation_no);
+
     res.json({ success: true, data: result.rows[0], superseded: q.quotation_no, new_version: newVersion });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -584,6 +591,9 @@ quotationsRouter.post('/:id/accept', async (req, res) => {
     if (qt.enquiry_id) {
       await query(`UPDATE enquiries SET status='CONVERTED' WHERE id=$1`, [qt.enquiry_id]);
     }
+
+    await logAudit('quotation', qt.id, qt.quotation_no, 'ACCEPT', 'status', qt.status, 'CONVERTED');
+    await logAudit('deal', deal.id, deal.deal_no, 'CREATE', null, null, 'Created from quotation ' + qt.quotation_no);
 
     res.json({ success: true, data: { quotation: qt, deal } });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -858,6 +868,7 @@ rfqRouter.patch('/:id/send', async (req, res) => {
     const result = await query(
       `UPDATE rfqs SET status='SENT', sent_at=NOW() WHERE id=$1 OR rfq_no=$1 RETURNING *`,
       [req.params.id]);
+    if (result.rows[0]) await logAudit('rfq', result.rows[0].id, result.rows[0].rfq_no, 'SEND', 'status', 'DRAFT', 'SENT');
     res.json({ success: true, data: result.rows[0] });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -939,6 +950,7 @@ quoteResponseRouter.patch('/:id/select', async (req, res) => {
   try {
     const result = await query(
       `UPDATE quote_responses SET status='SELECTED' WHERE id=$1 RETURNING *`, [req.params.id]);
+    if (result.rows[0]) await logAudit('quote_response', result.rows[0].id, result.rows[0].response_no, 'SELECT', 'status', 'RECEIVED', 'SELECTED');
     res.json({ success: true, data: result.rows[0] });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -948,6 +960,7 @@ quoteResponseRouter.patch('/:id/decline', async (req, res) => {
   try {
     const result = await query(
       `UPDATE quote_responses SET status='DECLINED' WHERE id=$1 RETURNING *`, [req.params.id]);
+    if (result.rows[0]) await logAudit('quote_response', result.rows[0].id, result.rows[0].response_no, 'DECLINE', 'status', 'RECEIVED', 'DECLINED');
     res.json({ success: true, data: result.rows[0] });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -1083,6 +1096,9 @@ feasibilityRouter.post('/basket/confirm', async (req, res) => {
       await query(`UPDATE quote_responses SET status='CONVERTED', deal_id=$1 WHERE id=$2`, [deal.id, r.id]);
     }
 
+    await logAudit('deal', deal.id, deal.deal_no, 'CREATE', null, null,
+      'Created from Deal Basket: '+enquiryIds.length+' enquiries, '+pqSelected.length+' PQ, '+sqSelected.length+' SQ');
+
     res.json({
       success: true,
       data: deal,
@@ -1180,3 +1196,22 @@ searchRouter.get('/', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.searchRouter = searchRouter;
+
+// ── AUDIT LOG ────────────────────────────────────────────────────
+const auditRouter = require('express').Router();
+auditRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { entity_type, entity_id, limit } = req.query;
+    let sql = 'SELECT * FROM audit_log WHERE 1=1';
+    const params = [];
+    if (entity_type) { params.push(entity_type); sql += ` AND entity_type=$${params.length}`; }
+    if (entity_id)   { params.push(entity_id);   sql += ` AND entity_id=$${params.length}`; }
+    sql += ' ORDER BY changed_at DESC';
+    params.push(parseInt(limit) || 50);
+    sql += ` LIMIT $${params.length}`;
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.auditRouter = auditRouter;

@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V16.6</div>
+    <div class="sb-tag">CTRM PLATFORM · V16.7</div>
   </div>
   <nav class="sb-nav">
 
@@ -767,7 +767,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span class="badge" id="rfqd-dir-badge" style="margin-left:8px;font-size:9px">VENDOR</span>
           <button class="btn bp bsm" id="rfqd-send-btn" style="margin-left:8px" onclick="sendRFQ()">Send RFQ →</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="openLogResponse()">+ Log Response</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('rfq', window._activeRFQ?.id, 'rfqd-audit-panel')">📜 History</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('rfq-detail-card').style.display='none'">✕</button>
+        </div>
+        <div id="rfqd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Activity Log</div>
+          <div id="rfqd-audit-list" style="font-size:11px">Loading…</div>
         </div>
 
         <div class="lcb">
@@ -863,11 +868,16 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span class="badge bd-draft" id="qd-version-badge" style="margin-left:auto;font-size:9px">v1</span>
           <span class="badge" id="qd-status-badge" style="margin-left:8px">—</span>
           <button class="btn bs2 bsm" id="qd-new-version-btn" style="margin-left:8px" onclick="createNewQuotationVersion()">+ New Version</button>
-          <button class="btn bg bsm" id="qd-version-history-btn" style="margin-left:4px" onclick="toggleVersionHistory()">📋 History</button>
+          <button class="btn bg bsm" id="qd-version-history-btn" style="margin-left:4px" onclick="toggleVersionHistory()">📋 Versions</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('quotation', window._activeQuotDbId, 'qd-audit-panel')">📜 History</button>
         </div>
         <div id="qd-version-history-panel" style="display:none;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
           <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Version History</div>
           <div id="qd-version-list" style="font-size:11px">Loading…</div>
+        </div>
+        <div id="qd-audit-panel" style="display:none;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Activity Log</div>
+          <div id="qd-audit-list" style="font-size:11px">Loading…</div>
         </div>
         <div class="fts">
           <div class="ft active qt-tab" data-tab="qt-general">General</div>
@@ -983,8 +993,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span id="dd-badge" style="margin-right:8px"></span>
           <span id="dd-comm-chip"></span>
           <div style="margin-left:auto" class="br gap7">
+            <button class="btn bg bsm" onclick="toggleAuditPanel('deal', window._activeDeal?.id, 'dd-audit-panel')">📜 History</button>
             <button class="btn bg bsm" onclick="erpStub('ERP Sync')">Sync to ERP</button>
           </div>
+        </div>
+        <div id="dd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Activity Log</div>
+          <div id="dd-audit-list" style="font-size:11px">Loading…</div>
         </div>
         <!-- DEAL CONFIRMATION PANEL -->
         <div id="deal-confirm-panel" style="padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
@@ -1186,7 +1201,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','New version drafted','info')">New Version</button>
           <button class="btn bp bsm" style="margin-left:7px" onclick="confirmContract('PC')">Confirm Contract →</button>
           <button class="btn bg bsm" style="margin-left:7px" onclick="printPCContract()">🖨 Print</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'pcd-audit-panel')">📜 History</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('pc-detail-card').style.display='none'">✕ Close</button>
+        </div>
+        <div id="pcd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Activity Log</div>
+          <div id="pcd-audit-list" style="font-size:11px">Loading…</div>
         </div>
         <div class="lcb" id="pcd-lifecycle">
           <div class="lcs" id="pcd-lcs-draft">DRAFT</div><div class="lcs" id="pcd-lcs-review">UNDER REVIEW</div><div class="lcs" id="pcd-lcs-contracted">CONTRACTED</div>
@@ -1528,7 +1548,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','New version drafted','info')">New Version</button>
           <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
           <button class="btn bg bsm" style="margin-left:7px" onclick="printSCContract()">🖨 Print</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'scd-audit-panel')">📜 History</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('sc-detail-card').style.display='none'">✕ Close</button>
+        </div>
+        <div id="scd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Activity Log</div>
+          <div id="scd-audit-list" style="font-size:11px">Loading…</div>
         </div>
         <div class="lcb">
           <div class="lcs done">DRAFT</div><div class="lcs done">UNDER REVIEW</div><div class="lcs cur">CONTRACTED</div>
@@ -8169,6 +8194,48 @@ async function unlinkEnquiry(linkId) {
 
 <script>
 window._dealBasketOpen = false;
+
+// ── GENERIC ACTIVITY LOG (reusable across Deal/Quotation/RFQ/Contract) ──
+async function toggleAuditPanel(entityType, entityId, panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  if (!entityId) { toast('No Record', 'Open a record first', 'warning'); return; }
+  const listId = panelId.replace('-panel','-list');
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    await loadAuditLog(entityType, entityId, listId);
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+async function loadAuditLog(entityType, entityId, listId) {
+  const listEl = document.getElementById(listId);
+  if (!listEl) return;
+  listEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(API_BASE + '/api/audit?entity_type=' + entityType + '&entity_id=' + entityId);
+    const data = await res.json();
+    const entries = data.data || [];
+    if (!entries.length) { listEl.textContent = 'No activity recorded yet.'; return; }
+    listEl.innerHTML = entries.map(function(e) {
+      const when = new Date(e.changed_at).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      let desc = e.action;
+      if (e.field_name && e.old_value !== null && e.new_value !== null) {
+        desc = e.action + ' — ' + e.field_name + ': ' + e.old_value + ' → ' + e.new_value;
+      } else if (e.new_value) {
+        desc = e.action + ' — ' + e.new_value;
+      }
+      return '<div style="display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border)">'
+        + '<span style="font-size:9px;color:var(--text3);white-space:nowrap;flex-shrink:0">'+when+'</span>'
+        + '<span style="flex:1">'+desc+'</span>'
+        + '<span style="font-size:9px;color:var(--text3)">'+(e.changed_by||'—')+'</span>'
+        + '</div>';
+    }).join('');
+  } catch(e) { listEl.textContent = 'Could not load activity log.'; }
+}
+
+
 
 // ── GLOBAL SEARCH ────────────────────────────────────────────────
 let _gsDebounce = null;

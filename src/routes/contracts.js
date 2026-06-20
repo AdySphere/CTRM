@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { query } = require('../db');
+const { query, logAudit } = require('../db');
 
 // GET /api/contracts
 router.get('/', async (req, res) => {
@@ -111,12 +111,14 @@ module.exports = router;
 router.patch("/:id/confirm", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
+    const before = await query('SELECT status, contract_no FROM contracts WHERE id=$1', [req.params.id]);
     const result = await query(
       "UPDATE contracts SET status='CONTRACTED', updated_at=NOW() WHERE id=$1 RETURNING *",
       [req.params.id]
     );
     const contract = result.rows[0];
     if (contract) {
+      await logAudit('contract', contract.id, contract.contract_no, 'CONFIRM', 'status', before.rows[0]?.status, 'CONTRACTED');
       const orderType = contract.contract_type === 'PC' ? 'PO' : 'SO';
       const yr = new Date().getFullYear();
       const cntRes = await query("SELECT COUNT(*) FROM orders WHERE order_type=$1", [orderType]);
