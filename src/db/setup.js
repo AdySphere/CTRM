@@ -176,7 +176,7 @@ async function setupDatabase() {
       id                SERIAL PRIMARY KEY,
       rfq_no            VARCHAR(30) UNIQUE NOT NULL,
       enquiry_id        INT REFERENCES enquiries(id),
-      direction         VARCHAR(10) NOT NULL DEFAULT 'VENDOR', -- VENDOR or CUSTOMER
+      direction         VARCHAR(10) NOT NULL DEFAULT 'VENDOR',
       counterparty_id   INT REFERENCES counterparties(id),
       commodity_code    VARCHAR(20) REFERENCES commodities(code),
       qty_mt            DECIMAL(12,3),
@@ -188,21 +188,21 @@ async function setupDatabase() {
       payment_terms     TEXT,
       validity_date     DATE,
       notes             TEXT,
-      status            VARCHAR(20) DEFAULT 'DRAFT', -- DRAFT, SENT, RESPONDED, DECLINED, EXPIRED
+      status            VARCHAR(20) DEFAULT 'DRAFT',
       sent_at           TIMESTAMPTZ,
       created_at        TIMESTAMPTZ DEFAULT NOW()
     );
-  \`);
+  `);
   console.log('✓ rfqs');
 
-  // ── QUOTE RESPONSES (PQ from vendor / SQ from customer) ───────
-  await query(\`
+  // ── QUOTE RESPONSES ───────────────────────────────────────────
+  await query(`
     CREATE TABLE IF NOT EXISTS quote_responses (
       id                SERIAL PRIMARY KEY,
       response_no       VARCHAR(30) UNIQUE NOT NULL,
       rfq_id            INT REFERENCES rfqs(id),
       enquiry_id        INT REFERENCES enquiries(id),
-      quote_type        VARCHAR(5) NOT NULL DEFAULT 'PQ', -- PQ or SQ
+      quote_type        VARCHAR(5) NOT NULL DEFAULT 'PQ',
       counterparty_id   INT REFERENCES counterparties(id),
       commodity_code    VARCHAR(20) REFERENCES commodities(code),
       offered_qty       DECIMAL(12,3),
@@ -214,11 +214,11 @@ async function setupDatabase() {
       payment_terms     TEXT,
       validity_date     DATE,
       notes             TEXT,
-      status            VARCHAR(20) DEFAULT 'RECEIVED', -- RECEIVED, SELECTED, DECLINED, EXPIRED
+      status            VARCHAR(20) DEFAULT 'RECEIVED',
       received_at       TIMESTAMPTZ DEFAULT NOW(),
       created_at        TIMESTAMPTZ DEFAULT NOW()
     );
-  \`);
+  `);
   console.log('✓ quote_responses');
 
   await query(`
@@ -264,11 +264,11 @@ async function setupDatabase() {
       notes           TEXT,
       created_at      TIMESTAMPTZ DEFAULT NOW()
     );
-  \`);
+  `);
   console.log('✓ quotation_adjustment_lines');
 
   // ── QUOTATION SELL PENALTIES ──────────────────────────────────
-  await query(\`
+  await query(`
     CREATE TABLE IF NOT EXISTS quotation_penalties (
       id              SERIAL PRIMARY KEY,
       quotation_id    INT NOT NULL REFERENCES quotations(id) ON DELETE CASCADE,
@@ -282,7 +282,7 @@ async function setupDatabase() {
       notes           TEXT,
       created_at      TIMESTAMPTZ DEFAULT NOW()
     );
-  \`);
+  `);
   console.log('✓ quotation_penalties');
 
   await query(`
@@ -372,10 +372,10 @@ async function setupDatabase() {
     await query(`CREATE TABLE IF NOT EXISTS quote_responses (id SERIAL PRIMARY KEY, response_no VARCHAR(30) UNIQUE NOT NULL, rfq_id INT REFERENCES rfqs(id), enquiry_id INT REFERENCES enquiries(id), quote_type VARCHAR(5) DEFAULT 'PQ', counterparty_id INT REFERENCES counterparties(id), commodity_code VARCHAR(20), offered_qty DECIMAL(12,3), offered_price DECIMAL(14,4), price_basis TEXT, delivery_date DATE, delivery_window VARCHAR(100), incoterms VARCHAR(10), payment_terms TEXT, validity_date DATE, notes TEXT, status VARCHAR(20) DEFAULT 'RECEIVED', received_at TIMESTAMPTZ DEFAULT NOW(), created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS origin VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS destination VARCHAR(100)`);
-    await query(\`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)\`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)`);
     // Create adj lines tables if missing
-    await query(\`CREATE TABLE IF NOT EXISTS quotation_adjustment_lines (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, adj_code VARCHAR(30), description TEXT, adj_type VARCHAR(20) DEFAULT 'DEDUCTION', basis VARCHAR(20) DEFAULT 'per-unit', rate DECIMAL(12,4), uom VARCHAR(10) DEFAULT 'MT', computed_value DECIMAL(14,2), notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())\`);
-    await query(\`CREATE TABLE IF NOT EXISTS quotation_penalties (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, penalty_code VARCHAR(30), penalty_type VARCHAR(20) DEFAULT 'FLAT-RATE', element VARCHAR(50), threshold VARCHAR(50), rate VARCHAR(50), direction VARCHAR(10) DEFAULT 'OUT', notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())\`);
+    await query(`CREATE TABLE IF NOT EXISTS quotation_adjustment_lines (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, adj_code VARCHAR(30), description TEXT, adj_type VARCHAR(20) DEFAULT 'DEDUCTION', basis VARCHAR(20) DEFAULT 'per-unit', rate DECIMAL(12,4), uom VARCHAR(10) DEFAULT 'MT', computed_value DECIMAL(14,2), notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE TABLE IF NOT EXISTS quotation_penalties (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, penalty_code VARCHAR(30), penalty_type VARCHAR(20) DEFAULT 'FLAT-RATE', element VARCHAR(50), threshold VARCHAR(50), rate VARCHAR(50), direction VARCHAR(10) DEFAULT 'OUT', notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
 
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS direction VARCHAR(10) DEFAULT 'BUY'`);
   } catch(e) {}
