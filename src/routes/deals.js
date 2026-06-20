@@ -1141,3 +1141,42 @@ budgetActualRouter.get('/:id/budget-actual', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.budgetActualRouter = budgetActualRouter;
+
+// ── GLOBAL SEARCH ────────────────────────────────────────────────
+const searchRouter = require('express').Router();
+searchRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const q = (req.query.q || '').trim();
+  if (!q || q.length < 2) return res.json({ success: true, data: [] });
+  const like = '%' + q + '%';
+  try {
+    const [enq, rfq, quot, deal, pc, sc] = await Promise.all([
+      query(`SELECT id, enquiry_no, direction, commodity_code, status FROM enquiries
+             WHERE enquiry_no ILIKE $1 LIMIT 8`, [like]),
+      query(`SELECT r.id, r.rfq_no, r.direction, r.status, cp.name as counterparty_name
+             FROM rfqs r LEFT JOIN counterparties cp ON cp.id=r.counterparty_id
+             WHERE r.rfq_no ILIKE $1 LIMIT 8`, [like]),
+      query(`SELECT id, quotation_no, quote_type, status FROM quotations
+             WHERE quotation_no ILIKE $1 LIMIT 8`, [like]),
+      query(`SELECT id, deal_no, status, commodity_code FROM deals
+             WHERE deal_no ILIKE $1 LIMIT 8`, [like]),
+      query(`SELECT c.id, c.contract_no, c.status, cp.name as counterparty_name
+             FROM contracts c LEFT JOIN counterparties cp ON cp.id=c.counterparty_id
+             WHERE c.contract_type='PC' AND c.contract_no ILIKE $1 LIMIT 8`, [like]),
+      query(`SELECT c.id, c.contract_no, c.status, cp.name as counterparty_name
+             FROM contracts c LEFT JOIN counterparties cp ON cp.id=c.counterparty_id
+             WHERE c.contract_type='SC' AND c.contract_no ILIKE $1 LIMIT 8`, [like]),
+    ]);
+
+    const results = [];
+    enq.rows.forEach(r => results.push({ type: 'Enquiry', id: r.id, no: r.enquiry_no, label: r.enquiry_no, sub: (r.direction||'') + ' · ' + (r.commodity_code||'') + ' · ' + (r.status||'') }));
+    rfq.rows.forEach(r => results.push({ type: 'RFQ', id: r.id, no: r.rfq_no, label: r.rfq_no, sub: (r.direction||'') + ' · ' + (r.counterparty_name||'') + ' · ' + (r.status||'') }));
+    quot.rows.forEach(r => results.push({ type: 'Quotation', id: r.id, no: r.quotation_no, label: r.quotation_no, sub: (r.quote_type||'') + ' · ' + (r.status||'') }));
+    deal.rows.forEach(r => results.push({ type: 'Deal', id: r.id, no: r.deal_no, label: r.deal_no, sub: (r.commodity_code||'') + ' · ' + (r.status||'') }));
+    pc.rows.forEach(r => results.push({ type: 'Purchase Contract', id: r.id, no: r.contract_no, label: r.contract_no, sub: (r.counterparty_name||'') + ' · ' + (r.status||'') }));
+    sc.rows.forEach(r => results.push({ type: 'Sales Contract', id: r.id, no: r.contract_no, label: r.contract_no, sub: (r.counterparty_name||'') + ' · ' + (r.status||'') }));
+
+    res.json({ success: true, data: results });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.searchRouter = searchRouter;
