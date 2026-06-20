@@ -190,7 +190,8 @@ html,body{height:100%;margin:0;padding:0}
 .mh{display:flex;align-items:center;gap:10px;padding:16px 20px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
 .mt{font-size:14px;font-weight:700;flex:1}
 .mc{color:var(--text3);font-size:17px;cursor:pointer;line-height:1;padding:2px 4px}.mc:hover{color:var(--text)}
-.mb{padding:20px}
+.md{display:flex;flex-direction:column;max-height:90vh}
+.mb{padding:20px;overflow-y:auto;flex:1 1 auto}
 .mf{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;position:sticky;bottom:0;background:var(--surface)}
 /* TOAST */
 .tc-wrap{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:7px;z-index:2000}
@@ -6685,8 +6686,32 @@ function onRFQEnquiryChange() {
 }
 
 async function openNewRFQ() {
-  // Ensure dropdowns loaded
-  if (!window._allCPs || !window._allCPs.length) await loadCommodityDropdowns();
+  // Ensure commodity cache loaded
+  if (!window._commodityCache || Object.keys(window._commodityCache).length === 0) await loadCommodityDropdowns();
+
+  // Fetch and cache all counterparties — independent of any enquiry link
+  let cps = [];
+  try {
+    const cpRes = await fetch(API_BASE + '/api/master/counterparties');
+    const cpData = await cpRes.json();
+    cps = cpData.data || [];
+    window._allCPs = cps;
+    window._cpCache = window._cpCache || {};
+    cps.forEach(function(c){ window._cpCache[c.id] = c; });
+  } catch(e) { console.warn('Could not load counterparties:', e); }
+
+  // Populate vendor/customer dropdown immediately based on current direction
+  const cpSel = document.getElementById('rfq-cp-sel');
+  if (cpSel) {
+    const isVendor = document.getElementById('rfq-dir-vendor')?.checked !== false;
+    const filtered = isVendor
+      ? cps.filter(function(c){ return !c.type || c.type==='VENDOR' || c.type==='BOTH'; })
+      : cps.filter(function(c){ return !c.type || c.type==='CUSTOMER' || c.type==='BOTH'; });
+    const list = filtered.length ? filtered : cps;
+    cpSel.innerHTML = '<option value="">— Select ' + (isVendor?'Vendor':'Customer') + ' —</option>'
+      + list.map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+  }
+
   // Populate enquiry dropdown
   const enqSel = document.getElementById('rfq-enquiry-sel');
   if (enqSel) {
