@@ -834,6 +834,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               No responses to compare yet
             </div>
           </div>
+          <div class="br btw mt16" id="rfqd-feasibility-cta" style="display:none">
+            <div style="font-size:11px;color:var(--text3)">Selections are saved automatically · Open Deal Feasibility when ready to combine and confirm</div>
+            <button class="btn bp" onclick="openDealFeasibility()">Open Deal Feasibility →</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1052,6 +1056,25 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               </table>
             </div>
           </div>
+                    <!-- LINKED ENQUIRIES -->
+          <div class="card mt14">
+            <div class="lh">
+              <div class="li li-b" style="background:var(--accent2)">E</div>
+              <div class="lttl">Linked Enquiries</div>
+              <div class="lm">Each leg = one enquiry · BUY legs (vendors) and SELL legs (customers) combined into this deal</div>
+              <button class="btn bp bxs" onclick="openLinkEnquiryModal()" style="margin-left:8px">+ Link Enquiry</button>
+            </div>
+            <div class="cb">
+              <div class="ban bi" style="margin-bottom:10px"><span>ℹ</span>A deal combines multiple enquiries — one or more BUY legs (suppliers) and one or more SELL legs (customers). Link enquiries here to build the deal structure.</div>
+              <table class="lt">
+                <thead><tr><th>Enquiry No.</th><th>Direction</th><th>Counterparty</th><th>Commodity</th><th>Qty</th><th>Status</th><th></th></tr></thead>
+                <tbody id="deal-linked-enq-tbody">
+                  <tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No enquiries linked — click + Link Enquiry to add legs</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- BUY LEGS SUMMARY -->
           <div class="card">
             <div class="lh"><div class="li li-b">B</div><div class="lttl">Buy Legs (1 of 1)</div><div class="lm">Each independent</div><button class="btn bp bxs" onclick="openAddBuyLeg()" style="margin-left:8px">+ Leg</button></div>
@@ -6029,8 +6052,10 @@ async function openDealDetail(dealNo) {
     wireTabs('slt');
     // Wire buy leg detail modal tabs
     wireTabs('blt');
-    // Load buy legs from DB
+    // Load buy legs and linked enquiries from DB
     await loadBuyLegs(deal.id);
+    window._activeDeal = deal;
+    await loadDealLinkedEnquiries(deal.id);
 
     toast('Deal Opened', deal.deal_no + ' — ' + (deal.commodity_name || deal.commodity_code || ''), 'info');
   } catch (err) {
@@ -6463,6 +6488,10 @@ async function loadRFQResponses(rfqId, isVendor, uom) {
           + '</div>';
       }).join('');
     }
+
+    // Show feasibility CTA if any responses are selected
+    const cta = document.getElementById('rfqd-feasibility-cta');
+    if (cta) cta.style.display = responses.some(function(r){return r.status==='SELECTED';}) ? 'flex' : 'none';
   } catch(e) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--accent2);font-size:11px">Error loading responses</td></tr>'; }
 }
 
@@ -7656,5 +7685,273 @@ async function loadAllocationTable() {
   </div>
 </div>
 
+<!-- MODAL: Link Enquiry to Deal -->
+<div class="mo" id="modal-link-enquiry">
+  <div class="md" style="max-width:560px">
+    <div class="mh"><div class="mt">Link Enquiry to Deal</div><button class="mc" onclick="closeModal('modal-link-enquiry')">✕</button></div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>ℹ</span>Select an open enquiry to link as a leg of this deal. BUY = supplier side, SELL = customer side.</div>
+      <div class="f"><div class="fl">Leg Role</div>
+        <select class="fs" id="link-enq-role">
+          <option value="BUY">BUY — supplier leg</option>
+          <option value="SELL">SELL — customer leg</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Select Enquiry <span class="req">*</span></div>
+        <select class="fs" id="link-enq-sel"><option value="">— Loading enquiries… —</option></select>
+      </div>
+      <div id="link-enq-preview" style="display:none;margin-top:8px;padding:10px 14px;background:var(--surface2);border-radius:var(--r);font-size:11px">
+        <div id="link-enq-preview-text"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-link-enquiry')">Cancel</button>
+      <button class="btn bp" onclick="submitLinkEnquiry()">Link Enquiry →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadDealLinkedEnquiries(dealId) {
+  const tbody = document.getElementById('deal-linked-enq-tbody');
+  if (!tbody || !dealId) return;
+  try {
+    const res = await fetch(API_BASE + '/api/deal-enquiries?deal_id=' + dealId);
+    const data = await res.json();
+    const legs = data.data || [];
+    if (!legs.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No enquiries linked — click + Link Enquiry to add legs</td></tr>';
+      return;
+    }
+    tbody.innerHTML = legs.map(function(l) {
+      const dirClass = l.leg_role === 'BUY' ? 'bd-ship' : 'bd-act';
+      const cp = l.leg_role === 'BUY' ? (l.supplier_name||'—') : (l.customer_name||'—');
+      return '<tr>'
+        + '<td class="mono ta fw6" style="color:var(--accent)">' + l.enquiry_no + '</td>'
+        + '<td><span class="badge ' + dirClass + '">' + l.leg_role + '</span></td>'
+        + '<td class="f11">' + cp + '</td>'
+        + '<td class="f11">' + (l.commodity_name||l.commodity_code||'—') + '</td>'
+        + '<td class="mono">' + (l.qty_mt||'—') + ' ' + (l.uom||'MT') + '</td>'
+        + '<td><span class="badge bd-confirmed">' + (l.enq_status||'—') + '</span></td>'
+        + '<td><button class="btn bxs bd" onclick="unlinkEnquiry(' + l.id + ')">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--accent2);font-size:11px">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+async function openLinkEnquiryModal() {
+  if (!window._activeDeal) { toast('No Deal', 'Open a deal first', 'warning'); return; }
+  const sel = document.getElementById('link-enq-sel');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Loading… —</option>';
+    try {
+      const res = await fetch(API_BASE + '/api/enquiries');
+      const data = await res.json();
+      const enqs = (data.data || []).filter(function(e){ return e.status === 'OPEN' || e.status === 'QUOTED'; });
+      sel.innerHTML = '<option value="">— Select Enquiry —</option>' + enqs.map(function(e) {
+        const uom = (window._commodityCache && e.commodity_code && window._commodityCache[e.commodity_code]?.uom) || 'MT';
+        const dir = e.direction || 'BUY';
+        const cp = dir === 'BUY' ? (e.supplier_name||'—') : (e.customer_name||'—');
+        return '<option value="' + e.id + '" data-dir="' + dir + '" data-cp="' + cp + '" data-comm="' + (e.commodity_name||e.commodity_code||'') + '" data-qty="' + (e.qty_mt||'') + '" data-uom="' + uom + '">'
+          + e.enquiry_no + ' · ' + dir + ' · ' + (e.commodity_name||e.commodity_code||'—') + ' · ' + (e.qty_mt||'—') + ' ' + uom + ' · ' + cp
+          + '</option>';
+      }).join('');
+      sel.onchange = function() {
+        const opt = sel.options[sel.selectedIndex];
+        const preview = document.getElementById('link-enq-preview');
+        const previewText = document.getElementById('link-enq-preview-text');
+        if (opt && opt.value) {
+          if (preview) preview.style.display = 'block';
+          if (previewText) previewText.innerHTML =
+            '<b>' + (opt.dataset.dir||'') + '</b> · ' + (opt.dataset.cp||'—') + ' · '
+            + (opt.dataset.comm||'—') + ' · <b>' + (opt.dataset.qty||'—') + ' ' + (opt.dataset.uom||'MT') + '</b>';
+          const roleEl = document.getElementById('link-enq-role');
+          if (roleEl && opt.dataset.dir) roleEl.value = opt.dataset.dir;
+        } else {
+          if (preview) preview.style.display = 'none';
+        }
+      };
+    } catch(e) {
+      sel.innerHTML = '<option value="">Error loading enquiries</option>';
+    }
+  }
+  openModal('modal-link-enquiry');
+}
+
+async function submitLinkEnquiry() {
+  if (!window._activeDeal) return;
+  const enqId = document.getElementById('link-enq-sel')?.value;
+  const role = document.getElementById('link-enq-role')?.value || 'BUY';
+  if (!enqId) { toast('Required', 'Please select an enquiry', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/deal-enquiries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deal_id: window._activeDeal.id, enquiry_id: parseInt(enqId), leg_role: role })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed');
+    toast('Enquiry Linked', 'Leg added to deal successfully', 'success');
+    closeModal('modal-link-enquiry');
+    await loadDealLinkedEnquiries(window._activeDeal.id);
+    await loadEnquiryList();
+  } catch(err) { toast('Error', err.message, 'error'); }
+}
+
+async function unlinkEnquiry(linkId) {
+  if (!confirm('Remove this enquiry leg from the deal?')) return;
+  try {
+    const res = await fetch(API_BASE + '/api/deal-enquiries/' + linkId, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Unlinked', 'Enquiry leg removed from deal', 'info');
+    if (window._activeDeal) await loadDealLinkedEnquiries(window._activeDeal.id);
+  } catch(err) { toast('Error', err.message, 'error'); }
+}
+</script>
+<!-- MODAL: Deal Feasibility -->
+<div class="mo" id="modal-deal-feasibility">
+  <div class="md" style="max-width:920px">
+    <div class="mh">
+      <div class="mt">Deal Feasibility — <span id="feas-enq-no">—</span></div>
+      <button class="mc" onclick="closeModal('modal-deal-feasibility')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>ℹ</span>Compare selected vendor (PQ) and customer (SQ) quotes · Confirm to lock budget and create the deal.</div>
+
+      <!-- Selected PQ responses -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Selected Purchase Quotes (Buy Side)</div>
+        <table class="lt">
+          <thead><tr><th>Response No.</th><th>Vendor</th><th>Qty</th><th>Price</th><th>Value</th></tr></thead>
+          <tbody id="feas-pq-tbody"><tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">—</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Selected SQ responses -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Selected Sales Quotes (Sell Side)</div>
+        <table class="lt">
+          <thead><tr><th>Response No.</th><th>Customer</th><th>Qty</th><th>Price</th><th>Value</th></tr></thead>
+          <tbody id="feas-sq-tbody"><tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">—</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Budget summary -->
+      <div style="background:var(--surface2);border-radius:var(--r);padding:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+        <div>
+          <div style="font-size:9px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Buy Qty / Avg Price</div>
+          <div style="font-size:14px;font-weight:700" id="feas-buy-summary">—</div>
+        </div>
+        <div>
+          <div style="font-size:9px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Sell Qty / Avg Price</div>
+          <div style="font-size:14px;font-weight:700" id="feas-sell-summary">—</div>
+        </div>
+        <div>
+          <div style="font-size:9px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Qty Balance</div>
+          <div style="font-size:14px;font-weight:700" id="feas-balance">—</div>
+        </div>
+        <div>
+          <div style="font-size:9px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Budget Margin</div>
+          <div style="font-size:18px;font-weight:800" id="feas-margin">—</div>
+        </div>
+      </div>
+      <div id="feas-warning" class="ban bw mt12" style="display:none"><span>⚠</span><span id="feas-warning-text"></span></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-deal-feasibility')">Cancel</button>
+      <button class="btn bp" id="feas-confirm-btn" onclick="confirmFeasibility()">Confirm Feasibility → Create Deal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+window._activeFeasEnqId = null;
+
+async function openDealFeasibility() {
+  const rfq = window._activeRFQ;
+  if (!rfq || !rfq.enquiry_id) { toast('No Enquiry', 'This RFQ is not linked to an enquiry — feasibility requires an enquiry reference', 'warning'); return; }
+  window._activeFeasEnqId = rfq.enquiry_id;
+  await loadFeasibility(rfq.enquiry_id);
+  openModal('modal-deal-feasibility');
+}
+
+async function loadFeasibility(enqId) {
+  try {
+    const res = await fetch(API_BASE + '/api/feasibility/' + enqId);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const d = data.data;
+    const uom = (window._commodityCache && d.enquiry.commodity_code && window._commodityCache[d.enquiry.commodity_code]?.uom) || 'MT';
+
+    document.getElementById('feas-enq-no').textContent = d.enquiry.enquiry_no;
+
+    const pqBody = document.getElementById('feas-pq-tbody');
+    if (!d.selected_pq.length) {
+      pqBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">No PQ selected yet</td></tr>';
+    } else {
+      pqBody.innerHTML = d.selected_pq.map(function(r){
+        const val = (parseFloat(r.offered_qty)||0) * (parseFloat(r.offered_price)||0);
+        return '<tr><td class="mono ta fw6" style="color:var(--accent)">'+r.response_no+'</td><td class="f11 fw6">'+(r.counterparty_name||'—')+'</td><td class="mono">'+r.offered_qty+' '+uom+'</td><td class="mono">USD '+parseFloat(r.offered_price).toLocaleString()+'</td><td class="mono fw6">USD '+val.toLocaleString()+'</td></tr>';
+      }).join('');
+    }
+
+    const sqBody = document.getElementById('feas-sq-tbody');
+    if (!d.selected_sq.length) {
+      sqBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">No SQ selected yet</td></tr>';
+    } else {
+      sqBody.innerHTML = d.selected_sq.map(function(r){
+        const val = (parseFloat(r.offered_qty)||0) * (parseFloat(r.offered_price)||0);
+        return '<tr><td class="mono ta fw6" style="color:var(--accent)">'+r.response_no+'</td><td class="f11 fw6">'+(r.counterparty_name||'—')+'</td><td class="mono">'+r.offered_qty+' '+uom+'</td><td class="mono">USD '+parseFloat(r.offered_price).toLocaleString()+'</td><td class="mono fw6">USD '+val.toLocaleString()+'</td></tr>';
+      }).join('');
+    }
+
+    const s = d.summary;
+    document.getElementById('feas-buy-summary').textContent = (s.buy_qty||0).toFixed(2) + ' ' + uom + ' @ USD ' + (s.buy_avg_price||0).toFixed(2);
+    document.getElementById('feas-sell-summary').textContent = (s.sell_qty||0).toFixed(2) + ' ' + uom + ' @ USD ' + (s.sell_avg_price||0).toFixed(2);
+    const balEl = document.getElementById('feas-balance');
+    balEl.textContent = s.qty_balanced ? '✓ Balanced' : 'Mismatch: ' + Math.abs(s.buy_qty - s.sell_qty).toFixed(2) + ' ' + uom;
+    balEl.style.color = s.qty_balanced ? 'var(--green)' : 'var(--accent2)';
+    const marginEl = document.getElementById('feas-margin');
+    marginEl.textContent = 'USD ' + (s.margin||0).toLocaleString();
+    marginEl.style.color = s.margin >= 0 ? 'var(--green)' : 'var(--accent2)';
+
+    const warning = document.getElementById('feas-warning');
+    const warningText = document.getElementById('feas-warning-text');
+    if (!s.buy_qty || !s.sell_qty) {
+      warning.style.display = 'flex';
+      warningText.textContent = 'You need at least one selected PQ and one selected SQ to create a deal.';
+      document.getElementById('feas-confirm-btn').disabled = true;
+    } else if (!s.qty_balanced) {
+      warning.style.display = 'flex';
+      warningText.textContent = 'Buy and sell quantities do not match — deal can still be created but check coverage.';
+      document.getElementById('feas-confirm-btn').disabled = false;
+    } else {
+      warning.style.display = 'none';
+      document.getElementById('feas-confirm-btn').disabled = false;
+    }
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function confirmFeasibility() {
+  if (!window._activeFeasEnqId) return;
+  try {
+    const res = await fetch(API_BASE + '/api/feasibility/' + window._activeFeasEnqId + '/confirm', {
+      method: 'POST', headers: {'Content-Type':'application/json'}
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Deal Created', data.data.deal_no + ' — Budget margin USD ' + (data.summary.margin||0).toLocaleString() + ' locked', 'success');
+    closeModal('modal-deal-feasibility');
+    closeModal('modal-link-enquiry');
+    document.getElementById('rfq-detail-card').style.display = 'none';
+    nav('deals', document.querySelector('[data-page=deals]'));
+    afterNav('deals');
+    setTimeout(function(){ openDealDetail(data.data.deal_no); }, 600);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+</script>
 </body>
 </html>

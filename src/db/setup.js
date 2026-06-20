@@ -300,6 +300,12 @@ async function setupDatabase() {
       origin          VARCHAR(100),
       destination     VARCHAR(100),
       direction       VARCHAR(10),
+      budget_buy_qty    DECIMAL(12,3),
+      budget_buy_price  DECIMAL(14,4),
+      budget_sell_qty   DECIMAL(12,3),
+      budget_sell_price DECIMAL(14,4),
+      budget_margin     DECIMAL(14,2),
+      budget_locked_at  TIMESTAMPTZ,
       confirmed       BOOLEAN DEFAULT FALSE,
       confirmed_at    TIMESTAMPTZ,
       confirmed_by    VARCHAR(50),
@@ -309,6 +315,19 @@ async function setupDatabase() {
     );
   `);
   console.log('✓ deals');
+
+  // ── DEAL-ENQUIRY LINKS (many-to-many) ───────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS deal_enquiries (
+      id          SERIAL PRIMARY KEY,
+      deal_id     INT NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+      enquiry_id  INT NOT NULL REFERENCES enquiries(id),
+      leg_role    VARCHAR(20) DEFAULT 'BUY',
+      added_at    TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(deal_id, enquiry_id)
+    );
+  `);
+  console.log('✓ deal_enquiries');
 
   // ── BUY LEGS ────────────────────────────────────────────────────
   await query(`
@@ -373,6 +392,13 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS origin VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS destination VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_buy_qty DECIMAL(12,3)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_buy_price DECIMAL(14,4)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_qty DECIMAL(12,3)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_price DECIMAL(14,4)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_margin DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_locked_at TIMESTAMPTZ`);
+    await query(`CREATE TABLE IF NOT EXISTS deal_enquiries (id SERIAL PRIMARY KEY, deal_id INT NOT NULL REFERENCES deals(id) ON DELETE CASCADE, enquiry_id INT NOT NULL REFERENCES enquiries(id), leg_role VARCHAR(20) DEFAULT 'BUY', added_at TIMESTAMPTZ DEFAULT NOW(), UNIQUE(deal_id, enquiry_id))`);
     // Create adj lines tables if missing
     await query(`CREATE TABLE IF NOT EXISTS quotation_adjustment_lines (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, adj_code VARCHAR(30), description TEXT, adj_type VARCHAR(20) DEFAULT 'DEDUCTION', basis VARCHAR(20) DEFAULT 'per-unit', rate DECIMAL(12,4), uom VARCHAR(10) DEFAULT 'MT', computed_value DECIMAL(14,2), notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE TABLE IF NOT EXISTS quotation_penalties (id SERIAL PRIMARY KEY, quotation_id INT REFERENCES quotations(id) ON DELETE CASCADE, line_no INT DEFAULT 1, penalty_code VARCHAR(30), penalty_type VARCHAR(20) DEFAULT 'FLAT-RATE', element VARCHAR(50), threshold VARCHAR(50), rate VARCHAR(50), direction VARCHAR(10) DEFAULT 'OUT', notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
