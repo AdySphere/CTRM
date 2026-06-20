@@ -22,14 +22,35 @@ dealsRouter.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// POST /api/deals — direct deal creation (Path B: known counterparty, repeat trade, no RFQ/Quote)
 dealsRouter.post('/', async (req, res) => {
   try {
-    const { deal_no, deal_date, commodity_code, deal_type, qty_mt, supplier_id, customer_id, notes } = req.body;
+    const { commodity_code, qty_mt, supplier_id, customer_id, incoterms, origin, destination, notes } = req.body;
+    if (!commodity_code || !qty_mt) {
+      return res.status(400).json({ success: false, error: 'commodity_code and qty_mt are required' });
+    }
+    if (!supplier_id && !customer_id) {
+      return res.status(400).json({ success: false, error: 'At least one counterparty (supplier or customer) is required — an open one-sided deal is allowed, but needs at least one leg' });
+    }
+
+    // Auto-generate deal number — same series as Deal Basket / Quotation accept
+    const yr = new Date().getFullYear();
+    const cnt = await query(`SELECT COUNT(*) FROM deals WHERE deal_no LIKE $1`, [`DL-${yr}-%`]);
+    const dealNo = 'DL-' + yr + '-' + String(parseInt(cnt.rows[0].count)+1).padStart(3,'0');
+
+    const direction = supplier_id && customer_id ? 'BOTH' : supplier_id ? 'BUY' : 'SELL';
+
     const result = await query(`
-      INSERT INTO deals (deal_no, deal_date, commodity_code, deal_type, qty_mt, supplier_id, customer_id, notes, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'DRAFT') RETURNING *
-    `, [deal_no, deal_date, commodity_code, deal_type, qty_mt, supplier_id, customer_id, notes]);
-    res.json({ success: true, data: result.rows[0] });
+      INSERT INTO deals (deal_no, deal_date, commodity_code, qty_mt, supplier_id, customer_id,
+        incoterms, origin, destination, direction, notes, status)
+      VALUES ($1,NOW(),$2,$3,$4,$5,$6,$7,$8,$9,$10,'DRAFT') RETURNING *
+    `, [dealNo, commodity_code, qty_mt, supplier_id||null, customer_id||null,
+        incoterms||null, origin||null, destination||null, direction, notes||null]);
+
+    const deal = result.rows[0];
+    await logAudit('deal', deal.id, deal.deal_no, 'CREATE', null, null, 'Created directly — known counterparty, no RFQ/Quote (Path B)');
+
+    res.json({ success: true, data: deal });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 

@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V16.9</div>
+    <div class="sb-tag">CTRM PLATFORM · V16.10</div>
   </div>
   <nav class="sb-nav">
 
@@ -966,10 +966,11 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <!-- PAGE: DEALS -->
     <div class="page" id="page-deals">
       <div class="ph">
-        <div class="ph-left"><div class="pt">Deal Management</div><div class="ps">Created from confirmed quotations · Multi-vendor buy legs · Full lifecycle</div></div>
+        <div class="ph-left"><div class="pt">Deal Management</div><div class="ps">From Quotation acceptance, Deal Basket, or direct entry · Multi-vendor buy legs · Full lifecycle</div></div>
         <div class="ph-right">
+          <button class="btn bp" onclick="openNewDealModal()">+ New Deal</button>
           <button class="btn bp" onclick="openDealFeasibility()">🧺 Deal Basket <span class="badge bd-ship" id="deal-basket-badge" style="margin-left:6px;font-size:9px">0</span></button>
-          <button class="btn bg" onclick="toast('Info','Deals are created by accepting a Quotation, or by selecting PQ/SQ responses on the Quotation → RFQ tab and confirming the Deal Basket','info')">How deals are created?</button>
+          <button class="btn bg" onclick="toast('Info','Three ways to create a deal: 1) Accept a Quotation, 2) Confirm the Deal Basket from RFQ responses, 3) + New Deal for a known counterparty / repeat trade with no RFQ or Quote needed','info')">How deals are created?</button>
         </div>
       </div>
       <div class="sr">
@@ -8664,5 +8665,140 @@ async function confirmFeasibility(overrideCredit) {
     </div>
   </div>
 </div>
+<!-- MODAL: New Deal (Path B — direct, known counterparty, no RFQ/Quote) -->
+<div class="mo" id="modal-new-deal">
+  <div class="md" style="max-width:580px">
+    <div class="mh">
+      <div class="mt">New Deal — Direct Entry</div>
+      <button class="mc" onclick="closeModal('modal-new-deal')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>ℹ</span>Use this for a known counterparty or repeat trade where no RFQ or Quotation negotiation is needed. You can set up one leg now (buy or sell) and add the other leg later — an open deal is allowed.</div>
+
+      <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
+        <select class="fs" id="nd-commodity"><option value="">— Select Commodity —</option></select>
+      </div>
+      <div class="f"><div class="fl" id="nd-qty-label">Quantity (MT) <span class="req">*</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" class="fi" id="nd-qty" placeholder="e.g. 500" step="0.001" style="flex:1">
+          <span class="badge bd-act" id="nd-uom-badge" style="font-size:9px">MT</span>
+        </div>
+      </div>
+      <div class="f"><div class="fl">Supplier / Vendor (Buy Leg)</div>
+        <select class="fs" id="nd-supplier"><option value="">— None (sell-only / open) —</option></select>
+      </div>
+      <div class="f"><div class="fl">Customer (Sell Leg)</div>
+        <select class="fs" id="nd-customer"><option value="">— None (buy-only / open) —</option></select>
+      </div>
+      <div class="f"><div class="fl">Incoterms</div>
+        <select class="fs" id="nd-incoterms">
+          <option value="">—</option><option>CIF</option><option>FOB</option>
+          <option>CFR</option><option>DDP</option><option>EXW</option><option>DAP</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Origin</div>
+        <input type="text" class="fi" id="nd-origin" placeholder="e.g. Shanghai, CN">
+      </div>
+      <div class="f"><div class="fl">Destination</div>
+        <input type="text" class="fi" id="nd-destination" placeholder="e.g. Nhava Sheva, IN">
+      </div>
+      <div class="f csf"><div class="fl">Notes</div>
+        <textarea class="fta" id="nd-notes" placeholder="e.g. Repeat trade — same terms as DL-2026-012" style="min-height:50px"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-deal')">Cancel</button>
+      <button class="btn bp" onclick="submitNewDeal()">Create Deal →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function openNewDealModal() {
+  if (!window._commodityCache || Object.keys(window._commodityCache).length === 0) await loadCommodityDropdowns();
+
+  const cmSel = document.getElementById('nd-commodity');
+  if (cmSel && window._commodityCache) {
+    const cms = Object.values(window._commodityCache);
+    const groups = {};
+    cms.forEach(function(c){ const g=c.category||'OTHER'; if(!groups[g]) groups[g]=[]; groups[g].push(c); });
+    const catLabels = {'BASE-METAL':'Base Metals','FERROUS':'Ferrous','PRECIOUS':'Precious Metals','ENERGY':'Energy','AGRICULTURAL':'Agricultural','FERTILIZER':'Fertilizers','POLYMER':'Polymers','OTHER':'Other'};
+    let opts = '<option value="">— Select Commodity —</option>';
+    Object.keys(catLabels).forEach(function(cat){
+      if(!groups[cat]) return;
+      opts += '<optgroup label="'+catLabels[cat]+'">';
+      groups[cat].forEach(function(c){ opts += '<option value="'+c.code+'" data-uom="'+(c.uom||'MT')+'">'+c.name+' ('+(c.uom||'MT')+')</option>'; });
+      opts += '</optgroup>';
+    });
+    cmSel.innerHTML = opts;
+    cmSel.onchange = function() {
+      const opt = cmSel.options[cmSel.selectedIndex];
+      const uom = opt?.dataset?.uom || 'MT';
+      const badge = document.getElementById('nd-uom-badge');
+      if (badge) badge.textContent = uom;
+      const lbl = document.getElementById('nd-qty-label');
+      if (lbl) lbl.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
+    };
+  }
+
+  try {
+    const cpRes = await fetch(API_BASE + '/api/master/counterparties');
+    const cpData = await cpRes.json();
+    const cps = cpData.data || [];
+    const supSel = document.getElementById('nd-supplier');
+    const custSel = document.getElementById('nd-customer');
+    const vendors = cps.filter(function(c){ return !c.type || c.type==='VENDOR' || c.type==='BOTH'; });
+    const customers = cps.filter(function(c){ return !c.type || c.type==='CUSTOMER' || c.type==='BOTH'; });
+    if (supSel) supSel.innerHTML = '<option value="">— None (sell-only / open) —</option>' + (vendors.length?vendors:cps).map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+    if (custSel) custSel.innerHTML = '<option value="">— None (buy-only / open) —</option>' + (customers.length?customers:cps).map(function(c){ return '<option value="'+c.id+'">'+c.name+'</option>'; }).join('');
+  } catch(e) { console.warn('Could not load counterparties:', e); }
+
+  openModal('modal-new-deal');
+}
+
+async function submitNewDeal() {
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const commCode = g('nd-commodity');
+  const qty = g('nd-qty');
+  const supplierId = g('nd-supplier');
+  const customerId = g('nd-customer');
+
+  if (!commCode) { toast('Required', 'Please select a commodity', 'warning'); return; }
+  if (!qty) { toast('Required', 'Please enter the quantity', 'warning'); return; }
+  if (!supplierId && !customerId) { toast('Required', 'Select at least one counterparty — supplier (buy leg) or customer (sell leg)', 'warning'); return; }
+
+  const btn = document.querySelector('#modal-new-deal .btn.bp');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/deals', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        commodity_code: commCode,
+        qty_mt: parseFloat(qty),
+        supplier_id: supplierId ? parseInt(supplierId) : null,
+        customer_id: customerId ? parseInt(customerId) : null,
+        incoterms: g('nd-incoterms'),
+        origin: g('nd-origin'),
+        destination: g('nd-destination'),
+        notes: g('nd-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const deal = data.data;
+    const legDesc = supplierId && customerId ? 'both legs set' : supplierId ? 'buy leg only — add sell leg later' : 'sell leg only — add buy leg later';
+    toast('Deal Created', deal.deal_no + ' created directly (' + legDesc + ')', 'success');
+    closeModal('modal-new-deal');
+    ['nd-commodity','nd-qty','nd-supplier','nd-customer','nd-incoterms','nd-origin','nd-destination','nd-notes'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+    await loadDealList();
+    await openDealDetail(deal.deal_no);
+  } catch(e) {
+    toast('Error', e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Create Deal →'; }
+  }
+}
+</script>
 </body>
 </html>
