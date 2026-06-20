@@ -573,6 +573,29 @@ quotationsRouter.post('/:id/accept', async (req, res) => {
     const incoterms = qt.incoterms || qt.enq_incoterms || null;
     const direction = qt.direction || qt.quote_type === 'PQ' ? 'BUY' : 'SELL';
 
+    // ── CREDIT LIMIT CHECK — only relevant for Sales Quotes (customer exposure) ──
+    if (qt.quote_type === 'SQ' && customerId && !req.body.override_credit) {
+      const { getCreditExposure } = require('../db');
+      const exposure = await getCreditExposure(customerId);
+      if (exposure && exposure.limit_set) {
+        const thisDealValue = parseFloat(qt.provisional_value) || (parseFloat(qt.qty_mt||0) * parseFloat(qt.provisional_price||0));
+        const projectedUsed = exposure.credit_used + thisDealValue;
+        if (projectedUsed > exposure.credit_limit) {
+          return res.status(409).json({
+            error: 'credit_limit_exceeded',
+            message: exposure.counterparty_name + ' would exceed their credit limit by accepting this quotation',
+            credit_issues: [{
+              counterparty_id: customerId, counterparty_name: exposure.counterparty_name,
+              credit_limit: exposure.credit_limit, credit_used: exposure.credit_used,
+              this_deal_value: Math.round(thisDealValue*100)/100,
+              projected_used: Math.round(projectedUsed*100)/100,
+              over_by: Math.round((projectedUsed - exposure.credit_limit)*100)/100
+            }]
+          });
+        }
+      }
+    }
+
     const dealRes = await query(`
       INSERT INTO deals (deal_no, deal_date, enquiry_id, commodity_code, deal_type,
         qty_mt, supplier_id, customer_id, incoterms, origin, destination, direction,
@@ -1060,6 +1083,39 @@ feasibilityRouter.post('/basket/confirm', async (req, res) => {
     const sellAvgPrice = sellQty > 0 ? sellValue / sellQty : 0;
     const margin = sellValue - buyValue;
 
+    // ── CREDIT LIMIT CHECK — block if any customer in the SELL side is over their limit ──
+    if (!req.body.override_credit) {
+      const { getCreditExposure } = require('../db');
+      const customerIds = [...new Set(sqSelected.map(r => r.counterparty_id).filter(Boolean))];
+      const creditIssues = [];
+      for (const cid of customerIds) {
+        const custSellValue = sqSelected.filter(r => r.counterparty_id === cid)
+          .reduce((s,r) => s + (parseFloat(r.offered_qty)||0) * (parseFloat(r.offered_price)||0), 0);
+        const exposure = await getCreditExposure(cid);
+        if (exposure && exposure.limit_set) {
+          const projectedUsed = exposure.credit_used + custSellValue;
+          if (projectedUsed > exposure.credit_limit) {
+            creditIssues.push({
+              counterparty_id: cid,
+              counterparty_name: exposure.counterparty_name,
+              credit_limit: exposure.credit_limit,
+              credit_used: exposure.credit_used,
+              this_deal_value: Math.round(custSellValue*100)/100,
+              projected_used: Math.round(projectedUsed*100)/100,
+              over_by: Math.round((projectedUsed - exposure.credit_limit)*100)/100
+            });
+          }
+        }
+      }
+      if (creditIssues.length) {
+        return res.status(409).json({
+          error: 'credit_limit_exceeded',
+          message: 'This deal would exceed the credit limit for ' + creditIssues.length + ' customer(s)',
+          credit_issues: creditIssues
+        });
+      }
+    }
+
     // Use the commodity from the first PQ (all basket items should typically be same commodity)
     const commodityCode = pqSelected[0]?.commodity_code || sqSelected[0]?.commodity_code;
     const incoterms = sqSelected[0]?.enq_incoterms || pqSelected[0]?.enq_incoterms || null;
@@ -1215,3 +1271,16 @@ auditRouter.get('/', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.auditRouter = auditRouter;
+
+// GET /api/credit/:counterpartyId — credit exposure check
+const creditRouter = require('express').Router();
+creditRouter.get('/:counterpartyId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { getCreditExposure } = require('../db');
+    const data = await getCreditExposure(req.params.counterpartyId);
+    if (!data) return res.status(404).json({ error: 'Counterparty not found' });
+    res.json({ success: true, data });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.creditRouter = creditRouter;

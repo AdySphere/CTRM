@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V16.8</div>
+    <div class="sb-tag">CTRM PLATFORM · V16.9</div>
   </div>
   <nav class="sb-nav">
 
@@ -4326,15 +4326,32 @@ async function saveQuotation() {
   } catch (err) { toast('Error', err.message, 'warning'); }
 }
 
-async function acceptQuotation() {
+async function acceptQuotation(overrideCredit) {
   if (!_activeQuotId) return;
   const btn = document.getElementById('btn-accept-quot');
   if (btn) { btn.textContent = 'Processing...'; btn.disabled = true; }
   try {
     const res = await fetch(API_BASE + '/api/quotations/' + _activeQuotId + '/accept', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ override_credit: overrideCredit || false })
     });
     const data = await res.json();
+
+    if (res.status === 409 && data.error === 'credit_limit_exceeded') {
+      const issue = data.credit_issues[0];
+      const msg = issue.counterparty_name + ' — Limit USD ' + issue.credit_limit.toLocaleString()
+        + ' · Already used USD ' + issue.credit_used.toLocaleString()
+        + ' · This deal adds USD ' + issue.this_deal_value.toLocaleString()
+        + ' · Over by USD ' + issue.over_by.toLocaleString();
+      if (btn) { btn.textContent = 'Accept → Confirm Deal'; btn.disabled = false; }
+      if (confirm('\u26A0 CREDIT LIMIT EXCEEDED\n\n' + msg + '\n\nOverride and proceed anyway? (requires manager approval offline)')) {
+        await acceptQuotation(true);
+      } else {
+        toast('Blocked', 'Deal not created — credit limit exceeded', 'warning');
+      }
+      return;
+    }
+
     if (data.success) {
       const dealNo = data.data?.deal?.deal_no;
       toast('Deal Created', 'Quotation accepted · ' + (dealNo || 'New deal') + ' created → go to Deal Confirmation', 'success');
@@ -5513,29 +5530,46 @@ function onEnqCPChange(sel, side) {
       kycEl.innerHTML = '<span class="badge bd-confirmed">APPROVED</span>';
     }
   }
-  // Update credit limit and deal value in approvals tab
+  // Update credit limit and deal value in approvals tab — now LIVE from /api/credit
   const creditEl = document.getElementById('enq-credit-limit');
   const creditStatusEl = document.getElementById('enq-credit-status');
   const approvalEl = document.getElementById('enq-approval-req');
-  if (cp && creditEl) {
-    const limit = cp.credit_limit ? 'USD ' + Number(cp.credit_limit).toLocaleString() : 'Not set';
-    creditEl.textContent = limit;
-  } else if (creditEl && !cpId) {
-    creditEl.textContent = '— select counterparty first';
-  }
-  if (creditStatusEl) {
-    const hasLimit = cp && cp.credit_limit;
-    creditStatusEl.innerHTML = hasLimit
-      ? '<span class="badge bd-confirmed">PASSED</span>'
-      : '<span class="badge bd-draft">PENDING REVIEW</span>';
-  }
-  if (approvalEl) {
-    approvalEl.innerHTML = cp
-      ? '<span class="badge bd-ship">CHECK REQUIRED</span>'
-      : '—';
+  if (!cpId) {
+    if (creditEl) creditEl.textContent = '— select counterparty first';
+    if (creditStatusEl) creditStatusEl.innerHTML = '—';
+    if (approvalEl) approvalEl.innerHTML = '—';
+  } else {
+    fetchLiveCreditStatus(cpId, creditEl, creditStatusEl, approvalEl);
   }
   // Update deal value estimate if qty is available
   updateEnqDealValue();
+}
+
+async function fetchLiveCreditStatus(cpId, creditEl, creditStatusEl, approvalEl) {
+  try {
+    const res = await fetch(API_BASE + '/api/credit/' + cpId);
+    const data = await res.json();
+    if (!data.success) throw new Error('not found');
+    const c = data.data;
+    if (creditEl) {
+      creditEl.innerHTML = c.limit_set
+        ? 'USD ' + c.credit_limit.toLocaleString() + ' limit · USD ' + c.credit_used.toLocaleString() + ' used · '
+          + '<span style="color:' + (c.credit_available>=0?'var(--green)':'var(--accent2)') + '">USD ' + c.credit_available.toLocaleString() + ' available</span>'
+        : 'No credit limit set';
+    }
+    if (creditStatusEl) {
+      creditStatusEl.innerHTML = c.over_limit
+        ? '<span class="badge bd-danger">OVER LIMIT</span>'
+        : c.limit_set ? '<span class="badge bd-confirmed">WITHIN LIMIT</span>' : '<span class="badge bd-draft">NO LIMIT SET</span>';
+    }
+    if (approvalEl) {
+      approvalEl.innerHTML = c.over_limit
+        ? '<span class="badge bd-danger">APPROVAL REQUIRED — over limit</span>'
+        : '<span class="badge bd-ship">CHECK REQUIRED</span>';
+    }
+  } catch(e) {
+    if (creditEl) creditEl.textContent = 'Could not load credit data';
+  }
 }
 
 async function loadRelatedDocs(enqId, enqNo) {
@@ -8546,12 +8580,28 @@ async function removeFromBasket(responseId) {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
-async function confirmFeasibility() {
+async function confirmFeasibility(overrideCredit) {
   try {
     const res = await fetch(API_BASE + '/api/feasibility/basket/confirm', {
-      method: 'POST', headers: {'Content-Type':'application/json'}
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ override_credit: overrideCredit || false })
     });
     const data = await res.json();
+
+    if (res.status === 409 && data.error === 'credit_limit_exceeded') {
+      const issue = data.credit_issues[0];
+      const msg = issue.counterparty_name + ' — Limit USD ' + issue.credit_limit.toLocaleString()
+        + ' · Already used USD ' + issue.credit_used.toLocaleString()
+        + ' · This deal adds USD ' + issue.this_deal_value.toLocaleString()
+        + ' · Over by USD ' + issue.over_by.toLocaleString();
+      if (confirm('\u26A0 CREDIT LIMIT EXCEEDED\n\n' + msg + '\n\nOverride and proceed anyway? (requires manager approval offline)')) {
+        await confirmFeasibility(true);
+      } else {
+        toast('Blocked', 'Deal not created — credit limit exceeded', 'warning');
+      }
+      return;
+    }
+
     if (!data.success) throw new Error(data.error);
     toast('Deal Created', data.data.deal_no + ' — ' + data.enquiries_linked + ' enquiries linked (' + data.legs.buy + ' buy, ' + data.legs.sell + ' sell legs) · Margin USD ' + (data.summary.margin||0).toLocaleString() + ' locked', 'success');
     closeModal('modal-deal-feasibility');

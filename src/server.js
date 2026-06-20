@@ -11,7 +11,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
 
-const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter, buyLegsRouter, dealEnqRouter, adjLinesRouter, penaltiesRouter, rfqRouter, quoteResponseRouter, feasibilityRouter, budgetActualRouter, searchRouter, auditRouter } = require('./routes/deals');
+const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter, buyLegsRouter, dealEnqRouter, adjLinesRouter, penaltiesRouter, rfqRouter, quoteResponseRouter, feasibilityRouter, budgetActualRouter, searchRouter, auditRouter, creditRouter } = require('./routes/deals');
 const { invoiceRouter, masterRouter } = require('./routes/invoices');
 
 app.use('/api/market-prices',   require('./routes/marketPrices'));
@@ -27,6 +27,7 @@ app.use('/api/feasibility',     feasibilityRouter);
 app.use('/api/deals',           budgetActualRouter);
 app.use('/api/search',          searchRouter);
 app.use('/api/audit',           auditRouter);
+app.use('/api/credit',          creditRouter);
 app.use('/api/penalties',       penaltiesRouter);
 app.use('/api/enquiries',       enquiriesRouter);
 app.use('/api/quotations',      quotationsRouter);
