@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V16.4</div>
+    <div class="sb-tag">CTRM PLATFORM · V16.5</div>
   </div>
   <nav class="sb-nav">
 
@@ -949,7 +949,8 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="ph">
         <div class="ph-left"><div class="pt">Deal Management</div><div class="ps">Created from confirmed quotations · Multi-vendor buy legs · Full lifecycle</div></div>
         <div class="ph-right">
-          <button class="btn bg" onclick="toast('Info','Deals are created by accepting a Quotation — go to Quotation Management','info')">How deals are created?</button>
+          <button class="btn bp" onclick="openDealFeasibility()">🧺 Deal Basket <span class="badge bd-ship" id="deal-basket-badge" style="margin-left:6px;font-size:9px">0</span></button>
+          <button class="btn bg" onclick="toast('Info','Deals are created by accepting a Quotation, or by selecting PQ/SQ responses on the Quotation → RFQ tab and confirming the Deal Basket','info')">How deals are created?</button>
         </div>
       </div>
       <div class="sr">
@@ -5890,7 +5891,7 @@ function afterNav(pageId) {
   setTimeout(() => {
     if (pageId === 'enquiry') { loadEnquiryList(); loadCommodityDropdowns(); }
     else if (pageId === 'quotation') { loadCommodityDropdowns(); loadRFQList(); loadQuotationList(); }
-    else if (pageId === 'deals') loadDealList();
+    else if (pageId === 'deals') { loadDealList(); updateBasketBadge(); }
     else if (pageId === 'purchase-contracts') loadContractList('PC');
     else if (pageId === 'sales-contracts') loadContractList('SC');
     else if (pageId === 'logistics') loadLogisticsList();
@@ -6617,8 +6618,9 @@ async function selectResponse(id) {
     const res = await fetch(API_BASE + '/api/quote-responses/' + id + '/select', {method:'PATCH', headers:{'Content-Type':'application/json'}});
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
-    toast('Selected', 'Response selected — proceed to Deal Feasibility', 'success');
+    toast('Selected', 'Added to Deal Basket — combine more PQ/SQ from other enquiries, then confirm when ready', 'success');
     if (window._activeRFQ) await loadRFQResponses(window._activeRFQ.id, window._activeRFQ.direction==='VENDOR', 'MT');
+    await updateBasketBadge();
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
@@ -6627,6 +6629,7 @@ async function declineResponse(id) {
     await fetch(API_BASE + '/api/quote-responses/' + id + '/decline', {method:'PATCH', headers:{'Content-Type':'application/json'}});
     toast('Declined', 'Response declined', 'info');
     if (window._activeRFQ) await loadRFQResponses(window._activeRFQ.id, window._activeRFQ.direction==='VENDOR', 'MT');
+    await updateBasketBadge();
   } catch(e) {}
 }
 
@@ -8101,29 +8104,29 @@ async function unlinkEnquiry(linkId) {
 </script>
 <!-- MODAL: Deal Feasibility -->
 <div class="mo" id="modal-deal-feasibility">
-  <div class="md" style="max-width:920px">
+  <div class="md" style="max-width:980px">
     <div class="mh">
-      <div class="mt">Deal Feasibility — <span id="feas-enq-no">—</span></div>
+      <div class="mt">Deal Basket <span id="feas-enq-count" class="badge bd-act" style="margin-left:8px;font-size:9px">0 enquiries</span></div>
       <button class="mc" onclick="closeModal('modal-deal-feasibility')">✕</button>
     </div>
     <div class="mb">
-      <div class="ban bi mb12"><span>ℹ</span>Compare selected vendor (PQ) and customer (SQ) quotes · Confirm to lock budget and create the deal.</div>
+      <div class="ban bi mb12"><span>ℹ</span>This basket holds every Purchase Quote (PQ) and Sales Quote (SQ) you've selected across all RFQs and enquiries. Mix multiple vendors and multiple customers here — confirming creates ONE deal linking every enquiry involved.</div>
 
       <!-- Selected PQ responses -->
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Selected Purchase Quotes (Buy Side)</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Selected Purchase Quotes (Buy Side — Vendors)</div>
         <table class="lt">
-          <thead><tr><th>Response No.</th><th>Vendor</th><th>Qty</th><th>Price</th><th>Value</th></tr></thead>
-          <tbody id="feas-pq-tbody"><tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">—</td></tr></tbody>
+          <thead><tr><th>Response No.</th><th>Enquiry</th><th>Vendor</th><th>Qty</th><th>Price</th><th>Value</th><th></th></tr></thead>
+          <tbody id="feas-pq-tbody"><tr><td colspan="7" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">—</td></tr></tbody>
         </table>
       </div>
 
       <!-- Selected SQ responses -->
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Selected Sales Quotes (Sell Side)</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Selected Sales Quotes (Sell Side — Customers)</div>
         <table class="lt">
-          <thead><tr><th>Response No.</th><th>Customer</th><th>Qty</th><th>Price</th><th>Value</th></tr></thead>
-          <tbody id="feas-sq-tbody"><tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">—</td></tr></tbody>
+          <thead><tr><th>Response No.</th><th>Enquiry</th><th>Customer</th><th>Qty</th><th>Price</th><th>Value</th><th></th></tr></thead>
+          <tbody id="feas-sq-tbody"><tr><td colspan="7" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">—</td></tr></tbody>
         </table>
       </div>
 
@@ -8150,57 +8153,82 @@ async function unlinkEnquiry(linkId) {
     </div>
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-deal-feasibility')">Cancel</button>
-      <button class="btn bp" id="feas-confirm-btn" onclick="confirmFeasibility()">Confirm Feasibility → Create Deal</button>
+      <button class="btn bp" id="feas-confirm-btn" onclick="confirmFeasibility()">Confirm Basket → Create Deal</button>
     </div>
   </div>
 </div>
 
 <script>
-window._activeFeasEnqId = null;
+window._dealBasketOpen = false;
+
+async function updateBasketBadge() {
+  try {
+    const res = await fetch(API_BASE + '/api/feasibility/basket');
+    const data = await res.json();
+    const count = (data.data?.selected_pq?.length || 0) + (data.data?.selected_sq?.length || 0);
+    const badge = document.getElementById('deal-basket-badge');
+    if (badge) badge.textContent = count;
+  } catch(e) {}
+}
+
+
 
 async function openDealFeasibility() {
-  const rfq = window._activeRFQ;
-  if (!rfq || !rfq.enquiry_id) { toast('No Enquiry', 'This RFQ is not linked to an enquiry — feasibility requires an enquiry reference', 'warning'); return; }
-  window._activeFeasEnqId = rfq.enquiry_id;
-  await loadFeasibility(rfq.enquiry_id);
+  window._dealBasketOpen = true;
+  await loadFeasibility();
   openModal('modal-deal-feasibility');
 }
 
-async function loadFeasibility(enqId) {
+async function loadFeasibility() {
   try {
-    const res = await fetch(API_BASE + '/api/feasibility/' + enqId);
+    const res = await fetch(API_BASE + '/api/feasibility/basket');
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     const d = data.data;
-    const uom = (window._commodityCache && d.enquiry.commodity_code && window._commodityCache[d.enquiry.commodity_code]?.uom) || 'MT';
 
-    document.getElementById('feas-enq-no').textContent = d.enquiry.enquiry_no;
+    const countBadge = document.getElementById('feas-enq-count');
+    if (countBadge) countBadge.textContent = d.enquiry_count + (d.enquiry_count === 1 ? ' enquiry' : ' enquiries');
 
     const pqBody = document.getElementById('feas-pq-tbody');
     if (!d.selected_pq.length) {
-      pqBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">No PQ selected yet</td></tr>';
+      pqBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">No PQ selected yet — go to an RFQ, log a response, and click Select</td></tr>';
     } else {
       pqBody.innerHTML = d.selected_pq.map(function(r){
+        const uom = r.uom || 'MT';
         const val = (parseFloat(r.offered_qty)||0) * (parseFloat(r.offered_price)||0);
-        return '<tr><td class="mono ta fw6" style="color:var(--accent)">'+r.response_no+'</td><td class="f11 fw6">'+(r.counterparty_name||'—')+'</td><td class="mono">'+r.offered_qty+' '+uom+'</td><td class="mono">USD '+parseFloat(r.offered_price).toLocaleString()+'</td><td class="mono fw6">USD '+val.toLocaleString()+'</td></tr>';
+        return '<tr><td class="mono ta fw6" style="color:var(--accent)">'+r.response_no+'</td>'
+          + '<td class="mono f10">'+(r.enquiry_no||'—')+'</td>'
+          + '<td class="f11 fw6">'+(r.counterparty_name||'—')+'</td>'
+          + '<td class="mono">'+r.offered_qty+' '+uom+'</td>'
+          + '<td class="mono">USD '+parseFloat(r.offered_price).toLocaleString()+'</td>'
+          + '<td class="mono fw6">USD '+val.toLocaleString()+'</td>'
+          + '<td><button class="btn bxs bd" onclick="removeFromBasket('+r.id+')">✕</button></td></tr>';
       }).join('');
     }
 
     const sqBody = document.getElementById('feas-sq-tbody');
     if (!d.selected_sq.length) {
-      sqBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">No SQ selected yet</td></tr>';
+      sqBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:10px;color:var(--text3);font-size:11px">No SQ selected yet — go to an RFQ, log a response, and click Select</td></tr>';
     } else {
       sqBody.innerHTML = d.selected_sq.map(function(r){
+        const uom = r.uom || 'MT';
         const val = (parseFloat(r.offered_qty)||0) * (parseFloat(r.offered_price)||0);
-        return '<tr><td class="mono ta fw6" style="color:var(--accent)">'+r.response_no+'</td><td class="f11 fw6">'+(r.counterparty_name||'—')+'</td><td class="mono">'+r.offered_qty+' '+uom+'</td><td class="mono">USD '+parseFloat(r.offered_price).toLocaleString()+'</td><td class="mono fw6">USD '+val.toLocaleString()+'</td></tr>';
+        return '<tr><td class="mono ta fw6" style="color:var(--accent)">'+r.response_no+'</td>'
+          + '<td class="mono f10">'+(r.enquiry_no||'—')+'</td>'
+          + '<td class="f11 fw6">'+(r.counterparty_name||'—')+'</td>'
+          + '<td class="mono">'+r.offered_qty+' '+uom+'</td>'
+          + '<td class="mono">USD '+parseFloat(r.offered_price).toLocaleString()+'</td>'
+          + '<td class="mono fw6">USD '+val.toLocaleString()+'</td>'
+          + '<td><button class="btn bxs bd" onclick="removeFromBasket('+r.id+')">✕</button></td></tr>';
       }).join('');
     }
 
+    const uomGuess = (d.selected_pq[0]?.uom) || (d.selected_sq[0]?.uom) || 'MT';
     const s = d.summary;
-    document.getElementById('feas-buy-summary').textContent = (s.buy_qty||0).toFixed(2) + ' ' + uom + ' @ USD ' + (s.buy_avg_price||0).toFixed(2);
-    document.getElementById('feas-sell-summary').textContent = (s.sell_qty||0).toFixed(2) + ' ' + uom + ' @ USD ' + (s.sell_avg_price||0).toFixed(2);
+    document.getElementById('feas-buy-summary').textContent = (s.buy_qty||0).toFixed(2) + ' ' + uomGuess + ' @ USD ' + (s.buy_avg_price||0).toFixed(2);
+    document.getElementById('feas-sell-summary').textContent = (s.sell_qty||0).toFixed(2) + ' ' + uomGuess + ' @ USD ' + (s.sell_avg_price||0).toFixed(2);
     const balEl = document.getElementById('feas-balance');
-    balEl.textContent = s.qty_balanced ? '✓ Balanced' : 'Mismatch: ' + Math.abs(s.buy_qty - s.sell_qty).toFixed(2) + ' ' + uom;
+    balEl.textContent = s.qty_balanced ? '✓ Balanced' : 'Mismatch: ' + Math.abs(s.buy_qty - s.sell_qty).toFixed(2) + ' ' + uomGuess;
     balEl.style.color = s.qty_balanced ? 'var(--green)' : 'var(--accent2)';
     const marginEl = document.getElementById('feas-margin');
     marginEl.textContent = 'USD ' + (s.margin||0).toLocaleString();
@@ -8210,7 +8238,7 @@ async function loadFeasibility(enqId) {
     const warningText = document.getElementById('feas-warning-text');
     if (!s.buy_qty || !s.sell_qty) {
       warning.style.display = 'flex';
-      warningText.textContent = 'You need at least one selected PQ and one selected SQ to create a deal.';
+      warningText.textContent = 'Basket needs at least one selected PQ and one selected SQ to create a deal.';
       document.getElementById('feas-confirm-btn').disabled = true;
     } else if (!s.qty_balanced) {
       warning.style.display = 'flex';
@@ -8223,23 +8251,33 @@ async function loadFeasibility(enqId) {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
-async function confirmFeasibility() {
-  if (!window._activeFeasEnqId) return;
+async function removeFromBasket(responseId) {
   try {
-    const res = await fetch(API_BASE + '/api/feasibility/' + window._activeFeasEnqId + '/confirm', {
+    await fetch(API_BASE + '/api/feasibility/basket/remove/' + responseId, {method:'POST'});
+    toast('Removed', 'Response removed from basket', 'info');
+    await loadFeasibility();
+    if (window._activeRFQ) await loadRFQResponses(window._activeRFQ.id, window._activeRFQ.direction==='VENDOR', 'MT');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function confirmFeasibility() {
+  try {
+    const res = await fetch(API_BASE + '/api/feasibility/basket/confirm', {
       method: 'POST', headers: {'Content-Type':'application/json'}
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
-    toast('Deal Created', data.data.deal_no + ' — Budget margin USD ' + (data.summary.margin||0).toLocaleString() + ' locked', 'success');
+    toast('Deal Created', data.data.deal_no + ' — ' + data.enquiries_linked + ' enquiries linked (' + data.legs.buy + ' buy, ' + data.legs.sell + ' sell legs) · Margin USD ' + (data.summary.margin||0).toLocaleString() + ' locked', 'success');
     closeModal('modal-deal-feasibility');
     closeModal('modal-link-enquiry');
-    document.getElementById('rfq-detail-card').style.display = 'none';
+    const rfqCard = document.getElementById('rfq-detail-card');
+    if (rfqCard) rfqCard.style.display = 'none';
     nav('deals', document.querySelector('[data-page=deals]'));
     afterNav('deals');
     setTimeout(function(){ openDealDetail(data.data.deal_no); }, 600);
   } catch(e) { toast('Error', e.message, 'error'); }
 }
+
 </script>
 <!-- MODAL: New Allocation (Container → Sales Contract) -->
 <div class="mo" id="modal-new-alloc">

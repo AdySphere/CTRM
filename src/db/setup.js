@@ -217,6 +217,7 @@ async function setupDatabase() {
       validity_date     DATE,
       notes             TEXT,
       status            VARCHAR(20) DEFAULT 'RECEIVED',
+      deal_id           INT REFERENCES deals(id),
       received_at       TIMESTAMPTZ DEFAULT NOW(),
       created_at        TIMESTAMPTZ DEFAULT NOW()
     );
@@ -401,6 +402,7 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_qty DECIMAL(12,3)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_price DECIMAL(14,4)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_margin DECIMAL(14,2)`);
+    await query(`ALTER TABLE quote_responses ADD COLUMN IF NOT EXISTS deal_id INT REFERENCES deals(id)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_locked_at TIMESTAMPTZ`);
     await query(`CREATE TABLE IF NOT EXISTS deal_enquiries (id SERIAL PRIMARY KEY, deal_id INT NOT NULL REFERENCES deals(id) ON DELETE CASCADE, enquiry_id INT NOT NULL REFERENCES enquiries(id), leg_role VARCHAR(20) DEFAULT 'BUY', added_at TIMESTAMPTZ DEFAULT NOW(), UNIQUE(deal_id, enquiry_id))`);
     // Create adj lines tables if missing

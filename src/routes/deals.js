@@ -954,30 +954,30 @@ quoteResponseRouter.patch('/:id/decline', async (req, res) => {
 
 module.exports.quoteResponseRouter = quoteResponseRouter;
 
-// ── DEAL FEASIBILITY → CREATE DEAL FROM SELECTED RESPONSES ──────
+// ── DEAL BASKET → CREATE ONE DEAL FROM MULTIPLE ENQUIRIES/RESPONSES ──
 const feasibilityRouter = require('express').Router();
 
-// GET /api/feasibility/:enquiryId — aggregate all selected responses for an enquiry
-feasibilityRouter.get('/:enquiryId', async (req, res) => {
+// GET /api/feasibility/basket — ALL currently-selected, not-yet-converted responses
+// across ANY enquiry. This is the global basket the trader builds before booking one deal.
+feasibilityRouter.get('/basket', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const enqRes = await query(`SELECT * FROM enquiries WHERE id=$1`, [req.params.enquiryId]);
-    if (!enqRes.rows.length) return res.status(404).json({ error: 'Enquiry not found' });
-    const enquiry = enqRes.rows[0];
-
     const responsesRes = await query(`
-      SELECT qr.*, cp.name as counterparty_name, r.rfq_no, r.direction as rfq_direction
+      SELECT qr.*, cp.name as counterparty_name,
+        r.rfq_no, r.direction as rfq_direction,
+        e.enquiry_no, e.direction as enquiry_direction, e.commodity_code as enq_commodity_code,
+        cm.name as commodity_name, cm.uom
       FROM quote_responses qr
       LEFT JOIN counterparties cp ON cp.id = qr.counterparty_id
       LEFT JOIN rfqs r ON r.id = qr.rfq_id
-      WHERE qr.enquiry_id = $1
+      LEFT JOIN enquiries e ON e.id = qr.enquiry_id
+      LEFT JOIN commodities cm ON cm.code = qr.commodity_code
+      WHERE qr.status = 'SELECTED' AND qr.deal_id IS NULL
       ORDER BY qr.quote_type, qr.offered_price ASC
-    `, [req.params.enquiryId]);
-
+    `);
     const responses = responsesRes.rows;
-    const selected = responses.filter(r => r.status === 'SELECTED');
-    const pqSelected = selected.filter(r => r.quote_type === 'PQ');
-    const sqSelected = selected.filter(r => r.quote_type === 'SQ');
+    const pqSelected = responses.filter(r => r.quote_type === 'PQ');
+    const sqSelected = responses.filter(r => r.quote_type === 'SQ');
 
     const buyQty = pqSelected.reduce((s,r) => s + (parseFloat(r.offered_qty)||0), 0);
     const buyValue = pqSelected.reduce((s,r) => s + (parseFloat(r.offered_qty)||0) * (parseFloat(r.offered_price)||0), 0);
@@ -989,13 +989,16 @@ feasibilityRouter.get('/:enquiryId', async (req, res) => {
 
     const margin = sellValue - buyValue;
 
+    // Distinct enquiries involved — these will all get linked to the deal on confirm
+    const enquiryIds = [...new Set(responses.map(r => r.enquiry_id).filter(Boolean))];
+
     res.json({
       success: true,
       data: {
-        enquiry,
         all_responses: responses,
         selected_pq: pqSelected,
         selected_sq: sqSelected,
+        enquiry_count: enquiryIds.length,
         summary: {
           buy_qty: buyQty, buy_value: buyValue, buy_avg_price: buyAvgPrice,
           sell_qty: sellQty, sell_value: sellValue, sell_avg_price: sellAvgPrice,
@@ -1007,20 +1010,34 @@ feasibilityRouter.get('/:enquiryId', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// POST /api/feasibility/:enquiryId/confirm — create deal from selected responses
-feasibilityRouter.post('/:enquiryId/confirm', async (req, res) => {
+// POST /api/feasibility/basket/remove/:responseId — take one response out of the basket
+feasibilityRouter.post('/basket/remove/:responseId', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const enqRes = await query(`SELECT * FROM enquiries WHERE id=$1`, [req.params.enquiryId]);
-    if (!enqRes.rows.length) return res.status(404).json({ error: 'Enquiry not found' });
-    const enquiry = enqRes.rows[0];
+    await query(`UPDATE quote_responses SET status='RECEIVED' WHERE id=$1 AND deal_id IS NULL`, [req.params.responseId]);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
 
-    const responsesRes = await query(`SELECT * FROM quote_responses WHERE enquiry_id=$1 AND status='SELECTED'`, [req.params.enquiryId]);
+// POST /api/feasibility/basket/confirm — create ONE deal from everything in the basket,
+// linking every distinct enquiry involved (covers many-customers + many-vendors → one deal)
+feasibilityRouter.post('/basket/confirm', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const responsesRes = await query(`
+      SELECT qr.*, e.direction as enquiry_direction, e.incoterms as enq_incoterms
+      FROM quote_responses qr
+      LEFT JOIN enquiries e ON e.id = qr.enquiry_id
+      WHERE qr.status = 'SELECTED' AND qr.deal_id IS NULL
+    `);
     const selected = responsesRes.rows;
-    if (!selected.length) return res.status(400).json({ error: 'No selected responses to convert' });
+    if (!selected.length) return res.status(400).json({ error: 'Basket is empty — select at least one PQ and one SQ response first' });
 
     const pqSelected = selected.filter(r => r.quote_type === 'PQ');
     const sqSelected = selected.filter(r => r.quote_type === 'SQ');
+    if (!pqSelected.length || !sqSelected.length) {
+      return res.status(400).json({ error: 'Basket needs at least one Purchase Quote (PQ) and one Sales Quote (SQ) to form a deal' });
+    }
 
     const buyQty = pqSelected.reduce((s,r) => s + (parseFloat(r.offered_qty)||0), 0);
     const buyValue = pqSelected.reduce((s,r) => s + (parseFloat(r.offered_qty)||0) * (parseFloat(r.offered_price)||0), 0);
@@ -1030,38 +1047,49 @@ feasibilityRouter.post('/:enquiryId/confirm', async (req, res) => {
     const sellAvgPrice = sellQty > 0 ? sellValue / sellQty : 0;
     const margin = sellValue - buyValue;
 
-    // Generate deal number
+    // Use the commodity from the first PQ (all basket items should typically be same commodity)
+    const commodityCode = pqSelected[0]?.commodity_code || sqSelected[0]?.commodity_code;
+    const incoterms = sqSelected[0]?.enq_incoterms || pqSelected[0]?.enq_incoterms || null;
+
     const yr = new Date().getFullYear();
     const cnt = await query(`SELECT COUNT(*) FROM deals WHERE deal_no LIKE $1`, [`DL-${yr}-%`]);
     const dealNo = 'DL-' + yr + '-' + String(parseInt(cnt.rows[0].count)+1).padStart(3,'0');
 
     const dealRes = await query(`
-      INSERT INTO deals (deal_no, deal_date, enquiry_id, commodity_code, qty_mt,
-        incoterms, direction, budget_buy_qty, budget_buy_price, budget_sell_qty,
+      INSERT INTO deals (deal_no, deal_date, commodity_code, qty_mt,
+        incoterms, budget_buy_qty, budget_buy_price, budget_sell_qty,
         budget_sell_price, budget_margin, budget_locked_at, confirmed, confirmed_at, status)
-      VALUES ($1,NOW(),$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),TRUE,NOW(),'CONFIRMED')
+      VALUES ($1,NOW(),$2,$3,$4,$5,$6,$7,$8,$9,NOW(),TRUE,NOW(),'CONFIRMED')
       RETURNING *
-    `, [dealNo, enquiry.id, enquiry.commodity_code, sellQty||buyQty,
-        enquiry.incoterms, enquiry.direction, buyQty, buyAvgPrice, sellQty,
-        sellAvgPrice, margin]);
+    `, [dealNo, commodityCode, sellQty||buyQty, incoterms,
+        buyQty, buyAvgPrice, sellQty, sellAvgPrice, margin]);
 
     const deal = dealRes.rows[0];
 
-    // Link the original enquiry
-    await query(`
-      INSERT INTO deal_enquiries (deal_id, enquiry_id, leg_role)
-      VALUES ($1,$2,$3) ON CONFLICT DO NOTHING
-    `, [deal.id, enquiry.id, enquiry.direction === 'SELL' ? 'SELL' : 'BUY']);
-
-    // Mark enquiry converted
-    await query(`UPDATE enquiries SET status='CONVERTED' WHERE id=$1`, [enquiry.id]);
-
-    // Mark all selected responses as converted (keep status SELECTED, add deal ref via notes)
-    for (const r of selected) {
-      await query(`UPDATE quote_responses SET notes = COALESCE(notes,'') || ' [Deal: ${deal.deal_no}]' WHERE id=$1`, [r.id]);
+    // Link EVERY distinct enquiry involved — covers 2 customers + 3 vendors → 1 deal
+    const enquiryIds = [...new Set(selected.map(r => r.enquiry_id).filter(Boolean))];
+    for (const eid of enquiryIds) {
+      const enqResponses = selected.filter(r => r.enquiry_id === eid);
+      const legRole = enqResponses[0]?.enquiry_direction === 'SELL' ? 'SELL' : 'BUY';
+      await query(`
+        INSERT INTO deal_enquiries (deal_id, enquiry_id, leg_role)
+        VALUES ($1,$2,$3) ON CONFLICT DO NOTHING
+      `, [deal.id, eid, legRole]);
+      await query(`UPDATE enquiries SET status='CONVERTED' WHERE id=$1`, [eid]);
     }
 
-    res.json({ success: true, data: deal, summary: { buyQty, buyAvgPrice, sellQty, sellAvgPrice, margin } });
+    // Mark every response in the basket as CONVERTED and tag with this deal
+    for (const r of selected) {
+      await query(`UPDATE quote_responses SET status='CONVERTED', deal_id=$1 WHERE id=$2`, [deal.id, r.id]);
+    }
+
+    res.json({
+      success: true,
+      data: deal,
+      summary: { buyQty, buyAvgPrice, sellQty, sellAvgPrice, margin },
+      enquiries_linked: enquiryIds.length,
+      legs: { buy: pqSelected.length, sell: sqSelected.length }
+    });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
