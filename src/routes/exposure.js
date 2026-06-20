@@ -255,6 +255,97 @@ router.get('/qp/:deal_no', async (req, res) => {
   }
 });
 
+// GET /api/exposure/portfolio — net position rollup by commodity across the whole book
+router.get('/portfolio', async (req, res) => {
+  try {
+    const { as_of_date } = req.query;
+    const today = as_of_date || new Date().toISOString().split('T')[0];
+
+    const contractsRes = await query(`
+      SELECT c.id, c.contract_no, c.contract_type, c.commodity_code, c.qty_mt,
+        d.deal_no, cm.name as commodity_name, cm.uom,
+        pl.index_pct, pl.benchmark_code, pl.qp_start_date, pl.qp_end_date,
+        CASE WHEN c.contract_type = 'PC' THEN 'BUY' ELSE 'SELL' END as direction
+      FROM contracts c
+      JOIN commodities cm ON cm.code = c.commodity_code
+      LEFT JOIN contract_pricing_lines pl ON pl.contract_id = c.id
+      LEFT JOIN deals d ON d.id = c.deal_id
+      WHERE c.status NOT IN ('CANCELLED', 'CLOSED')
+    `);
+
+    const byCommodity = {};
+
+    for (const c of contractsRes.rows) {
+      const code = c.commodity_code;
+      if (!byCommodity[code]) {
+        byCommodity[code] = {
+          commodity_code: code, commodity_name: c.commodity_name, uom: c.uom || 'MT',
+          buy_qty: 0, sell_qty: 0, buy_priced_qty: 0, sell_priced_qty: 0,
+          net_mtm: 0, contract_count: 0
+        };
+      }
+      const bucket = byCommodity[code];
+      bucket.contract_count++;
+
+      const indexPct = c.index_pct ? parseFloat(c.index_pct) / 100 : 1;
+      const payableQty = parseFloat(c.qty_mt) * indexPct;
+
+      // Get fixation/priced qty for this deal
+      let pricedQty = 0;
+      if (c.deal_no) {
+        const fixRes = await query(
+          `SELECT COALESCE(SUM(fixed_qty_mt),0) as priced FROM fixation_lots WHERE deal_id=$1`,
+          [c.deal_no]
+        );
+        pricedQty = parseFloat(fixRes.rows[0]?.priced || 0);
+      }
+
+      if (c.direction === 'BUY') {
+        bucket.buy_qty += payableQty;
+        bucket.buy_priced_qty += Math.min(pricedQty, payableQty);
+      } else {
+        bucket.sell_qty += payableQty;
+        bucket.sell_priced_qty += Math.min(pricedQty, payableQty);
+      }
+    }
+
+    // Compute net position and MTM per commodity
+    const portfolio = Object.values(byCommodity).map(b => {
+      const netQty = b.buy_qty - b.sell_qty; // positive = net long (more buy than sell), negative = net short
+      const netPricedQty = b.buy_priced_qty - b.sell_priced_qty;
+      const netUnpriced = (b.buy_qty - b.buy_priced_qty) - (b.sell_qty - b.sell_priced_qty);
+      return {
+        ...b,
+        buy_qty: Math.round(b.buy_qty * 1000) / 1000,
+        sell_qty: Math.round(b.sell_qty * 1000) / 1000,
+        net_qty: Math.round(netQty * 1000) / 1000,
+        net_position: netQty > 0.01 ? 'LONG' : netQty < -0.01 ? 'SHORT' : 'FLAT',
+        net_priced_qty: Math.round(netPricedQty * 1000) / 1000,
+        net_unpriced_qty: Math.round(netUnpriced * 1000) / 1000,
+      };
+    });
+
+    portfolio.sort((a, b) => Math.abs(b.net_qty) - Math.abs(a.net_qty));
+
+    const grandTotalLong = portfolio.filter(p => p.net_position === 'LONG').reduce((s,p) => s + p.net_qty, 0);
+    const grandTotalShort = portfolio.filter(p => p.net_position === 'SHORT').reduce((s,p) => s + Math.abs(p.net_qty), 0);
+
+    res.json({
+      success: true,
+      data: portfolio,
+      summary: {
+        commodities_traded: portfolio.length,
+        total_long: Math.round(grandTotalLong * 1000) / 1000,
+        total_short: Math.round(grandTotalShort * 1000) / 1000,
+        as_of_date: today
+      }
+    });
+  } catch (err) {
+    console.error('Portfolio exposure error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 module.exports = router;
 module.exports.getSettlement = getSettlement;
 module.exports.getQPAverage = getQPAverage;

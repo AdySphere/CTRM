@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V16.7</div>
+    <div class="sb-tag">CTRM PLATFORM · V16.8</div>
   </div>
   <nav class="sb-nav">
 
@@ -2948,6 +2948,30 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="sc"><div class="scl">Net P&L</div><div class="scv" id="stat-net-pl">—</div></div>
       </div>
 
+      <!-- PORTFOLIO ROLLUP — net position by commodity across whole book -->
+      <div class="card mb14">
+        <div class="ch">
+          <div class="ct">Portfolio Position — Net Exposure by Commodity</div>
+          <div class="cs">Aggregated across every open contract · Net Long = more bought than sold · Net Short = more sold than bought</div>
+        </div>
+        <div style="overflow-x:auto">
+        <table class="dt" id="portfolio-rollup-table">
+          <thead><tr>
+            <th>Commodity</th><th>Buy Qty</th><th>Sell Qty</th><th>Net Position</th>
+            <th>Net Qty</th><th>Priced (Net)</th><th>Unpriced (Net)</th><th>Contracts</th>
+          </tr></thead>
+          <tbody id="portfolio-rollup-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">Loading…</td></tr>
+          </tbody>
+        </table>
+        </div>
+        <div class="cb" style="display:flex;gap:20px;padding:10px 16px;border-top:1px solid var(--border);font-size:11px">
+          <span><span style="color:var(--text3)">Commodities traded:</span> <span class="mono fw6" id="portfolio-commodity-count">—</span></span>
+          <span><span style="color:var(--text3)">Total Long:</span> <span class="mono fw6 tg" id="portfolio-total-long">—</span></span>
+          <span><span style="color:var(--text3)">Total Short:</span> <span class="mono fw6 td" id="portfolio-total-short">—</span></span>
+        </div>
+      </div>
+
       <!-- MAIN EXPOSURE TABLE — rendered by renderExposureTable() -->
       <div class="card">
         <div class="ch"><div class="ct">Exposure Screen — All Commodities</div><div class="cs">Computed live · Columns D–Q per Prashant spec · Physical P&L = K (Phase 1) · Click Run MTM to refresh</div></div>
@@ -3451,6 +3475,46 @@ function rowStyle(state) {
 }
 
 // ── EXPOSURE TABLE — reads from /api/exposure ─────────────────
+async function renderPortfolioRollup() {
+  const tbody = document.getElementById('portfolio-rollup-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">Loading…</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/exposure/portfolio');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const rows = data.data || [];
+    const s = data.summary || {};
+
+    const set = function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; };
+    set('portfolio-commodity-count', s.commodities_traded || 0);
+    set('portfolio-total-long', (s.total_long||0).toLocaleString());
+    set('portfolio-total-short', (s.total_short||0).toLocaleString());
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--text3);font-size:11px">No open contracts yet</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = rows.map(function(r) {
+      const posClass = r.net_position === 'LONG' ? 'bd-confirmed' : r.net_position === 'SHORT' ? 'bd-danger' : 'bd-draft';
+      const netColor = r.net_position === 'LONG' ? 'var(--green)' : r.net_position === 'SHORT' ? 'var(--danger)' : 'var(--text3)';
+      return '<tr>'
+        + '<td class="f11 fw6">' + (r.commodity_name || r.commodity_code) + '</td>'
+        + '<td class="mono">' + r.buy_qty.toLocaleString() + ' ' + r.uom + '</td>'
+        + '<td class="mono">' + r.sell_qty.toLocaleString() + ' ' + r.uom + '</td>'
+        + '<td><span class="badge ' + posClass + '">' + r.net_position + '</span></td>'
+        + '<td class="mono fw7" style="color:' + netColor + '">' + (r.net_qty>=0?'+':'') + r.net_qty.toLocaleString() + ' ' + r.uom + '</td>'
+        + '<td class="mono f10">' + r.net_priced_qty.toLocaleString() + ' ' + r.uom + '</td>'
+        + '<td class="mono f10 tdim">' + r.net_unpriced_qty.toLocaleString() + ' ' + r.uom + '</td>'
+        + '<td class="mono f10">' + r.contract_count + '</td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--accent2);font-size:11px">Error: ' + e.message + '</td></tr>';
+  }
+}
+
 async function renderExposureTable() {
   const tbody = document.getElementById('exposure-tbody');
   if (!tbody) return;
@@ -3851,6 +3915,7 @@ async function runMTM() {
   toast('Running MTM...', 'Fetching latest prices and recalculating all positions', 'info');
   await Promise.all([
     renderExposureTable(),
+    renderPortfolioRollup(),
     renderHedgeCard(),
     renderProvInvoice(),
     renderFinalInvoice(),
@@ -5930,7 +5995,7 @@ function afterNav(pageId) {
     else if (pageId === 'sales-contracts') loadContractList('SC');
     else if (pageId === 'logistics') loadLogisticsList();
     else if (pageId === 'qpwindow') { loadQPDealOptions(); renderQPWindow(); }
-    else if (pageId === 'exposure') renderExposureTable();
+    else if (pageId === 'exposure') { renderExposureTable(); renderPortfolioRollup(); }
     else if (pageId === 'rfq') { loadRFQList(); loadCommodityDropdowns(); }
     else if (pageId === 'allocation') loadAllocationPage();
     else if (pageId === 'purchase-orders') loadOrdersList('PO');
