@@ -690,19 +690,28 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
     </div>
 
-    <!-- PAGE: RFQ -->
-    <div class="page" id="page-rfq">
+    <!-- PAGE: QUOTATION LIST -->
+    <div class="page" id="page-quotation">
       <div class="ph">
-        <div class="ph-l">
-          <div class="pt">Request for Quotation (RFQ)</div>
-          <div class="ps">Sent to vendors (buy side) and customers (sell side) · Tracks responses · Links to enquiry</div>
-        </div>
-        <div class="ph-r">
-          <button class="btn bp" onclick="openNewRFQ()">+ New RFQ</button>
+        <div class="ph-left"><div class="pt">Quotation Management</div><div class="ps">RFQ sent to vendors/customers · Responses logged · Best quote selected → Deal</div></div>
+        <div class="ph-right" id="quot-subtab-actions">
+          <button class="btn bp" onclick="openNewQuotation()" id="quot-new-quotation-btn">＋ New Quotation</button>
         </div>
       </div>
 
-      <!-- Stat cards -->
+      <!-- SUB-NAV: RFQ vs Quote Responses -->
+      <div class="fts" style="margin-bottom:14px;border-bottom:2px solid var(--border)">
+        <div class="ft quot-subtab" data-subtab="quot-sub-rfq" onclick="switchQuotSubtab(this)" style="font-size:13px;padding:10px 18px">
+          RFQ <span class="nb" id="rfq-subtab-badge" style="margin-left:6px">0</span>
+        </div>
+        <div class="ft quot-subtab active" data-subtab="quot-sub-responses" onclick="switchQuotSubtab(this)" style="font-size:13px;padding:10px 18px">
+          Quote Responses (PQ/SQ) <span class="nb" id="quot-subtab-badge" style="margin-left:6px">0</span>
+        </div>
+      </div>
+
+      <!-- ═══════ SUB-TAB: RFQ ═══════ -->
+      <div id="quot-sub-rfq" class="quot-subtab-content hidden">
+
       <div class="sr">
         <div class="sc"><div class="scl">Total RFQs</div><div class="scv" id="rfq-stat-total">—</div></div>
         <div class="sc"><div class="scl">Draft</div><div class="scv tdim" id="rfq-stat-draft">—</div></div>
@@ -711,7 +720,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="sc"><div class="scl">Responses Logged</div><div class="scv ta3" id="rfq-stat-responses">—</div></div>
       </div>
 
-      <!-- Filter tabs -->
       <div class="fts" style="margin-bottom:12px">
         <div class="ft rfq-filter active" data-filter="ALL" onclick="filterRFQ(this)">All</div>
         <div class="ft rfq-filter" data-filter="VENDOR" onclick="filterRFQ(this)">Vendor RFQs</div>
@@ -720,7 +728,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ft rfq-filter" data-filter="RESPONDED" onclick="filterRFQ(this)">Responded</div>
       </div>
 
-      <!-- RFQ list -->
       <div class="card">
         <div class="ch">
           <div class="ct">RFQ List</div>
@@ -730,17 +737,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <table class="lt">
             <thead>
               <tr>
-                <th>RFQ No.</th>
-                <th>Direction</th>
-                <th>Enquiry Ref</th>
-                <th>Counterparty</th>
-                <th>Commodity</th>
-                <th>Qty</th>
-                <th>Required By</th>
-                <th>Validity</th>
-                <th>Responses</th>
-                <th>Status</th>
-                <th></th>
+                <th>RFQ No.</th><th>Direction</th><th>Enquiry Ref</th><th>Counterparty</th>
+                <th>Commodity</th><th>Qty</th><th>Required By</th><th>Validity</th>
+                <th>Responses</th><th>Status</th><th></th>
               </tr>
             </thead>
             <tbody id="rfq-list-tbody">
@@ -750,7 +749,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
       </div>
 
-      <!-- RFQ Detail card -->
       <div class="card mt14" id="rfq-detail-card" style="display:none">
         <div class="ch">
           <div class="ct" id="rfqd-no">RFQ Detail</div>
@@ -762,7 +760,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('rfq-detail-card').style.display='none'">✕</button>
         </div>
 
-        <!-- Lifecycle bar -->
         <div class="lcb">
           <div class="lcs" id="rfqd-lcs-draft">DRAFT</div>
           <div class="lcs" id="rfqd-lcs-sent">SENT</div>
@@ -770,14 +767,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="lcs" id="rfqd-lcs-selected">SELECTED</div>
         </div>
 
-        <!-- Tabs -->
         <div class="fts">
           <div class="ft rfqt active" data-tab="rfqd-general">RFQ Details</div>
           <div class="ft rfqt" data-tab="rfqd-responses">Responses Received</div>
           <div class="ft rfqt" data-tab="rfqd-comparison">Comparison</div>
         </div>
 
-        <!-- General tab -->
         <div id="rfqd-general" class="ftc active">
           <div class="fg">
             <div class="f"><div class="fl">RFQ No.</div><div class="fc mono fw6" id="rfqd-no-field">—</div></div>
@@ -797,7 +792,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </div>
         </div>
 
-        <!-- Responses tab -->
         <div id="rfqd-responses" class="ftc hidden">
           <div class="ch" style="margin-bottom:10px">
             <div class="ct" style="font-size:12px">Quote Responses</div>
@@ -807,17 +801,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <table class="lt">
             <thead>
               <tr>
-                <th>Response No.</th>
-                <th>Type</th>
-                <th>Counterparty</th>
-                <th>Offered Qty</th>
-                <th>Offered Price</th>
-                <th>Delivery</th>
-                <th>Payment Terms</th>
-                <th>Incoterms</th>
-                <th>Validity</th>
-                <th>Status</th>
-                <th></th>
+                <th>Response No.</th><th>Type</th><th>Counterparty</th><th>Offered Qty</th>
+                <th>Offered Price</th><th>Delivery</th><th>Payment Terms</th><th>Incoterms</th>
+                <th>Validity</th><th>Status</th><th></th>
               </tr>
             </thead>
             <tbody id="rfqd-responses-tbody">
@@ -826,7 +812,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </table>
         </div>
 
-        <!-- Comparison tab -->
         <div id="rfqd-comparison" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Select responses to compare side by side · See margin and delivery feasibility</div>
           <div id="rfqd-comparison-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
@@ -840,14 +825,11 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- PAGE: QUOTATION LIST -->
-    <div class="page" id="page-quotation">
-      <div class="ph">
-        <div class="ph-left"><div class="pt">Quotation Management</div><div class="ps">Pricing template resolves here · Adj. lines confirmed · Accepted quotation creates the Deal</div></div>
-        <div class="ph-right"><button class="btn bp" onclick="openNewQuotation()">＋ New Quotation</button></div>
       </div>
+      <!-- ═══════ END SUB-TAB: RFQ ═══════ -->
+
+      <!-- ═══════ SUB-TAB: QUOTE RESPONSES (existing quotation list) ═══════ -->
+      <div id="quot-sub-responses" class="quot-subtab-content">
       <div class="sr">
         <div class="sc"><div class="scl">Total Quotations</div><div class="scv" id="qt-stat-total">—</div></div>
         <div class="sc"><div class="scl">Pending</div><div class="scv ta3" id="qt-stat-open">—</div></div>
@@ -950,6 +932,8 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="btn bp" id="btn-accept-quot" onclick="acceptQuotation()">Accept → Confirm Deal</button>
         </div>
       </div>
+      </div>
+      <!-- ═══════ END SUB-TAB: QUOTE RESPONSES ═══════ -->
     </div>
 
     <!-- PAGE: DEALS -->
@@ -1096,23 +1080,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- PAGE: RFQ -->
-    <div class="page" id="page-rfq">
-      <div class="ph">
-        <div class="ph-left"><div class="pt">RFQ Management</div><div class="ps">PR → RFQ → Vendor Responses (heterogeneous) → Comparison → Buy Leg · Penalties locked before PO</div></div>
-        <div class="ph-right"><button class="btn bp" onclick="openModal('modal-new-rfq')">＋ New RFQ</button></div>
-      </div>
-      <div class="card">
-        <div class="ch"><div class="ct">All RFQs</div></div>
-        <div class="cbf"><table class="dt">
-          <thead><tr><th>RFQ No.</th><th>Commodity</th><th>Target Qty</th><th>Deal No.</th><th>Vendors</th><th>Status</th><th>Deadline</th><th></th></tr></thead>
-          <tbody id="rfq-list"><tr><td colspan="10" class="te" style="padding:20px;text-align:center;color:var(--text3);font-family:var(--font-mono);font-size:10px">No RFQs raised yet — create from Quotation page</td></tr></tbody>
-        </table></div>
-      </div>
-      <!-- RFQ DETAIL -->
-      <div id="rfq-detail-area" class="mt16"></div>
     </div>
 
     <!-- PAGE: SHIPMENT & ASSAY -->
@@ -1549,31 +1516,19 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div id="sc-price" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Same structure as Purchase Contract pricing. LONGER = buyer has right to fix price on any day in the QP window. Each line has its own source item, benchmark, index %, payable %, pricing rule and QP dates.</div>
           <div style="overflow-x:auto">
-          <table class="lt" style="min-width:1400px">
+          <table class="lt" style="min-width:1400px" id="sc-price-table">
             <thead><tr>
               <th>Line</th><th>Source Item</th><th>Pricing Item / Benchmark</th><th>Exchange</th><th>Reporting Agency</th><th>Instrument Code</th>
               <th>Index %</th><th>Payable %</th><th>Premium / Discount</th>
               <th>Pricing Rule</th><th>Calculation Method</th><th>Default Price</th>
-              <th>QP Start Date</th><th>QP End Date</th><th>Pricing Option</th><th>Derived MT Exposure</th>
+              <th>QP Start</th><th>QP End</th><th>QP Type</th><th>Qty</th>
             </tr></thead>
-            <tbody>
-              <tr>
-                <td class="mono f10 fw6">1</td>
-                <td class="f11 fw6">Copper MillBerry<br><span class="mono f10 tdim">CU-MILLBERRY</span></td>
-                <td class="f11 fw6">Copper Cathode Grade A<br><span class="mono f10 tdim">CU-CATHODE-A</span></td>
-                <td class="mono f10">LME</td><td class="mono f10">LME</td><td class="mono f10">LME-CU-PROMPT</td>
-                <td class="mono fw6 ta">95%</td><td class="mono fw6 ta2">95%</td>
-                <td class="mono f10">—</td>
-                <td><span class="badge bd-act" style="font-size:8px">EVENT BASED</span></td>
-                <td class="f10">Highest of 4</td><td class="mono f10">Cash Ask</td>
-                <td class="mono f10 ta2">2026-01-01</td><td class="mono f10 ta2">2026-01-31</td>
-                <td class="f10 ta2">LONGER (buyer fixes)</td>
-                <td class="mono fw6 tg">53.44 MT</td>
-              </tr>
+            <tbody id="sc-price-tbody">
+              <tr><td colspan="16" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines yet — click + Add Pricing Line</td></tr>
             </tbody>
           </table>
           </div>
-          <div class="lar"><button class="btn bg bsm" onclick="addPCPriceLineV10()">+ Add Pricing Line</button></div>
+          <div class="lar"><button class="btn bg bsm" onclick="addSCPriceLine()">+ Add Pricing Line</button></div>
 
           <div class="two-col mt12">
             <div>
@@ -3995,6 +3950,8 @@ async function loadQuotationList() {
     setChip('qt-stat-declined', data.filter(q => q.status === 'DECLINED' || q.status === 'EXPIRED').length);
     const nav = document.getElementById('quot-nav-badge');
     if (nav) nav.textContent = data.length;
+    const subtabBadge2 = document.getElementById('quot-subtab-badge');
+    if (subtabBadge2) subtabBadge2.textContent = data.length;
 
     if (!data.length) {
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:11px">No quotations yet · Click + New Quotation to create one</td></tr>';
@@ -5928,7 +5885,7 @@ async function loadQPDealOptions() {
 function afterNav(pageId) {
   setTimeout(() => {
     if (pageId === 'enquiry') { loadEnquiryList(); loadCommodityDropdowns(); }
-    else if (pageId === 'quotation') loadQuotationList();
+    else if (pageId === 'quotation') { loadCommodityDropdowns(); loadRFQList(); loadQuotationList(); }
     else if (pageId === 'deals') loadDealList();
     else if (pageId === 'purchase-contracts') loadContractList('PC');
     else if (pageId === 'sales-contracts') loadContractList('SC');
@@ -6215,6 +6172,120 @@ async function deleteAllocation(id) {
 }
 
 // ── PC/SC MATERIAL AND PRICING TABS FROM DB ───────────────────
+// ── PC/SC LINE ADDITION FUNCTIONS ──────────────────────────────
+async function addPCMatLine() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  const tbody = document.getElementById('pc-mat-tbody');
+  if (!tbody) return;
+  const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
+  const row = document.createElement('tr');
+  const n = tbody.querySelectorAll('tr[data-mat-row]').length + 1;
+  row.setAttribute('data-mat-row', '1');
+  row.innerHTML = '<td class="mono f10">'+n+'</td>'
+    + '<td><input type="text" class="fi" placeholder="Material/grade" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="HS Code" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Spec" style="font-size:10px"></td>'
+    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right"></td>'
+    + '<td><input type="text" class="fi" placeholder="±%" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="MOLOO/MOLCO" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" value="'+uom+'" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Packing" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="—" style="font-size:10px"></td>'
+    + '<td><select class="fs" style="font-size:10px"><option>SHIPPED-WEIGHT</option><option>DMT</option><option>FLOW-METER</option></select></td>'
+    + '<td><input type="text" class="fi" placeholder="Origin" style="font-size:10px"></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  const placeholder = tbody.querySelector('td[colspan]');
+  if (placeholder) placeholder.closest('tr').remove();
+  tbody.appendChild(row);
+}
+
+async function addSCMatLine() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  const tbody = document.getElementById('sc-mat-tbody');
+  if (!tbody) return;
+  const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
+  const row = document.createElement('tr');
+  const n = tbody.querySelectorAll('tr[data-mat-row]').length + 1;
+  row.setAttribute('data-mat-row', '1');
+  row.innerHTML = '<td class="mono f10">'+n+'</td>'
+    + '<td><input type="text" class="fi" placeholder="Material/grade" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="HS Code" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Spec" style="font-size:10px"></td>'
+    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right"></td>'
+    + '<td><input type="text" class="fi" placeholder="±%" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="MOLOO/MOLCO" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" value="'+uom+'" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Packing" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="—" style="font-size:10px"></td>'
+    + '<td><select class="fs" style="font-size:10px"><option>SHIPPED-WEIGHT</option><option>DMT</option><option>FLOW-METER</option></select></td>'
+    + '<td><input type="text" class="fi" placeholder="Destination" style="font-size:10px"></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  const placeholder = tbody.querySelector('td[colspan]');
+  if (placeholder) placeholder.closest('tr').remove();
+  tbody.appendChild(row);
+}
+
+async function addPCPriceLineV10() { await addContractPriceLine('pc'); }
+async function addSCPriceLine() { await addContractPriceLine('sc'); }
+async function addContractPriceLine(prefix) {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  const tbody = document.getElementById(prefix + '-price-tbody');
+  if (!tbody) { toast('Error', 'Pricing table not found', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/pricing-lines', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        source_item_code: c.commodity_code,
+        index_pct: 100, payable_pct: 100,
+        pricing_rule: 'average', calc_method: 'settlement'
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Line Added', 'Pricing line created — edit fields and they will save', 'success');
+    await loadContractTabs(c.id, prefix);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function addPCQCLine() {
+  const tbody = document.getElementById('pc-qc-tbody');
+  if (!tbody) { toast('QC Specs', 'QC table not found on this tab', 'warning'); return; }
+  const row = document.createElement('tr');
+  row.innerHTML = '<td><input type="text" class="fi" placeholder="Element (e.g. Cu, Moisture)" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Min %" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Max %" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Target / Typical" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Penalty / Bonus basis" style="font-size:10px"></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  const placeholder = tbody.querySelector('td[colspan]');
+  if (placeholder) placeholder.closest('tr').remove();
+  tbody.appendChild(row);
+}
+
+async function addPCPayLine() {
+  toast('Payment Terms', 'Use the Payment Currency / Method fields above — additional milestone lines coming soon', 'info');
+}
+async function addSCPayLine() {
+  toast('Payment Terms', 'Use the Payment Currency / Method fields above — additional milestone lines coming soon', 'info');
+}
+
+async function addRolloverEvent() {
+  const tbody = document.getElementById('pc-rollover-tbody') || document.querySelector('#pc-rollover tbody');
+  if (!tbody) { toast('Rollover', 'Rollover table not found on this tab', 'warning'); return; }
+  const row = document.createElement('tr');
+  row.innerHTML = '<td><input type="date" class="fi" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="Reason" style="font-size:10px"></td>'
+    + '<td><input type="text" class="fi" placeholder="New QP window" style="font-size:10px"></td>'
+    + '<td><select class="fs" style="font-size:10px"><option>PENDING</option><option>APPROVED</option><option>REJECTED</option></select></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  const placeholder = tbody.querySelector('td[colspan]');
+  if (placeholder) placeholder.closest('tr').remove();
+  tbody.appendChild(row);
+}
+
 async function loadContractTabs(contractId, prefix) {
   // prefix = 'pc' or 'sc'
   try {
@@ -6302,6 +6373,25 @@ async function loadOrdersList(type) {
 // ── RFQ MODULE ────────────────────────────────────────────────
 window._activeRFQ = null;
 
+function switchQuotSubtab(tab) {
+  document.querySelectorAll('.quot-subtab').forEach(function(t){t.classList.remove('active');});
+  tab.classList.add('active');
+  const target = tab.dataset.subtab;
+  document.querySelectorAll('.quot-subtab-content').forEach(function(c){
+    c.classList.toggle('hidden', c.id !== target);
+  });
+  const actions = document.getElementById('quot-subtab-actions');
+  if (actions) {
+    if (target === 'quot-sub-rfq') {
+      actions.innerHTML = '<button class="btn bp" onclick="openNewRFQ()">+ New RFQ</button>';
+    } else {
+      actions.innerHTML = '<button class="btn bp" id="quot-new-quotation-btn" onclick="openNewQuotation()">＋ New Quotation</button>';
+    }
+  }
+  if (target === 'quot-sub-rfq') loadRFQList();
+  else loadQuotationList();
+}
+
 async function loadRFQList(filterDir) {
   const tbody = document.getElementById('rfq-list-tbody');
   if (!tbody) return;
@@ -6325,6 +6415,8 @@ async function loadRFQList(filterDir) {
     set('rfq-stat-responded', rfqs.filter(function(r){return r.status==='RESPONDED';}).length);
     const badge = document.getElementById('rfq-nav-badge');
     if (badge) badge.textContent = rfqs.length;
+    const subtabBadge = document.getElementById('rfq-subtab-badge');
+    if (subtabBadge) subtabBadge.textContent = rfqs.length;
 
     // Load response counts
     const respRes = await fetch(API_BASE + '/api/quote-responses');
