@@ -6754,8 +6754,16 @@ async function submitNewRFQ(saveStatus) {
   const cpId = document.getElementById('rfq-cp-sel')?.value;
   const commCode = document.getElementById('rfq-commodity-sel')?.value;
   const qty = document.getElementById('rfq-qty')?.value;
-  if (!cpId || !commCode || !qty) { toast('Required', 'Counterparty, commodity and quantity are required', 'warning'); return; }
+  if (!cpId) { toast('Required', 'Please select a counterparty', 'warning'); return; }
+  if (!commCode) { toast('Required', 'Please select a commodity', 'warning'); return; }
+  if (!qty) { toast('Required', 'Please enter the quantity', 'warning'); return; }
+
   const g = function(id){return document.getElementById(id)?.value||null;};
+  const submitBtn = saveStatus === 'SENT'
+    ? document.querySelector('#modal-new-rfq .btn.bp')
+    : document.querySelector('#modal-new-rfq .btn.bs');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving…'; }
+
   try {
     const res = await fetch(API_BASE + '/api/rfqs', {
       method: 'POST', headers:{'Content-Type':'application/json'},
@@ -6776,17 +6784,63 @@ async function submitNewRFQ(saveStatus) {
       })
     });
     const data = await res.json();
-    if (!data.success) throw new Error(data.error);
+    if (!data.success) throw new Error(data.error || 'Failed to save RFQ');
     const rfq = data.data;
-    // If SENT, mark as sent
+
     if (saveStatus === 'SENT') {
+      // Mark as sent in DB
       await fetch(API_BASE + '/api/rfqs/' + rfq.id + '/send', {method:'PATCH', headers:{'Content-Type':'application/json'}});
+
+      // Open email client with pre-filled RFQ details
+      const cpSel = document.getElementById('rfq-cp-sel');
+      const cpName = cpSel?.options[cpSel.selectedIndex]?.textContent || 'Counterparty';
+      let cpEmail = '';
+      try {
+        const cpRes = await fetch(API_BASE + '/api/master/counterparties');
+        const cpData = await cpRes.json();
+        const cp = (cpData.data||[]).find(function(c){ return c.id == cpId; });
+        cpEmail = cp?.email || '';
+      } catch(e) {}
+
+      const uom = (window._commodityCache && commCode && window._commodityCache[commCode]?.uom) || 'MT';
+      const commName = document.getElementById('rfq-commodity-sel')?.options[document.getElementById('rfq-commodity-sel').selectedIndex]?.textContent || commCode;
+      const subject = 'RFQ ' + rfq.rfq_no + ' — ' + commName.split(' (')[0] + ' — ' + qty + ' ' + uom;
+      const bodyLines = [
+        'Dear ' + cpName + ',', '',
+        'Please find below our Request for Quotation:', '',
+        'RFQ No: ' + rfq.rfq_no,
+        'Commodity: ' + commName,
+        'Quantity: ' + qty + ' ' + uom,
+        g('rfq-incoterms') ? 'Incoterms: ' + g('rfq-incoterms') : '',
+        g('rfq-origin') ? 'Origin: ' + g('rfq-origin') : '',
+        g('rfq-destination') ? 'Destination: ' + g('rfq-destination') : '',
+        g('rfq-delivery') ? 'Required Delivery: ' + g('rfq-delivery') : '',
+        g('rfq-pricing') ? 'Pricing Basis: ' + g('rfq-pricing') : '',
+        g('rfq-payment') ? 'Payment Terms: ' + g('rfq-payment') : '',
+        g('rfq-validity') ? 'RFQ Valid Until: ' + g('rfq-validity') : '',
+        g('rfq-notes') ? '' : '', g('rfq-notes') || '',
+        '', 'Please respond with your best offer at your earliest convenience.', '',
+        'Best regards,'
+      ].filter(function(l){ return l !== undefined; }).join('\n');
+
+      const mailtoUrl = 'mailto:' + encodeURIComponent(cpEmail) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(bodyLines);
+      window.open(mailtoUrl, '_blank');
+
+      if (!cpEmail) {
+        toast('No Email on File', rfq.rfq_no + ' marked as SENT, but ' + cpName + ' has no email saved — add one in Counterparty master', 'warning');
+      } else {
+        toast('RFQ Sent', rfq.rfq_no + ' sent — email draft opened for ' + cpName, 'success');
+      }
+    } else {
+      toast('RFQ Saved', rfq.rfq_no + ' saved as draft', 'success');
     }
-    toast(saveStatus==='SENT'?'RFQ Sent':'RFQ Saved', rfq.rfq_no + (saveStatus==='SENT'?' sent to counterparty':' saved as draft'), 'success');
+
     closeModal('modal-new-rfq');
     await loadRFQList();
     await openRFQDetail(rfq.rfq_no);
-  } catch(e) { toast('Error', e.message, 'error'); }
+  } catch(e) {
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = saveStatus === 'SENT' ? 'Save & Send RFQ →' : 'Save as Draft'; }
+    toast('Error', e.message, 'error'); }
 }
 
 function openLogResponse() {

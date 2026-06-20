@@ -52,6 +52,21 @@ async function seed() {
       ('BP-TRAD',   'BP Trading Ltd',         'CUSTOMER', 'UK',          'USD', 'TT-90-10',     'UK-BP-001',  'C-004', 'APPROVED')
     ON CONFLICT (code) DO NOTHING;
   `);
+
+  // Backfill emails for demo counterparties (safe — only fills if currently NULL)
+  await query(`
+    UPDATE counterparties SET email = CASE code
+      WHEN 'GLEN-AG'  THEN 'trading.desk@glencore.com'
+      WHEN 'TATA-MET' THEN 'procurement@tatametals.com'
+      WHEN 'AURUBIS'  THEN 'sourcing@aurubis.com'
+      WHEN 'NOBLE-SG' THEN 'metals@noblegroup.com'
+      WHEN 'HANWA-SG' THEN 'agency@hanwa.com.sg'
+      WHEN 'VITOL-SA' THEN 'trading@vitol.com'
+      WHEN 'BP-TRAD'  THEN 'trading@bp.com'
+      ELSE email
+    END
+    WHERE email IS NULL AND code IN ('GLEN-AG','TATA-MET','AURUBIS','NOBLE-SG','HANWA-SG','VITOL-SA','BP-TRAD');
+  `);
   console.log('✓ counterparties seeded');
 
   // ── LOCATIONS ────────────────────────────────────────────────────

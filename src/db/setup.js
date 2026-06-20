@@ -35,6 +35,8 @@ async function setupDatabase() {
       payment_term_code VARCHAR(20),
       tax_ref         VARCHAR(50),
       erp_ref         VARCHAR(50),
+      email           VARCHAR(150),
+      contact_person  VARCHAR(100),
       credit_limit    DECIMAL(15,2),
       kyc_status      VARCHAR(20) DEFAULT 'PENDING',
       active          BOOLEAN DEFAULT TRUE,
@@ -392,6 +394,8 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS origin VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS destination VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS direction VARCHAR(10)`);
+    await query(`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS email VARCHAR(150)`);
+    await query(`ALTER TABLE counterparties ADD COLUMN IF NOT EXISTS contact_person VARCHAR(100)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_buy_qty DECIMAL(12,3)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_buy_price DECIMAL(14,4)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_qty DECIMAL(12,3)`);
