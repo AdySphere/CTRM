@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V15</div>
+    <div class="sb-tag">CTRM PLATFORM · V16.4</div>
   </div>
   <nav class="sb-nav">
 
@@ -851,7 +851,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ch">
           <div class="ct" id="qd-title">Quotation Detail</div>
           <div class="cs" id="qd-source">—</div>
-          <span class="badge" id="qd-status-badge" style="margin-left:auto">—</span>
+          <span class="badge bd-draft" id="qd-version-badge" style="margin-left:auto;font-size:9px">v1</span>
+          <span class="badge" id="qd-status-badge" style="margin-left:8px">—</span>
+          <button class="btn bs2 bsm" id="qd-new-version-btn" style="margin-left:8px" onclick="createNewQuotationVersion()">+ New Version</button>
+          <button class="btn bg bsm" id="qd-version-history-btn" style="margin-left:4px" onclick="toggleVersionHistory()">📋 History</button>
+        </div>
+        <div id="qd-version-history-panel" style="display:none;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Version History</div>
+          <div id="qd-version-list" style="font-size:11px">Loading…</div>
         </div>
         <div class="fts">
           <div class="ft active qt-tab" data-tab="qt-general">General</div>
@@ -992,6 +999,43 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             </div>
           </div>
         </div>
+        <!-- BUDGET vs ACTUAL P&L -->
+        <div id="dd-budget-panel" style="display:none;padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">Budget vs Actual P&L · Locked at deal confirmation</div>
+          <table class="lt" style="width:100%">
+            <thead><tr>
+              <th></th><th>Buy Qty</th><th>Buy Price</th><th>Sell Qty</th><th>Sell Price</th><th>Margin</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="f10 fw6" style="color:var(--text3)">BUDGET</td>
+                <td class="mono" id="dd-budget-buy-qty">—</td>
+                <td class="mono" id="dd-budget-buy-price">—</td>
+                <td class="mono" id="dd-budget-sell-qty">—</td>
+                <td class="mono" id="dd-budget-sell-price">—</td>
+                <td class="mono fw7" id="dd-budget-margin">—</td>
+              </tr>
+              <tr>
+                <td class="f10 fw6" style="color:var(--accent)">ACTUAL</td>
+                <td class="mono" id="dd-actual-buy-qty">—</td>
+                <td class="mono" id="dd-actual-buy-price">—</td>
+                <td class="mono" id="dd-actual-sell-qty">—</td>
+                <td class="mono" id="dd-actual-sell-price">—</td>
+                <td class="mono fw7" id="dd-actual-margin">—</td>
+              </tr>
+              <tr style="border-top:1px solid var(--border)">
+                <td class="f10 fw6">VARIANCE</td>
+                <td class="mono f10" id="dd-var-buy-qty">—</td>
+                <td class="mono f10" id="dd-var-buy-price">—</td>
+                <td class="mono f10" id="dd-var-sell-qty">—</td>
+                <td class="mono f10" id="dd-var-sell-price">—</td>
+                <td class="mono f10 fw7" id="dd-var-margin">—</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="font-size:9px;color:var(--text3);margin-top:8px">Actual figures update automatically as fixations, invoices and contract prices are booked against this deal.</div>
+        </div>
+
         <div class="lcb" id="dd-lifecycle">
           <div class="lcs done">Enquiry</div><div class="lcs done">Quotation</div><div class="lcs cur">Deal Confirmed</div>
           <div class="lcs future">RFQ / PO</div><div class="lcs future">Shipment</div><div class="lcs future">QP Final</div>
@@ -3946,12 +3990,20 @@ async function openQuotationDetail(quotNo) {
   card.style.display = 'block';
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   wireTabs('qt-tab');
+  document.getElementById('qd-version-history-panel').style.display = 'none';
 
   try {
     const res = await fetch(API_BASE + '/api/quotations/' + quotNo);
     const json = await res.json();
     if (!json.success) throw new Error(json.error);
     const q = json.data;
+    window._activeQuot = q;
+    window._activeQuotDbId = q.id;
+    const vBadge = document.getElementById('qd-version-badge');
+    if (vBadge) {
+      vBadge.textContent = 'v' + (q.version || 1);
+      vBadge.className = 'badge ' + (q.status === 'SUPERSEDED' ? 'bd-draft' : 'bd-confirmed');
+    }
 
     // Header
     document.getElementById('qd-title').textContent = 'Quotation Detail — ' + q.quotation_no;
@@ -5965,6 +6017,7 @@ async function openDealDetail(dealNo) {
     await loadBuyLegs(deal.id);
     window._activeDeal = deal;
     await loadDealLinkedEnquiries(deal.id);
+    await loadBudgetActual(deal.id);
 
     toast('Deal Opened', deal.deal_no + ' — ' + (deal.commodity_name || deal.commodity_code || ''), 'info');
   } catch (err) {
@@ -7834,6 +7887,119 @@ async function loadAllocationTable() {
 </div>
 
 <script>
+async function loadBudgetActual(dealId) {
+  const panel = document.getElementById('dd-budget-panel');
+  if (!panel) return;
+  try {
+    const res = await fetch(API_BASE + '/api/deals/' + dealId + '/budget-actual');
+    const data = await res.json();
+    if (!data.success) { panel.style.display = 'none'; return; }
+    const b = data.data.budget;
+    const a = data.data.actual;
+
+    // Only show if budget was locked (i.e. deal came from feasibility)
+    if (!b.margin && b.margin !== 0) { panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+
+    const uom = (window._commodityCache && window._activeDeal?.commodity_code && window._commodityCache[window._activeDeal.commodity_code]?.uom) || 'MT';
+    const set = function(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const fmt = function(v) { return v === null || v === undefined ? '—' : parseFloat(v).toLocaleString(undefined, {maximumFractionDigits:2}); };
+
+    set('dd-budget-buy-qty', fmt(b.buy_qty) + ' ' + uom);
+    set('dd-budget-buy-price', b.buy_price ? 'USD ' + fmt(b.buy_price) : '—');
+    set('dd-budget-sell-qty', fmt(b.sell_qty) + ' ' + uom);
+    set('dd-budget-sell-price', b.sell_price ? 'USD ' + fmt(b.sell_price) : '—');
+    set('dd-budget-margin', b.margin !== null ? 'USD ' + fmt(b.margin) : '—');
+
+    set('dd-actual-buy-qty', fmt(a.buy_qty) + ' ' + uom);
+    set('dd-actual-buy-price', a.buy_price ? 'USD ' + fmt(a.buy_price) : '—');
+    set('dd-actual-sell-qty', fmt(a.sell_qty) + ' ' + uom);
+    set('dd-actual-sell-price', a.sell_price ? 'USD ' + fmt(a.sell_price) : '—');
+    const actualMarginEl = document.getElementById('dd-actual-margin');
+    if (actualMarginEl) {
+      actualMarginEl.textContent = 'USD ' + fmt(a.margin);
+      actualMarginEl.style.color = a.margin >= (b.margin||0) ? 'var(--green)' : 'var(--accent2)';
+    }
+
+    // Variance
+    const varBuyQty = (a.buy_qty||0) - (b.buy_qty||0);
+    const varSellQty = (a.sell_qty||0) - (b.sell_qty||0);
+    const varBuyPrice = (a.buy_price||0) - (b.buy_price||0);
+    const varSellPrice = (a.sell_price||0) - (b.sell_price||0);
+    const varMargin = (a.margin||0) - (b.margin||0);
+    set('dd-var-buy-qty', (varBuyQty>=0?'+':'') + fmt(varBuyQty));
+    set('dd-var-sell-qty', (varSellQty>=0?'+':'') + fmt(varSellQty));
+    set('dd-var-buy-price', (varBuyPrice>=0?'+':'') + fmt(varBuyPrice));
+    set('dd-var-sell-price', (varSellPrice>=0?'+':'') + fmt(varSellPrice));
+    const varMarginEl = document.getElementById('dd-var-margin');
+    if (varMarginEl) {
+      varMarginEl.textContent = (varMargin>=0?'+':'') + fmt(varMargin);
+      varMarginEl.style.color = varMargin >= 0 ? 'var(--green)' : 'var(--accent2)';
+    }
+  } catch(e) { panel.style.display = 'none'; }
+}
+
+async function createNewQuotationVersion() {
+  if (!_activeQuotId) { toast('No Quotation', 'Open a quotation first', 'warning'); return; }
+  const btn = document.getElementById('qd-new-version-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+  try {
+    const res = await fetch(API_BASE + '/api/quotations/' + _activeQuotId + '/new-version', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const newVer = data.data;
+    toast('New Version Created', data.superseded + ' → SUPERSEDED · ' + newVer.quotation_no + ' (v' + newVer.version + ') is now active', 'success');
+    await loadQuotationList();
+    await openQuotationDetail(newVer.quotation_no);
+  } catch(e) { toast('Error', e.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '+ New Version'; } }
+}
+
+async function toggleVersionHistory() {
+  const panel = document.getElementById('qd-version-history-panel');
+  if (!panel) return;
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'block';
+    await loadQuotationVersionHistory();
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+async function loadQuotationVersionHistory() {
+  const listEl = document.getElementById('qd-version-list');
+  if (!listEl || !_activeQuotId) return;
+  listEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(API_BASE + '/api/quotations/' + _activeQuotId + '/versions');
+    const data = await res.json();
+    const versions = data.data || [];
+    if (!versions.length) { listEl.textContent = 'No version history found.'; return; }
+    listEl.innerHTML = '';
+    versions.forEach(function(v) {
+      const cls = v.status === 'SUPERSEDED' ? 'bd-draft' : v.status === 'OPEN' ? 'bd-confirmed' : 'bd-act';
+      const isCur = v.quotation_no === _activeQuotId;
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--border)';
+      const n1 = document.createElement('span'); n1.className='mono fw6'; n1.style.color='var(--accent)'; n1.textContent=v.quotation_no;
+      const n2 = document.createElement('span'); n2.className='badge '+cls; n2.style.fontSize='8px'; n2.textContent=v.status||'OPEN';
+      const n3 = document.createElement('span'); n3.style.cssText='font-size:9px;color:var(--text3)'; n3.textContent=v.quotation_date||'';
+      row.appendChild(n1); row.appendChild(n2); row.appendChild(n3);
+      if (isCur) {
+        const nc = document.createElement('span'); nc.style.cssText='font-size:9px;font-weight:700;color:var(--accent)'; nc.textContent='← current'; row.appendChild(nc);
+      } else {
+        const nb = document.createElement('button'); nb.className='btn bxs bg'; nb.style.cssText='font-size:9px;padding:2px 8px'; nb.textContent='Open';
+        nb.onclick = function(){ openQuotationDetail(v.quotation_no); };
+        row.appendChild(nb);
+      }
+      listEl.appendChild(row);
+    });
+  } catch(e) { listEl.textContent = 'Could not load history.'; }
+}
+
 async function loadDealLinkedEnquiries(dealId) {
   const tbody = document.getElementById('deal-linked-enq-tbody');
   if (!tbody || !dealId) return;

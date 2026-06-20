@@ -489,6 +489,57 @@ quotationsRouter.patch('/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// POST /api/quotations/:id/new-version — create v2/v3, mark old as SUPERSEDED
+quotationsRouter.post('/:id/new-version', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const curRes = await query(`SELECT * FROM quotations WHERE id=$1 OR quotation_no=$1`, [req.params.id]);
+    if (!curRes.rows.length) return res.status(404).json({ error: 'Quotation not found' });
+    const q = curRes.rows[0];
+
+    await query(`UPDATE quotations SET status='SUPERSEDED' WHERE id=$1`, [q.id]);
+
+    const baseNo = q.quotation_no.replace(/-V\d+$/, '');
+    const newVersion = (q.version || 1) + 1;
+    const newNo = baseNo + '-V' + newVersion;
+
+    const result = await query(`
+      INSERT INTO quotations (
+        quotation_no, enquiry_id, quotation_date, commodity_code, customer_id,
+        qty_mt, incoterms, port_of_discharge, delivery_from, delivery_to,
+        validity_date, pricing_template, provisional_price, provisional_value,
+        quoted_by, status, version, parent_quotation_id, quote_type, notes
+      )
+      VALUES ($1,$2,CURRENT_DATE,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'OPEN',$15,$16,$17,$18)
+      RETURNING *
+    `, [
+      newNo, q.enquiry_id, q.commodity_code, q.customer_id,
+      q.qty_mt, q.incoterms, q.port_of_discharge, q.delivery_from, q.delivery_to,
+      q.validity_date, q.pricing_template, q.provisional_price, q.provisional_value,
+      q.quoted_by, newVersion, q.id, q.quote_type, req.body.notes || q.notes
+    ]);
+
+    res.json({ success: true, data: result.rows[0], superseded: q.quotation_no, new_version: newVersion });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// GET /api/quotations/:no/versions — all versions of a quotation chain
+quotationsRouter.get('/:no/versions', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const baseNo = req.params.no.replace(/-V\d+$/, '');
+    const result = await query(`
+      SELECT q.*, cp.name as customer_name, cm.name as commodity_name
+      FROM quotations q
+      LEFT JOIN counterparties cp ON cp.id = q.customer_id
+      LEFT JOIN commodities cm ON cm.code = q.commodity_code
+      WHERE q.quotation_no LIKE $1 OR q.quotation_no = $2
+      ORDER BY q.version ASC
+    `, [baseNo + '-%', baseNo]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 quotationsRouter.post('/:id/accept', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
@@ -1015,3 +1066,50 @@ feasibilityRouter.post('/:enquiryId/confirm', async (req, res) => {
 });
 
 module.exports.feasibilityRouter = feasibilityRouter;
+
+// GET /api/deals/:id/budget-actual — budget (locked) vs actual (computed live)
+const budgetActualRouter = require('express').Router();
+budgetActualRouter.get('/:id/budget-actual', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const dealRes = await query(`SELECT * FROM deals WHERE id=$1 OR deal_no=$1`, [req.params.id]);
+    if (!dealRes.rows.length) return res.status(404).json({ error: 'Deal not found' });
+    const deal = dealRes.rows[0];
+
+    // Actual = from confirmed contracts linked to this deal
+    const contractsRes = await query(`
+      SELECT contract_type, qty_mt, provisional_price
+      FROM contracts WHERE deal_id=$1 AND status IN ('CONTRACTED','CONFIRMED')
+    `, [deal.id]);
+    const contracts = contractsRes.rows;
+    const pcs = contracts.filter(c => c.contract_type === 'PC');
+    const scs = contracts.filter(c => c.contract_type === 'SC');
+
+    const actualBuyQty = pcs.reduce((s,c) => s + (parseFloat(c.qty_mt)||0), 0);
+    const actualBuyValue = pcs.reduce((s,c) => s + (parseFloat(c.qty_mt)||0) * (parseFloat(c.provisional_price)||0), 0);
+    const actualBuyPrice = actualBuyQty > 0 ? actualBuyValue / actualBuyQty : 0;
+
+    const actualSellQty = scs.reduce((s,c) => s + (parseFloat(c.qty_mt)||0), 0);
+    const actualSellValue = scs.reduce((s,c) => s + (parseFloat(c.qty_mt)||0) * (parseFloat(c.provisional_price)||0), 0);
+    const actualSellPrice = actualSellQty > 0 ? actualSellValue / actualSellQty : 0;
+
+    const actualMargin = actualSellValue - actualBuyValue;
+
+    res.json({
+      success: true,
+      data: {
+        budget: {
+          buy_qty: deal.budget_buy_qty, buy_price: deal.budget_buy_price,
+          sell_qty: deal.budget_sell_qty, sell_price: deal.budget_sell_price,
+          margin: deal.budget_margin, locked_at: deal.budget_locked_at
+        },
+        actual: {
+          buy_qty: actualBuyQty, buy_price: actualBuyPrice,
+          sell_qty: actualSellQty, sell_price: actualSellPrice,
+          margin: actualMargin
+        }
+      }
+    });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.budgetActualRouter = budgetActualRouter;
