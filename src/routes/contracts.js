@@ -33,6 +33,32 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/contracts/:id — with pricing lines and QC specs
+// PATCH /api/contracts/:id — generic field update (deal_id, incoterms, notes, etc.)
+router.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['deal_id', 'incoterms', 'origin', 'destination', 'pricing_formula', 'notes', 'qty_mt'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) {
+      if (allowed.includes(k)) fields[k] = req.body[k];
+    });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const before = await query('SELECT deal_no, contract_no FROM contracts c LEFT JOIN deals d ON d.id=c.deal_id WHERE c.id=$1', [req.params.id]);
+    const sets = Object.keys(fields).map(function(k,i){ return k + '=$' + (i+2); }).join(',');
+    const result = await query(
+      'UPDATE contracts SET ' + sets + ', updated_at=NOW() WHERE id=$1 RETURNING *',
+      [req.params.id, ...Object.values(fields)]
+    );
+    const contract = result.rows[0];
+    if (contract && 'deal_id' in fields) {
+      const dealRes = await query('SELECT deal_no FROM deals WHERE id=$1', [fields.deal_id]);
+      await logAudit('contract', contract.id, contract.contract_no, 'DEAL_LINK_CHANGED', 'deal_id',
+        before.rows[0]?.deal_no || 'none', dealRes.rows[0]?.deal_no || 'none (unlinked)');
+    }
+    res.json({ success: true, data: contract });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;

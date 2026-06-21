@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.0</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.1</div>
   </div>
   <nav class="sb-nav">
 
@@ -1226,7 +1226,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="pc-gen" class="ftc active"><div class="fg">
           <div class="f"><div class="fl">Contract No.</div><div class="fc mono" id="pcd-no">—</div></div>
-          <div class="f"><div class="fl">Linked Deal</div><div class="fc mono ta fw6" id="pcd-deal" style="color:var(--accent)">—</div></div>
+          <div class="f"><div class="fl">Linked Deal</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div class="fc mono ta fw6" id="pcd-deal" style="color:var(--accent);cursor:pointer;flex:1" onclick="jumpToLinkedDeal()">—</div>
+              <button class="btn bxs bg" onclick="openChangeDealModal('PC')" title="Attach or change linked deal">✎</button>
+            </div>
+          </div>
           <div class="f"><div class="fl">Contract Date</div><div class="fc mono" id="pcd-date">—</div></div>
           <div class="f"><div class="fl">Status</div><div class="fc fw6" id="pcd-status">—</div></div>
           <div class="f"><div class="fl">Direction</div><div class="fc">PURCHASE — we are the BUYER</div></div>
@@ -1557,7 +1562,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div id="scd-audit-list" style="font-size:11px">Loading…</div>
         </div>
         <div class="lcb">
-          <div class="lcs done">DRAFT</div><div class="lcs done">UNDER REVIEW</div><div class="lcs cur">CONTRACTED</div>
+          <div class="lcs done" id="scd-lcs-draft">DRAFT</div><div class="lcs done" id="scd-lcs-review">UNDER REVIEW</div><div class="lcs cur" id="scd-lcs-contracted">CONTRACTED</div>
           <div class="lcs fut">PARTIALLY SHIPPED</div><div class="lcs fut">FULLY SHIPPED</div><div class="lcs fut">CLOSED</div>
         </div>
         <div class="fts">
@@ -1571,21 +1576,26 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft sct" data-tab="sc-docs">Documents</div>
         </div>
         <div id="sc-gen" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">Contract No.</div><div class="fc mono">SC-2026-001</div></div>
-          <div class="f"><div class="fl">Internal Ref (Deal ID)</div><div class="fc mono ta">DEAL456</div></div>
-          <div class="f"><div class="fl">Contract Date</div><input type="date" class="fi" value="2026-03-21"></div>
-          <div class="f"><div class="fl">Status</div><div class="fc tg fw6">CONTRACTED</div></div>
-          <div class="f"><div class="fl">Version</div><div class="fc mono">v1.0</div></div>
+          <div class="f"><div class="fl">Contract No.</div><div class="fc mono" id="scd-no">—</div></div>
+          <div class="f"><div class="fl">Linked Deal</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <div class="fc mono ta fw6" id="scd-deal" style="color:var(--accent);cursor:pointer;flex:1" onclick="jumpToLinkedDeal()">—</div>
+              <button class="btn bxs bg" onclick="openChangeDealModal('SC')" title="Attach or change linked deal">✎</button>
+            </div>
+          </div>
+          <div class="f"><div class="fl">Contract Date</div><div class="fc mono" id="scd-date">—</div></div>
+          <div class="f"><div class="fl">Status</div><div class="fc tg fw6" id="scd-status">—</div></div>
           <div class="f"><div class="fl">Direction</div><div class="fc">SALE — we are the SELLER</div></div>
           <div class="f"><div class="fl">Our Company (Seller)</div><div class="fc">Trading Company DMCC</div></div>
-          <div class="f"><div class="fl">Customer (Buyer)</div><div class="fc fw6">Tata Metals Ltd</div></div>
-          <div class="f"><div class="fl">Customer BC Code</div><div class="fc mono tdim">C-001</div></div>
+          <div class="f"><div class="fl">Customer (Buyer)</div><div class="fc fw6" id="scd-customer">—</div></div>
+          <div class="f"><div class="fl">Commodity</div><div class="fc fw6" id="scd-commodity">—</div></div>
+          <div class="f"><div class="fl">Quantity</div><div class="fc mono fw6" id="scd-qty">—</div></div>
+          <div class="f"><div class="fl">Incoterms</div><div class="fc" id="scd-incoterms">—</div></div>
+          <div class="f"><div class="fl">Pricing Formula</div><div class="fc" id="scd-pricing">—</div></div>
           <div class="f"><div class="fl">Customer Contact / Attn.</div><input type="text" class="fi" placeholder="e.g. Mr. Prithvi Raj, Metals Procurement"></div>
           <div class="f"><div class="fl">Broker / Agent</div><input type="text" class="fi" placeholder="If via broker"></div>
           <div class="f"><div class="fl">Broker Commission</div><input type="text" class="fi" placeholder="e.g. 1.5% — deducted from final payment"></div>
-          <div class="f"><div class="fl">BC Sales Order No.</div><div class="fc mono ta2">SO-10042</div></div>
-          <div class="f"><div class="fl">Sales Order Status</div><div class="fc ta">OPEN — synced 2026-03-22</div></div>
-          <div class="f csf"><div class="fl">Contract Header Remarks</div><textarea class="fta" style="min-height:50px">Trading Company DMCC is pleased to confirm sale of Copper MillBerry to Tata Metals Ltd at the following terms and conditions.</textarea></div>
+          <div class="f csf"><div class="fl">Contract Header Remarks</div><textarea class="fta" id="scd-remarks" style="min-height:50px"></textarea></div>
         </div></div>
         <div id="sc-material" class="ftc hidden">
           <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade</th><th>Qty (MT)</th><th>Tolerance</th><th>UOM</th><th>Packing</th><th>Bundle Wt</th><th>Weight Basis</th><th>Origin</th></tr></thead>
@@ -4945,54 +4955,6 @@ function openNewSCContract(){
   loadNewContractDropdowns();
   if(window._activeDeal) prefillContractFromDeal(window._activeDeal,'SC');
 }
-async function loadNewContractDropdowns(){
-  try{
-    const [cpRes,dealRes,cmRes]=await Promise.all([
-      fetch(API_BASE+'/api/master/counterparties'),
-      fetch(API_BASE+'/api/deals'),
-      fetch(API_BASE+'/api/master/commodities')
-    ]);
-    const cps=(await cpRes.json()).data||[];
-    const deals=(await dealRes.json()).data||[];
-    const cms=(await cmRes.json()).data||[];
-    const cpSel=document.getElementById('nc-counterparty-sel');
-    const dealSel=document.getElementById('nc-deal-sel');
-    const cmSel=document.getElementById('nc-commodity');
-    if(cpSel)cpSel.innerHTML='<option value="">— Select —</option>'+cps.map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('');
-    if(dealSel)dealSel.innerHTML='<option value="">— None —</option>'+deals.map(d=>'<option value="'+d.id+'">'+d.deal_no+'</option>').join('');
-    if(cmSel)cmSel.innerHTML='<option value="">— Select Commodity —</option>'+cms.map(c=>'<option value="'+c.code+'">'+(c.name||c.code)+'</option>').join('');
-  }catch(e){console.error('Dropdown load error:',e);}
-}
-async function submitNewContract(){
-  const type=document.getElementById('new-contract-type')?.value;
-  const dealId=document.getElementById('nc-deal-sel')?.value;
-  const cpId=document.getElementById('nc-counterparty-sel')?.value;
-  const commCode=document.getElementById('nc-commodity')?.value;
-  const qty=document.getElementById('nc-qty')?.value;
-  const contractDate=document.getElementById('nc-contract-date')?.value;
-  const incoterms=document.getElementById('nc-incoterms')?.value;
-  const pricing=document.getElementById('nc-pricing')?.value?.trim();
-  const notes=document.getElementById('nc-notes')?.value?.trim();
-  if(!cpId||!commCode||!qty){toast('Required','Counterparty, commodity and quantity are required','warning');return;}
-  try{
-    const res=await fetch(API_BASE+'/api/contracts',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contract_type:type,deal_id:dealId||null,
-        counterparty_id:parseInt(cpId),commodity_code:commCode||null,
-        qty_mt:parseFloat(qty),incoterms:incoterms||'CIF',
-        pricing_formula:pricing||null,notes:notes||null,
-        contract_date:contractDate||new Date().toISOString().split('T')[0]
-      })
-    });
-    const json=await res.json();
-    if(!res.ok||!json.success)throw new Error(json.error||'HTTP '+res.status);
-    toast('Contract Created',json.data.contract_no+' saved','success');
-    closeModal('modal-new-contract');
-    loadContractList(type);
-  }catch(err){toast('Error',err.message,'error');}
-}
 function buildContractHTML(c, type) {
   const contractNo = c.contract_no || (type==='PC'?'PC-DRAFT':'SC-DRAFT');
   const vendor = type==='PC' ? (c.counterparty_name||'—') : 'Trading Company DMCC';
@@ -5134,6 +5096,7 @@ async function loadNewContractDropdowns(){
     const cps=(await cpRes.json()).data||[];
     const deals=(await dealRes.json()).data||[];
     const cms=(await cmRes.json()).data||[];
+    window._ncAllDeals = deals; // cache unfiltered, so commodity change can re-filter without refetch
     const cpSel=document.getElementById('nc-counterparty-sel');
     const dealSel=document.getElementById('nc-deal-sel');
     const cmSel=document.getElementById('nc-commodity');
@@ -5141,6 +5104,30 @@ async function loadNewContractDropdowns(){
     if(dealSel)dealSel.innerHTML='<option value="">— None —</option>'+deals.map(d=>'<option value="'+d.id+'">'+d.deal_no+'</option>').join('');
     if(cmSel)cmSel.innerHTML='<option value="">— Select Commodity —</option>'+cms.map(c=>'<option value="'+c.code+'">'+(c.name||c.code)+'</option>').join('');
   }catch(e){console.error('Dropdown load error:',e);}
+}
+
+function onNcCommodityChange() {
+  const cmSel = document.getElementById('nc-commodity');
+  const dealSel = document.getElementById('nc-deal-sel');
+  if (!cmSel || !dealSel || !window._ncAllDeals) return;
+  const selectedCommodity = cmSel.value;
+
+  if (!selectedCommodity) {
+    // No commodity chosen yet — show all deals
+    dealSel.innerHTML = '<option value="">— None —</option>' + window._ncAllDeals.map(function(d){ return '<option value="'+d.id+'">'+d.deal_no+'</option>'; }).join('');
+    return;
+  }
+
+  // B5 fix: only show deals that match the selected commodity
+  const matching = window._ncAllDeals.filter(function(d){ return d.commodity_code === selectedCommodity; });
+  if (!matching.length) {
+    dealSel.innerHTML = '<option value="">— No matching deals for this commodity —</option>';
+  } else {
+    dealSel.innerHTML = '<option value="">— None —</option>' + matching.map(function(d){
+      const uom = (window._commodityCache && window._commodityCache[selectedCommodity]?.uom) || 'MT';
+      return '<option value="'+d.id+'">'+d.deal_no+' · '+(d.qty_mt||'—')+' '+uom+'</option>';
+    }).join('');
+  }
 }
 async function submitNewContract(){
   const type=document.getElementById('new-contract-type')?.value;
@@ -5979,9 +5966,29 @@ async function openContractDetail(contractId, type) {
       if (summary) summary.textContent = [c.deal_no, c.counterparty_name, c.commodity_name||c.commodity_code, (c.qty_mt||'—')+' '+scUom, c.incoterms].filter(Boolean).join(' · ');
       const badge = document.getElementById('scd-status-badge');
       if (badge) { badge.textContent = c.status||'DRAFT'; badge.className = 'badge ' + (c.status==='CONTRACTED'?'bd-confirmed':c.status==='DRAFT'?'bd-draft':'bd-act'); }
+      // Lifecycle
+      ['scd-lcs-draft','scd-lcs-review','scd-lcs-contracted'].forEach(function(id,i){
+        const el=document.getElementById(id);
+        if(!el)return;
+        const stages=['DRAFT','UNDER REVIEW','CONTRACTED'];
+        const cur=stages.indexOf(c.status||'DRAFT');
+        el.className='lcs '+(i<cur?'done':i===cur?'cur':'fut');
+      });
+      // General tab — was hardcoded SC-2026-001/DEAL456/Tata Metals Ltd regardless of which contract opened
+      s('scd-no', c.contract_no);
+      s('scd-deal', c.deal_no||'—');
+      s('scd-date', c.contract_date ? new Date(c.contract_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—');
+      s('scd-status', c.status||'DRAFT');
+      s('scd-customer', c.counterparty_name||'—');
+      s('scd-commodity', (c.commodity_name||c.commodity_code)||'—');
+      s('scd-qty', c.qty_mt ? c.qty_mt + ' ' + scUom : '—');
+      s('scd-incoterms', c.incoterms||'—');
+      s('scd-pricing', c.pricing_formula||'—');
+      sv('scd-remarks', 'Trading Company DMCC is pleased to confirm sale of ' + (c.commodity_name||c.commodity_code||'commodity') + ' to ' + (c.counterparty_name||'Customer') + ' at the following terms and conditions.');
       const card = document.getElementById('sc-detail-card');
       if (card) { card.style.display='block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
       wireTabs('sct');
+      if (c.id) loadContractTabs(c.id, 'sc');
     }
     toast('Opened', c.contract_no + ' · ' + (c.counterparty_name||''), 'info');
   } catch(err) { toast('Error', err.message, 'error'); }
@@ -7858,7 +7865,7 @@ async function loadAllocationTable() {
         <select class="fs" id="nc-deal-sel"><option value="">— None —</option></select>
       </div>
       <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
-        <select class="fs" id="nc-commodity"><option value="">— Select Commodity —</option></select>
+        <select class="fs" id="nc-commodity" onchange="onNcCommodityChange()"><option value="">— Select Commodity —</option></select>
       </div>
       <div class="f"><div class="fl">Contract Date</div>
         <input type="date" class="fi" id="nc-contract-date">
@@ -8827,6 +8834,80 @@ async function submitNewDeal() {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Create Deal →'; }
   }
+}
+</script>
+<!-- MODAL: Change Linked Deal (PC/SC) -->
+<div class="mo" id="modal-change-deal">
+  <div class="md" style="max-width:480px">
+    <div class="mh">
+      <div class="mt">Attach / Change Linked Deal</div>
+      <button class="mc" onclick="closeModal('modal-change-deal')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>ℹ</span>Only deals matching this contract's commodity are shown.</div>
+      <div class="f"><div class="fl">Deal <span class="req">*</span></div>
+        <select class="fs" id="ccd-deal-sel"><option value="">— Select Deal —</option></select>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-change-deal')">Cancel</button>
+      <button class="btn bp" onclick="submitChangeDeal()">Save →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+window._ccdContractType = null;
+
+function jumpToLinkedDeal() {
+  const c = window._currentContract;
+  if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click ✎ to attach one', 'info'); return; }
+  nav('deals', document.querySelector('[data-page=deals]'));
+  afterNav('deals');
+  setTimeout(function(){ openDealDetail(c.deal_no); }, 350);
+}
+
+async function openChangeDealModal(contractType) {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  window._ccdContractType = contractType;
+
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    const data = await res.json();
+    const deals = data.data || [];
+    const matching = deals.filter(function(d){ return d.commodity_code === c.commodity_code; });
+    const sel = document.getElementById('ccd-deal-sel');
+    if (sel) {
+      const list = matching.length ? matching : deals;
+      sel.innerHTML = '<option value="">— None (unlink) —</option>' + list.map(function(d){
+        const uom = (window._commodityCache && window._commodityCache[d.commodity_code]?.uom) || 'MT';
+        return '<option value="'+d.id+'"' + (c.deal_no===d.deal_no?' selected':'') + '>'+d.deal_no+' · '+(d.qty_mt||'—')+' '+uom+'</option>';
+      }).join('');
+      if (!matching.length) {
+        toast('No Matching Deals', 'No open deals match this contract\'s commodity — showing all deals instead', 'warning');
+      }
+    }
+  } catch(e) { toast('Error', e.message, 'error'); }
+
+  openModal('modal-change-deal');
+}
+
+async function submitChangeDeal() {
+  const c = window._currentContract;
+  if (!c) return;
+  const dealId = document.getElementById('ccd-deal-sel')?.value || null;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ deal_id: dealId ? parseInt(dealId) : null })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Updated', dealId ? 'Deal linked successfully' : 'Deal unlinked', 'success');
+    closeModal('modal-change-deal');
+    await openContractDetail(c.id, window._ccdContractType);
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 </script>
 </body>
