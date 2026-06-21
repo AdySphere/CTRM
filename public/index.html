@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V16.10</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.0</div>
   </div>
   <nav class="sb-nav">
 
@@ -883,7 +883,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft active qt-tab" data-tab="qt-general">General</div>
           <div class="ft qt-tab" data-tab="qt-pricing">Pricing & Template</div>
           <div class="ft qt-tab" data-tab="qt-adjlines">Adjustment Lines</div>
-          <div class="ft qt-tab" data-tab="qt-sellpen">Sell Penalties</div>
+          <div class="ft qt-tab" data-tab="qt-sellpen">Penalties</div>
         </div>
         <div id="qt-general" class="ftc active">
           <div class="fg">
@@ -4396,6 +4396,15 @@ function onNqTypeChange(radio) {
 
 async function openNewQuotation() {
   openModal('modal-new-quotation');
+  // Reset quote type lock state for a fresh modal open
+  const pqRadioInit = document.getElementById('nq-type-pq');
+  const sqRadioInit = document.getElementById('nq-type-sq');
+  if (pqRadioInit) pqRadioInit.disabled = false;
+  if (sqRadioInit) sqRadioInit.disabled = false;
+  const pqLabelInit = document.getElementById('qt-pq-label');
+  const sqLabelInit = document.getElementById('qt-sq-label');
+  if (pqLabelInit) pqLabelInit.style.opacity = '1';
+  if (sqLabelInit) sqLabelInit.style.opacity = '1';
   // Load dropdowns
   const [enqRes, cpRes, cmRes] = await Promise.all([
     fetch(API_BASE + '/api/enquiries').then(r=>r.json()),
@@ -4427,16 +4436,34 @@ async function openNewQuotation() {
 function onNqEnquiryChange() {
   const sel = document.getElementById('nq-enquiry-sel');
   const opt = sel?.options[sel.selectedIndex];
-  if (!opt || !opt.value) return;
+  const pqRadioReset = document.getElementById('nq-type-pq');
+  const sqRadioReset = document.getElementById('nq-type-sq');
+  if (!opt || !opt.value) {
+    // Standalone quotation — unlock both types
+    if (pqRadioReset) pqRadioReset.disabled = false;
+    if (sqRadioReset) sqRadioReset.disabled = false;
+    const pqLabelReset = document.getElementById('qt-pq-label');
+    const sqLabelReset = document.getElementById('qt-sq-label');
+    if (pqLabelReset) pqLabelReset.style.opacity = '1';
+    if (sqLabelReset) sqLabelReset.style.opacity = '1';
+    return;
+  }
   const d = opt.dataset;
 
-  // Auto-set quote type from enquiry direction
+  // Auto-set AND LOCK quote type from enquiry direction — a BUY enquiry can only produce a PQ,
+  // a SELL enquiry can only produce an SQ. Prevents picking the wrong type for a linked enquiry.
   const isBuy = d.dir === 'BUY';
   const pqRadio = document.getElementById('nq-type-pq');
   const sqRadio = document.getElementById('nq-type-sq');
   if (pqRadio && sqRadio) {
     pqRadio.checked = isBuy;
     sqRadio.checked = !isBuy;
+    pqRadio.disabled = !isBuy;
+    sqRadio.disabled = isBuy;
+    const pqLabelEl = document.getElementById('qt-pq-label');
+    const sqLabelEl = document.getElementById('qt-sq-label');
+    if (pqLabelEl) pqLabelEl.style.opacity = isBuy ? '1' : '0.4';
+    if (sqLabelEl) sqLabelEl.style.opacity = isBuy ? '0.4' : '1';
     onNqTypeChange(isBuy ? pqRadio : sqRadio);
   }
 
@@ -6693,8 +6720,10 @@ async function loadRFQResponses(rfqId, isVendor, uom) {
         + '<td class="mono f10">' + (qr.validity_date?new Date(qr.validity_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—') + '</td>'
         + '<td><span class="badge ' + stClass + '">' + qr.status + '</span></td>'
         + '<td style="display:flex;gap:4px">'
-        + (qr.status !== 'SELECTED' ? '<button class="btn bxs bg" onclick="selectResponse('+qr.id+')">Select</button>' : '<span class="badge bd-confirmed" style="font-size:8px">SELECTED</span>')
-        + (qr.status !== 'DECLINED' ? '<button class="btn bxs bd" onclick="declineResponse('+qr.id+')">✕</button>' : '')
+        + (qr.status === 'CONVERTED' ? '<span class="badge bd-draft" style="font-size:8px">LOCKED — IN DEAL</span>'
+          : qr.status === 'SELECTED' ? '<span class="badge bd-confirmed" style="font-size:8px">SELECTED</span>'
+          : '<button class="btn bxs bg" onclick="selectResponse('+qr.id+')">Select</button>')
+        + (qr.status !== 'DECLINED' && qr.status !== 'CONVERTED' ? '<button class="btn bxs bd" onclick="declineResponse('+qr.id+')">✕</button>' : '')
         + '</td>'
         + '</tr>';
     }).join('');
@@ -6715,7 +6744,7 @@ async function loadRFQResponses(rfqId, isVendor, uom) {
           + '<div style="display:flex;justify-content:space-between;padding:4px 0"><span style="color:var(--text3)">Payment</span><span>' + (qr.payment_terms||'—') + '</span></div>'
           + '</div>'
           + '<div style="display:flex;gap:6px;margin-top:8px">'
-          + (qr.status!=='SELECTED'?'<button class="btn bp bsm" style="flex:1" onclick="selectResponse('+qr.id+')">Select</button>':'<span class="badge bd-confirmed" style="font-size:10px;padding:6px;text-align:center;flex:1">SELECTED ✓</span>')
+          + (qr.status==='CONVERTED'?'<span class="badge bd-draft" style="font-size:10px;padding:6px;text-align:center;flex:1">LOCKED — IN DEAL</span>':qr.status==='SELECTED'?'<span class="badge bd-confirmed" style="font-size:10px;padding:6px;text-align:center;flex:1">SELECTED ✓</span>':'<button class="btn bp bsm" style="flex:1" onclick="selectResponse('+qr.id+')">Select</button>')
           + '</div>'
           + '</div>';
       }).join('');
