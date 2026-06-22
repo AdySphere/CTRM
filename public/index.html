@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.1</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.2</div>
   </div>
   <nav class="sb-nav">
 
@@ -1248,14 +1248,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div></div>
         <div id="pc-material" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Add one line per quality grade. Each has its own quantity, spec, HS code and base price. Sample 1 has Q1+Q2 Lead-Tin as separate lines.</div>
-          <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade / Quality</th><th>Qty (MT)</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle / Ingot Wt</th><th>Weight Basis</th><th>Origin</th></tr></thead>
+          <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade / Quality</th><th>Qty</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle / Ingot Wt</th><th>Weight Basis</th><th>Origin</th><th></th></tr></thead>
           <tbody id="pc-mat-tbody">
             <tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading material lines…</td></tr>
           </tbody></table>
           <div class="lar br-row g7"><button class="btn bg bsm" onclick="addPCMatLine()">+ Add Quality / Material Line</button></div>
           <div class="divl mt12">General Material Terms</div>
           <div class="fg">
-            <div class="f"><div class="fl">Total Contract Quantity</div><div class="fc mono fw7">100 MT</div></div>
+            <div class="f"><div class="fl">Total Contract Quantity</div><div class="fc mono fw7" id="pc-total-mat-qty">—</div></div>
             <div class="f"><div class="fl">Material Free From</div><input type="text" class="fi" value="Harmful impurities not stated, including radioactivity"></div>
             <div class="f"><div class="fl">Container Type</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option><option>BULK VESSEL</option></select></div>
           </div>
@@ -1415,12 +1415,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Test Sample Disposition</div><input type="text" class="fi" placeholder="e.g. Provisional assay samples sent to Seller. End-user sample kept at Buyer."></div>
           </div>
           <div class="divl">Quality Specification — Per Material / Quality Line</div>
-          <table class="lt"><thead><tr><th>Line</th><th>Quality</th><th>Element</th><th>Role</th><th>Range Min</th><th>Range Max</th><th>UOM</th><th>Reference Average</th><th>Penalty / Escalator</th></tr></thead>
+          <table class="lt"><thead><tr><th>Element</th><th>Min %</th><th>Max %</th><th>Target / Typical</th><th>Penalty / Bonus Basis</th><th></th></tr></thead>
           <tbody id="pc-qc-tbody">
-            <tr><td class="mono f10">1</td><td class="f10">MillBerry</td><td class="mono f10">Cu</td><td><span class="badge bd-act" style="font-size:7px">PAYABLE</span></td><td class="mono f10">91%</td><td class="f10 tdim">—</td><td class="f10">%</td><td class="mono f10">—</td><td class="f10 tdim">—</td></tr>
-            <tr><td class="mono f10">2</td><td class="f10">MillBerry</td><td class="mono f10">Moisture</td><td><span class="badge bd-ship" style="font-size:7px">PENALTY</span></td><td class="f10 tdim">—</td><td class="mono f10">8%</td><td class="f10">%</td><td class="mono f10">—</td><td class="f10">See Penalty Engine</td></tr>
-            <tr><td class="mono f10">3</td><td class="f10">MillBerry</td><td class="mono f10">Pb</td><td><span class="badge bd-ship" style="font-size:7px">PENALTY</span></td><td class="f10 tdim">—</td><td class="mono f10">0.5%</td><td class="f10">%</td><td class="mono f10">—</td><td class="f10">See Penalty Engine</td></tr>
-            <tr><td class="mono f10">4</td><td class="f10">MillBerry</td><td class="mono f10">As</td><td><span class="badge bd-ship" style="font-size:7px">PENALTY</span></td><td class="f10 tdim">—</td><td class="mono f10">0.1%</td><td class="f10">%</td><td class="mono f10">—</td><td class="f10 tdim">—</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No QC specifications yet — click + Add QC Line</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addPCQCLine()">+ Add QC Line</button></div>
         </div>
@@ -1598,11 +1595,17 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f csf"><div class="fl">Contract Header Remarks</div><textarea class="fta" id="scd-remarks" style="min-height:50px"></textarea></div>
         </div></div>
         <div id="sc-material" class="ftc hidden">
-          <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade</th><th>Qty (MT)</th><th>Tolerance</th><th>UOM</th><th>Packing</th><th>Bundle Wt</th><th>Weight Basis</th><th>Origin</th></tr></thead>
+          <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade</th><th>Qty</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle Wt</th><th>Weight Basis</th><th>Destination</th><th></th></tr></thead>
           <tbody id="sc-mat-tbody">
-            <tr><td class="mono f10">1</td><td><span class="cc"><span class="cp pcu"></span>Copper MillBerry</span></td><td class="mono f10">7404.00.00</td><td class="f10">MillBerry · Cu min 91%</td><td class="mono fw6">100</td><td class="mono f10">±0.1%</td><td class="mono f10">MT</td><td class="f10">Bags</td><td class="mono f10">~1MT bundles</td><td class="f10">SHIPPED-WEIGHT</td><td class="f10">Tanzania</td></tr>
+            <tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading material lines…</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addSCMatLine()">+ Add Quality / Material Line</button></div>
+          <div class="divl mt12">General Material Terms</div>
+          <div class="fg">
+            <div class="f"><div class="fl">Total Contract Quantity</div><div class="fc mono fw7" id="sc-total-mat-qty">—</div></div>
+            <div class="f"><div class="fl">Material Free From</div><input type="text" class="fi" placeholder="e.g. Harmful impurities not stated, including radioactivity"></div>
+            <div class="f"><div class="fl">Container Type</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option><option>BULK VESSEL</option></select></div>
+          </div>
         </div>
         <div id="sc-price" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Same structure as Purchase Contract pricing. LONGER = buyer has right to fix price on any day in the QP window. Each line has its own source item, benchmark, index %, payable %, pricing rule and QP dates.</div>
@@ -1701,10 +1704,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Assay Report Due</div><input type="text" class="fi" value="Within 30 days of delivery at POD"></div>
           <div class="f"><div class="fl">End-User Result Final</div><select class="fs"><option>YES</option><option>NO</option></select></div>
           </div>
-          <table class="lt"><thead><tr><th>Line</th><th>Quality</th><th>Element</th><th>Role</th><th>Min</th><th>Max</th><th>UOM</th><th>Avg</th><th>Penalty / Escalator</th></tr></thead>
+          <table class="lt"><thead><tr><th>Element</th><th>Min %</th><th>Max %</th><th>Target / Typical</th><th>Penalty / Bonus Basis</th><th></th></tr></thead>
           <tbody id="sc-qc-tbody">
-            <tr><td class="mono f10">1</td><td class="f10">MillBerry</td><td class="mono f10">Cu</td><td><span class="badge bd-act" style="font-size:7px">PAYABLE</span></td><td class="mono f10">91%</td><td class="f10 tdim">—</td><td class="f10">%</td><td class="mono f10">—</td><td class="f10 tdim">—</td></tr>
-            <tr><td class="mono f10">2</td><td class="f10">MillBerry</td><td class="mono f10">Moisture</td><td><span class="badge bd-ship" style="font-size:7px">PENALTY</span></td><td class="f10 tdim">—</td><td class="mono f10">8%</td><td class="f10">%</td><td class="mono f10">—</td><td class="f10">See Penalty Engine</td></tr>
+            <tr><td colspan="6" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No QC specifications yet — click + Add QC Line</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addSCQCLine()">+ Add QC Line</button></div>
         </div>
@@ -5109,8 +5111,14 @@ async function loadNewContractDropdowns(){
 function onNcCommodityChange() {
   const cmSel = document.getElementById('nc-commodity');
   const dealSel = document.getElementById('nc-deal-sel');
-  if (!cmSel || !dealSel || !window._ncAllDeals) return;
-  const selectedCommodity = cmSel.value;
+  const selectedCommodity = cmSel?.value;
+
+  // B7 fix: update the Quantity field label/UOM whenever commodity changes
+  const uom = (selectedCommodity && window._commodityCache && window._commodityCache[selectedCommodity]?.uom) || 'MT';
+  const lbl = document.getElementById('nc-qty-label');
+  if (lbl) lbl.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
+
+  if (!dealSel || !window._ncAllDeals) return;
 
   if (!selectedCommodity) {
     // No commodity chosen yet — show all deals
@@ -6347,6 +6355,21 @@ async function deleteAllocation(id) {
 
 // ── PC/SC MATERIAL AND PRICING TABS FROM DB ───────────────────
 // ── PC/SC LINE ADDITION FUNCTIONS ──────────────────────────────
+function recalcTotalMatQty(prefix) {
+  const tbody = document.getElementById(prefix + '-mat-tbody');
+  const totalEl = document.getElementById(prefix + '-total-mat-qty');
+  if (!tbody || !totalEl) return;
+  let total = 0;
+  let uom = 'MT';
+  tbody.querySelectorAll('tr[data-mat-row] input[type="number"]').forEach(function(inp){
+    const v = parseFloat(inp.value);
+    if (!isNaN(v)) total += v;
+  });
+  const uomInput = tbody.querySelector('tr[data-mat-row] td:nth-child(8) input');
+  if (uomInput && uomInput.value) uom = uomInput.value;
+  totalEl.textContent = total > 0 ? total.toLocaleString(undefined,{maximumFractionDigits:3}) + ' ' + uom : '—';
+}
+
 async function addPCMatLine() {
   const c = window._currentContract;
   if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
@@ -6360,7 +6383,7 @@ async function addPCMatLine() {
     + '<td><input type="text" class="fi" placeholder="Material/grade" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" placeholder="HS Code" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" placeholder="Spec" style="font-size:10px"></td>'
-    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right"></td>'
+    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right" oninput="recalcTotalMatQty(&quot;pc&quot;)"></td>'
     + '<td><input type="text" class="fi" placeholder="±%" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" placeholder="MOLOO/MOLCO" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" value="'+uom+'" style="font-size:10px"></td>'
@@ -6368,10 +6391,11 @@ async function addPCMatLine() {
     + '<td><input type="text" class="fi" placeholder="—" style="font-size:10px"></td>'
     + '<td><select class="fs" style="font-size:10px"><option>SHIPPED-WEIGHT</option><option>DMT</option><option>FLOW-METER</option></select></td>'
     + '<td><input type="text" class="fi" placeholder="Origin" style="font-size:10px"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove();recalcTotalMatQty(&quot;pc&quot;)">✕</button></td>';
   const placeholder = tbody.querySelector('td[colspan]');
   if (placeholder) placeholder.closest('tr').remove();
   tbody.appendChild(row);
+  recalcTotalMatQty('pc');
 }
 
 async function addSCMatLine() {
@@ -6387,7 +6411,7 @@ async function addSCMatLine() {
     + '<td><input type="text" class="fi" placeholder="Material/grade" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" placeholder="HS Code" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" placeholder="Spec" style="font-size:10px"></td>'
-    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right"></td>'
+    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right" oninput="recalcTotalMatQty(&quot;sc&quot;)"></td>'
     + '<td><input type="text" class="fi" placeholder="±%" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" placeholder="MOLOO/MOLCO" style="font-size:10px"></td>'
     + '<td><input type="text" class="fi" value="'+uom+'" style="font-size:10px"></td>'
@@ -6395,10 +6419,11 @@ async function addSCMatLine() {
     + '<td><input type="text" class="fi" placeholder="—" style="font-size:10px"></td>'
     + '<td><select class="fs" style="font-size:10px"><option>SHIPPED-WEIGHT</option><option>DMT</option><option>FLOW-METER</option></select></td>'
     + '<td><input type="text" class="fi" placeholder="Destination" style="font-size:10px"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove();recalcTotalMatQty(&quot;sc&quot;)">✕</button></td>';
   const placeholder = tbody.querySelector('td[colspan]');
   if (placeholder) placeholder.closest('tr').remove();
   tbody.appendChild(row);
+  recalcTotalMatQty('sc');
 }
 
 async function addPCPriceLineV10() { await addContractPriceLine('pc'); }
@@ -6424,8 +6449,10 @@ async function addContractPriceLine(prefix) {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
-async function addPCQCLine() {
-  const tbody = document.getElementById('pc-qc-tbody');
+async function addPCQCLine() { addQCLine('pc-qc-tbody'); }
+async function addSCQCLine() { addQCLine('sc-qc-tbody'); }
+function addQCLine(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
   if (!tbody) { toast('QC Specs', 'QC table not found on this tab', 'warning'); return; }
   const row = document.createElement('tr');
   row.innerHTML = '<td><input type="text" class="fi" placeholder="Element (e.g. Cu, Moisture)" style="font-size:10px"></td>'
@@ -6489,26 +6516,14 @@ async function loadContractTabs(contractId, prefix) {
       }
     }
 
-    // Material tab — use contract general fields
+    // Material tab — show empty state; trader builds lines explicitly via + Add Quality / Material Line.
+    // (Previously auto-injected a fake non-editable row that masked the real empty state and
+    //  couldn't be deleted — this is the B8/B9 fix.)
     const matTbody = document.getElementById(prefix + '-mat-tbody');
-    if (matTbody && window._currentContract) {
-      const c = window._currentContract;
-      const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
-      matTbody.innerHTML = '<tr>'
-        + '<td class="mono f10">1</td>'
-        + '<td class="f11 fw6">'+(c.commodity_name||c.commodity_code||'—')+'</td>'
-        + '<td class="mono f10">—</td>'
-        + '<td class="f10">—</td>'
-        + '<td class="mono fw6">'+(c.qty_mt||'—')+'</td>'
-        + '<td class="mono f10">—</td>'
-        + '<td class="f10">MOLOO</td>'
-        + '<td class="mono f10">'+uom+'</td>'
-        + '<td class="f10">—</td>'
-        + '<td class="mono f10">—</td>'
-        + '<td class="f10">SHIPPED-WEIGHT</td>'
-        + '<td class="f10">—</td>'
-        + '</tr>';
+    if (matTbody) {
+      matTbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No material lines yet — click + Add Quality / Material Line</td></tr>';
     }
+    recalcTotalMatQty(prefix);
   } catch(e) { console.warn('loadContractTabs:', e); }
 }
 
