@@ -338,6 +338,21 @@ async function seed() {
   `);
   console.log('✓ hedges seeded');
 
+  // ── ADJUSTMENT CODES MASTER — starter set, fully editable afterward ──
+  await query(`
+    INSERT INTO adjustment_codes (code, description, category, calc_type, default_direction)
+    VALUES
+      ('COMM-AGENT', 'Agent Commission', 'COMMISSION', 'PCT_OF_VALUE', 'DEDUCTION'),
+      ('COMM-BROKER', 'Broker Commission', 'COMMISSION', 'PCT_OF_VALUE', 'DEDUCTION'),
+      ('FRT-ADJ', 'Freight Adjustment', 'FREIGHT', 'PER_UNIT', 'DEDUCTION'),
+      ('PEN-LATE', 'Late Delivery Penalty', 'PENALTY', 'PER_UNIT', 'DEDUCTION'),
+      ('PEN-QUALITY', 'Quality / Off-Spec Penalty', 'PENALTY', 'PER_UNIT', 'DEDUCTION'),
+      ('FX-ADJ', 'FX Rate Adjustment', 'FX', 'FLAT', 'ADDITION'),
+      ('PREM-ORIGIN', 'Origin Premium', 'OTHER', 'PER_UNIT', 'ADDITION')
+    ON CONFLICT (code) DO NOTHING;
+  `);
+  console.log('✓ adjustment_codes seeded');
+
   console.log('\n✅ All seed data loaded.');
   console.log('\nDemo scenario ready:');
   console.log('  DEAL123 → PC-2026-001 → LOG-2026-011 → KMTC121/122/123/MAER232 → FIX123 → REQ-001');

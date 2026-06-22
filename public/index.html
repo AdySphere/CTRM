@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.4</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.5</div>
   </div>
   <nav class="sb-nav">
 
@@ -420,7 +420,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <div class="ni" data-page="shipment-transit" onclick="nav('shipment-transit',this);afterNav('shipment-transit')">In Transit</div>
     <div class="ni" data-page="provisional-receipt" onclick="nav('provisional-receipt',this);afterNav('provisional-receipt')">Provisional Receipt</div>
     <div class="ni" data-page="shipment" onclick="nav('shipment',this);afterNav('shipment')">Assay &amp; QC</div>
-    <div class="ni" data-page="grn" onclick="nav('grn',this);afterNav('grn')">Adjustment Screen</div>
+    <div class="ni" data-page="grn" onclick="nav('grn',this);afterNav('grn')">GRN / Final Receipt</div>
     <div class="sb-group">Pricing &amp; Risk</div>
     <div class="ni" data-page="pricing" onclick="nav('pricing',this);afterNav('pricing')">Pricing Engine</div>
     <div class="ni" data-page="allocation" onclick="nav('allocation',this);afterNav('allocation')">Allocation</div>
@@ -3077,16 +3077,16 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </table>
         </div>
         <div id="piv-adj" class="ftc hidden">
-          <div class="ban bi mb12"><span>ℹ</span>Adjustment lines reduce or increase the invoice amount. Commission, freight adjustments, penalties, and FX adjustments are captured here. Each line links to an adjustment code from the master.</div>
-          <table class="lt"><thead><tr><th>Code</th><th>Description</th><th>Payable Metal / Component</th><th>Calc Type</th><th>Value</th><th>Unit</th><th>Qty Basis</th><th>Amount (USD)</th><th>Direction</th></tr></thead>
-          <tbody>
-            <tr><td class="mono f10 ta2">COMM-AGENT</td><td class="f11">Agent Commission</td><td class="f10">—</td><td class="f10">% of Value</td><td class="mono f10">1.5%</td><td class="f10">% of invoice</td><td class="mono f10">587,812.50</td><td class="mono td">−8,817.19</td><td><span class="badge bd-danger" style="font-size:7px">DEDUCTION</span></td></tr>
+          <div class="ban bi mb12"><span>ℹ</span>Adjustment lines reduce or increase the invoice amount. Commission, freight adjustments, penalties, and FX adjustments are captured here. Each line links to an adjustment code from the master — codes are fully editable, not hardcoded.</div>
+          <table class="lt" id="inv-adj-table"><thead><tr><th>Code</th><th>Description</th><th>Payable Component</th><th>Value</th><th>Unit</th><th>Amount (USD)</th><th>Direction</th><th></th></tr></thead>
+          <tbody id="inv-adj-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Open an invoice to see its adjustment lines</td></tr>
           </tbody>
           <tfoot>
-            <tr style="background:var(--surface2)"><td colspan="7" class="mono f10 fw7" style="text-align:right;padding:8px 12px">Net Invoice Amount</td><td class="mono fw7 tg" style="padding:8px 12px"><span id="prov-provisional-amount">—</span></td><td></td></tr>
-            <tr style="background:var(--surface2)"><td colspan="7" class="mono f10 fw7" style="text-align:right;padding:8px 12px">90% Provisional Payment Due</td><td class="mono fw7 ta" style="padding:8px 12px"><span id="prov-pay-90">—</span></td><td></td></tr>
+            <tr style="background:var(--surface2)"><td colspan="6" class="mono f10 fw7" style="text-align:right;padding:8px 12px">Net Invoice Amount</td><td class="mono fw7 tg" style="padding:8px 12px"><span id="prov-provisional-amount">—</span></td><td></td></tr>
+            <tr style="background:var(--surface2)"><td colspan="6" class="mono f10 fw7" style="text-align:right;padding:8px 12px">90% Provisional Payment Due</td><td class="mono fw7 ta" style="padding:8px 12px"><span id="prov-pay-90">—</span></td><td></td></tr>
           </tfoot></table>
-          <div class="lar"><button class="btn bg bsm" onclick="toast('Adjustment','Add adjustment line','info')">+ Add Adjustment Line</button></div>
+          <div class="lar"><button class="btn bg bsm" onclick="addInvoiceAdjLine()">+ Add Adjustment Line</button></div>
         </div>
         <div id="piv-payment" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Payment % (Provisional)</div><div class="fc mono fw7">90%</div></div>
@@ -3263,7 +3263,7 @@ function nav(pageId,navEl){
     'purchase-orders':'Purchase Orders','sales-orders':'Sales Orders',
     'qpwindow':'QP & Rollover Window',logistics:'Logistics',
     'shipment-transit':'In Transit','provisional-receipt':'Provisional Receipt',
-    shipment:'Assay & QC',grn:'Adjustment Screen',
+    shipment:'Assay & QC',grn:'GRN / Final Receipt',
     pricing:'Pricing Engine',allocation:'Allocation',hedge:'Hedge Card',exposure:'Exposure & MTM',
     'provisional-invoice':'Provisional Invoice','final-invoice':'Final Invoice',
     approvals:'Approval Workflow'
@@ -8435,6 +8435,63 @@ async function submitNewAssay() {
     closeModal('modal-new-assay');
     await loadQCResultsList();
   } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// ── INVOICE ADJUSTMENT LINES (E30 fix) ──────────────────────────
+// NOTE: Provisional Invoice screen is currently a live computation keyed by deal,
+// not a persisted invoice record — so these lines compute client-side for now.
+// Full persistence requires the invoice to be saved as a real record first (separate piece of work).
+window._invAdjCodes = null;
+
+async function loadAdjustmentCodesMaster() {
+  if (window._invAdjCodes) return window._invAdjCodes;
+  try {
+    const res = await fetch(API_BASE + '/api/adjustment-codes');
+    const data = await res.json();
+    window._invAdjCodes = data.data || [];
+  } catch(e) { window._invAdjCodes = []; }
+  return window._invAdjCodes;
+}
+
+async function addInvoiceAdjLine() {
+  const tbody = document.getElementById('inv-adj-tbody');
+  if (!tbody) return;
+  const codes = await loadAdjustmentCodesMaster();
+  if (!codes.length) { toast('No Adjustment Codes', 'Adjustment codes master is empty — add one first', 'warning'); return; }
+
+  const row = document.createElement('tr');
+  const codeOptions = codes.map(function(c){ return '<option value="'+c.code+'" data-direction="'+c.default_direction+'" data-calc="'+c.calc_type+'">'+c.code+' — '+c.description+'</option>'; }).join('');
+  row.innerHTML = '<td><select class="fs" style="font-size:10px" onchange="onInvAdjCodeChange(this)">'+codeOptions+'</select></td>'
+    + '<td class="f11" data-desc>'+(codes[0]?.description||'—')+'</td>'
+    + '<td><input type="text" class="fi" placeholder="e.g. Cu" style="font-size:10px"></td>'
+    + '<td><input type="number" class="fi" placeholder="Value" style="font-size:10px;text-align:right" oninput="recalcInvAdjAmount(this)"></td>'
+    + '<td><input type="text" class="fi" placeholder="% or USD/MT" style="font-size:10px" value="'+(codes[0]?.calc_type==='PCT_OF_VALUE'?'%':'USD')+'"></td>'
+    + '<td class="mono f10 ta2" data-amount>—</td>'
+    + '<td><span class="badge '+(codes[0]?.default_direction==='ADDITION'?'bd-confirmed':'bd-danger')+'" style="font-size:7px" data-dir-badge>'+(codes[0]?.default_direction||'DEDUCTION')+'</span></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  const placeholder = tbody.querySelector('td[colspan]');
+  if (placeholder) placeholder.closest('tr').remove();
+  tbody.appendChild(row);
+}
+
+function onInvAdjCodeChange(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const row = sel.closest('tr');
+  const descCell = row.querySelector('[data-desc]');
+  const dirBadge = row.querySelector('[data-dir-badge]');
+  if (descCell) descCell.textContent = opt.textContent.split(' — ')[1] || '—';
+  if (dirBadge) {
+    dirBadge.textContent = opt.dataset.direction;
+    dirBadge.className = 'badge ' + (opt.dataset.direction === 'ADDITION' ? 'bd-confirmed' : 'bd-danger');
+    dirBadge.style.fontSize = '7px';
+  }
+}
+
+function recalcInvAdjAmount(input) {
+  // Placeholder calc — real amount depends on the invoice gross value once that's a persisted record
+  const row = input.closest('tr');
+  const amountCell = row.querySelector('[data-amount]');
+  if (amountCell) amountCell.textContent = input.value ? input.value : '—';
 }
 
 function openProvRcptDetail(receiptNo) {

@@ -1443,3 +1443,62 @@ lotsRouter.get('/', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.lotsRouter = lotsRouter;
+
+// ── ADJUSTMENT CODES MASTER ───────────────────────────────────────
+const adjCodesRouter = require('express').Router();
+adjCodesRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`SELECT * FROM adjustment_codes WHERE active=TRUE ORDER BY category, code`);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+adjCodesRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { code, description, category, calc_type, default_direction } = req.body;
+    if (!code || !description) return res.status(400).json({ error: 'code and description are required' });
+    const result = await query(`
+      INSERT INTO adjustment_codes (code, description, category, calc_type, default_direction)
+      VALUES ($1,$2,$3,$4,$5) RETURNING *
+    `, [code, description, category || 'OTHER', calc_type || 'PCT_OF_VALUE', default_direction || 'DEDUCTION']);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.adjCodesRouter = adjCodesRouter;
+
+// ── INVOICE ADJUSTMENT LINES ──────────────────────────────────────
+const invoiceAdjRouter = require('express').Router();
+invoiceAdjRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { invoice_id } = req.query;
+    const result = await query(`
+      SELECT ial.*, ac.description as code_description, ac.category
+      FROM invoice_adjustment_lines ial
+      LEFT JOIN adjustment_codes ac ON ac.code = ial.adjustment_code
+      WHERE ial.invoice_id=$1 ORDER BY ial.id
+    `, [invoice_id]);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+invoiceAdjRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { invoice_id, adjustment_code, payable_component, calc_value, calc_unit, qty_basis, computed_amount, direction, notes } = req.body;
+    if (!invoice_id) return res.status(400).json({ error: 'invoice_id is required' });
+    const result = await query(`
+      INSERT INTO invoice_adjustment_lines (invoice_id, adjustment_code, payable_component, calc_value, calc_unit, qty_basis, computed_amount, direction, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *
+    `, [invoice_id, adjustment_code || null, payable_component || null, calc_value || null, calc_unit || null, qty_basis || null, computed_amount || null, direction || 'DEDUCTION', notes || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+invoiceAdjRouter.delete('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query(`DELETE FROM invoice_adjustment_lines WHERE id=$1`, [req.params.id]);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.invoiceAdjRouter = invoiceAdjRouter;
