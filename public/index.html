@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.7</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.8</div>
   </div>
   <nav class="sb-nav">
 
@@ -1063,14 +1063,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
 
         <div class="lcb" id="dd-lifecycle">
-          <div class="lcs done">Enquiry</div><div class="lcs done">Quotation</div><div class="lcs cur">Deal Confirmed</div>
-          <div class="lcs future">RFQ / PO</div><div class="lcs future">Shipment</div><div class="lcs future">QP Final</div>
-          <div class="lcs future">Invoice</div><div class="lcs future">Settled</div>
+          <div class="lcs done" id="dd-lcs-enquiry">Enquiry</div><div class="lcs done" id="dd-lcs-rfq">RFQ</div><div class="lcs done" id="dd-lcs-quotation">Quotation</div><div class="lcs cur" id="dd-lcs-confirmed">Deal Confirmed</div>
+          <div class="lcs future" id="dd-lcs-po">PO / SO</div><div class="lcs future" id="dd-lcs-shipment">Shipment</div><div class="lcs future" id="dd-lcs-qp">QP Final</div>
+          <div class="lcs future" id="dd-lcs-invoice">Invoice</div><div class="lcs future" id="dd-lcs-settled">Settled</div>
         </div>
         <div class="two-col cb">
           <!-- SELL LEG -->
           <div class="card">
-            <div class="lh"><div class="li li-s">S</div><div class="lttl">Sell Leg — Tata Metals Ltd</div><span class="badge bd-act" style="margin-left:auto">CONTRACTED</span></div>
+            <div class="lh"><div class="li li-s">S</div><div class="lttl" id="dd-sl-title">Sell Leg</div><span class="badge bd-act" id="dd-sl-badge" style="margin-left:auto">—</span></div>
             <div class="fts">
               <div class="ft active slt" data-tab="sl-info">Details</div>
               <div class="ft slt" data-tab="sl-pricing">Pricing</div>
@@ -1088,27 +1088,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               </div>
             </div>
             <div id="sl-pricing" class="ftc hidden">
-              <div class="fg">
-                <div class="f"><div class="fl">Template</div><div class="fv mono ta">LME-CU-QP-M1</div></div>
-                <div class="f"><div class="fl">QP Period</div><div class="fv">M+1 after BL</div></div>
-                <div class="f"><div class="fl">Provisional Price</div><div class="fv mono">USD 9,480/MT</div></div>
-                <div class="f"><div class="fl">Provisional Value</div><div class="fv mono tg fw7">USD 4,740,000</div></div>
-              </div>
+              <div class="ban bi mb12"><span>ℹ</span>Pricing lives on the linked Sales Contract(s) — open the Contracts tab below or click a linked SC to see template, QP period and provisional values.</div>
             </div>
             <div id="sl-payment" class="ftc hidden">
-              <div class="fg">
-                <div class="f"><div class="fl">Payment Basis</div><div class="fv">LC-SIGHT</div></div>
-                <div class="f"><div class="fl">BC Terms Code</div><div class="fv mono">NET30</div></div>
-              </div>
-              <div class="divl">Payment Schedule</div>
-              <table class="lt"><thead><tr><th>#</th><th>%</th><th>Trigger</th><th>Due Date</th><th>Status</th></tr></thead>
-                <tbody id="so-list-tbody"><tr><td class="mono f11">1</td><td class="mono f11">100%</td><td class="f11">AGAINST-BL</td><td class="mono f11">2026-05-30</td><td><span class="badge bd-draft">PENDING</span></td></tr></tbody>
-              </table>
+              <div class="ban bi mb12"><span>ℹ</span>Payment terms live on the linked Sales Contract(s) — open the contract to see terms, schedule and due dates.</div>
             </div>
             <div id="sl-pen" class="ftc hidden">
-              <table class="lt"><thead><tr><th>Code</th><th>Type</th><th>Element</th><th>Threshold</th><th>Rate</th><th>Dir.</th></tr></thead>
-                <tbody><tr><td class="mono f11 ta2">PEN-LATE-DEL</td><td><span class="ctp ct-flat">FLAT-RATE</span></td><td class="mono f11">Days Late</td><td class="f11">—</td><td class="mono f11">$5/MT/day</td><td><span class="badge bd-danger" style="font-size:7px">OUT</span></td></tr></tbody>
-              </table>
+              <div class="ban bi mb12"><span>ℹ</span>Penalties live on the linked Sales Contract(s) — open the contract to see penalty codes and rates.</div>
             </div>
           </div>
                     <!-- LINKED ENQUIRIES -->
@@ -6300,10 +6286,36 @@ async function openDealDetail(dealNo) {
     if (confBadge) { confBadge.className = 'badge ' + (deal.confirmed ? 'bd-confirmed' : 'bd-draft'); confBadge.textContent = deal.confirmed ? 'CONFIRMED' : 'DRAFT'; }
     if (actDiv) actDiv.classList.toggle('hidden', !deal.confirmed);
 
-    // Sell leg details
-    set('sl-info', ''); // Let static HTML stand — update key fields
-    const slCustomer = document.querySelector('#sl-info .fg');
-    // (static deal HTML is fine for now; live data populates the summary fields below)
+    // Sell leg section header — was permanently hardcoded "Sell Leg — Tata Metals Ltd"
+    const slTitle = document.getElementById('dd-sl-title');
+    const slBadge = document.getElementById('dd-sl-badge');
+    if (slTitle) slTitle.textContent = 'Sell Leg' + (deal.customer_name ? (' — ' + deal.customer_name) : '');
+    if (slBadge) { slBadge.textContent = deal.status || 'DRAFT'; slBadge.className = 'badge ' + (deal.status==='CONFIRMED'?'bd-confirmed':'bd-act'); }
+
+    // Sell leg details — H35 fix: was permanently hardcoded (Tata Metals Ltd, 500 MT, SO-10042)
+    // regardless of which deal was opened. Now populated from the actual deal record.
+    const slInfo = document.getElementById('sl-info');
+    if (slInfo) {
+      const dUom = deal.commodity_uom || 'MT';
+      slInfo.innerHTML = '<div class="fg">'
+        + '<div class="f"><div class="fl">Customer</div><div class="fv">'+(deal.customer_name||'— not set —')+'</div></div>'
+        + '<div class="f"><div class="fl">Supplier</div><div class="fv">'+(deal.supplier_name||'— not set —')+'</div></div>'
+        + '<div class="f"><div class="fl">Quantity</div><div class="fv mono">'+(deal.qty_mt?deal.qty_mt+' '+dUom:'—')+'</div></div>'
+        + '<div class="f"><div class="fl">Incoterms</div><div class="fv">'+(deal.incoterms||'—')+'</div></div>'
+        + '<div class="f"><div class="fl">Commodity</div><div class="fv mono">'+(deal.commodity_name||deal.commodity_code||'—')+'</div></div>'
+        + '<div class="f"><div class="fl">Deal Date</div><div class="fv mono">'+(deal.deal_date?new Date(deal.deal_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—')+'</div></div>'
+        + '</div>';
+    }
+
+    // H34/H35 fix: lifecycle bar was permanently static — now reflects actual deal status
+    const lcsConfirmed = document.getElementById('dd-lcs-confirmed');
+    const lcsPo = document.getElementById('dd-lcs-po');
+    if (lcsConfirmed) {
+      lcsConfirmed.className = 'lcs ' + (deal.confirmed ? 'done' : 'cur');
+    }
+    if (lcsPo) {
+      lcsPo.className = 'lcs ' + (deal.confirmed ? 'cur' : 'future');
+    }
 
     // Scroll to deal detail card
     const card = document.getElementById('deal-detail-card');

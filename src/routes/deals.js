@@ -7,11 +7,12 @@ dealsRouter.get('/', async (req, res) => {
     const result = await query(`
       SELECT 
         d.id, d.deal_no, d.deal_date, d.commodity_code, d.deal_type,
-        d.qty_mt, d.supplier_id, d.customer_id, d.confirmed,
+        d.qty_mt, d.supplier_id, d.customer_id, d.confirmed, d.incoterms,
         d.confirmed_at, d.status, d.notes, d.created_at,
         s.name as supplier_name,
         c.name as customer_name,
-        cm.name as commodity_name
+        cm.name as commodity_name,
+        cm.uom as commodity_uom
       FROM deals d
       LEFT JOIN counterparties s ON s.id = d.supplier_id
       LEFT JOIN counterparties c ON c.id = d.customer_id
