@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.2</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.3</div>
   </div>
   <nav class="sb-nav">
 
@@ -1457,7 +1457,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bw mb12"><span>⚠</span>Rollover applies when counterparty misses fixing window. Each missed period = one append-only row. Rate basis: PER-MT, FIXED-TOTAL (÷ contract qty), or PERCENTAGE (× provisional price). All resolve to per-MT for accounting.</div>
           <div class="fg mb12">
             <div class="f"><div class="fl">Rollover Applicable</div><select class="fs"><option>YES</option><option>NO</option></select></div>
-            <div class="f"><div class="fl">Fixing Start Date</div><input type="date" class="fi" value="2026-04-01"></div>
+            <div class="f"><div class="fl">Fixing Start Date</div><input type="date" class="fi" id="pcd-rollover-start"></div>
             <div class="f"><div class="fl">Fixing Frequency</div><select class="fs"><option>MONTHLY</option><option>WEEKLY</option><option>CUSTOM</option></select></div>
             <div class="f"><div class="fl">Fixing Rule</div><select class="fs"><option>CALENDAR-MONTH</option><option>BL-MONTH</option><option>CUSTOM-PERIOD</option></select></div>
             <div class="f"><div class="fl">Rate Basis</div><select class="fs" id="rollover-rate-basis" onchange="toggleRolloverRateBasis()"><option value="PER-MT">PER-MT (USD/MT/period)</option><option value="FIXED-TOTAL">FIXED-TOTAL (total ÷ contract qty)</option><option value="PERCENTAGE">PERCENTAGE (% of provisional price)</option></select></div>
@@ -1467,9 +1467,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Derived Per-MT Rate</div><div class="fc ta fw7" id="rollover-derived-rate">USD 2.00 / MT / period</div></div>
           </div>
           <div class="divl">Rollover Events — Append-Only Log</div>
-          <table class="lt"><thead><tr><th>Event No.</th><th>Period From</th><th>Period To</th><th>Unfixed Qty (MT)</th><th>Rate (USD/MT)</th><th>Amount (USD)</th><th>Currency</th><th>Accrual Ref</th><th>Invoice No.</th><th>Status</th></tr></thead>
+          <table class="lt"><thead><tr><th>Period From</th><th>Period To</th><th>Unfixed Qty</th><th>Rate (USD/MT)</th><th>Amount (USD)</th><th>Status</th><th></th></tr></thead>
           <tbody id="rollover-tbody">
-            <tr><td class="mono f10 ta fw6">RO-001</td><td class="mono f10">2026-04-01</td><td class="mono f10">2026-04-30</td><td class="mono f10">100</td><td class="mono f10">2.00</td><td class="mono tg fw6">200</td><td class="mono f10">USD</td><td class="mono f10 ta2">ACC-001</td><td class="mono f10 tdim">—</td><td><span class="badge bd-ship">ACCRUED</span></td></tr>
+            <tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No rollover events yet — click + Add Rollover Event when counterparty misses a fixing window</td></tr>
           </tbody></table>
           <div class="lar br-row g7"><button class="btn bg bsm" onclick="addRolloverEvent()">+ Add Rollover Event</button><span class="tdim f10">Immutable once created</span></div>
         </div>
@@ -6056,9 +6056,17 @@ async function loadQPDealOptions() {
   if (!sel) return;
   const data = await api('/api/deals');
   if (!data) return;
-  sel.innerHTML = data.map(d =>
-    `<option value="${d.deal_no}">${d.deal_no} — ${d.commodity_name||d.commodity_code} (${d.deal_type||''})</option>`
-  ).join('');
+  // C18 fix: only show deals that actually have a commodity and qty set (i.e. real, usable deals) —
+  // excludes empty/placeholder DRAFT deals from cluttering the QP window selector.
+  const usable = data.filter(function(d){ return d.commodity_code && d.qty_mt; });
+  if (!usable.length) {
+    sel.innerHTML = '<option value="">— No deals with qty/commodity set yet —</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">— Select Deal —</option>' + usable.map(function(d) {
+    const uom = (window._commodityCache && d.commodity_code && window._commodityCache[d.commodity_code]?.uom) || 'MT';
+    return '<option value="'+d.deal_no+'">'+d.deal_no+' — '+(d.commodity_name||d.commodity_code)+' · '+d.qty_mt+' '+uom+'</option>';
+  }).join('');
 }
 
 // ── WIRE NAV TO LOAD DATA ────────────────────────────────────
@@ -6474,13 +6482,17 @@ async function addSCPayLine() {
 }
 
 async function addRolloverEvent() {
-  const tbody = document.getElementById('pc-rollover-tbody') || document.querySelector('#pc-rollover tbody');
+  const tbody = document.getElementById('rollover-tbody');
   if (!tbody) { toast('Rollover', 'Rollover table not found on this tab', 'warning'); return; }
+  const c = window._currentContract;
+  const uom = (c && window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
   const row = document.createElement('tr');
   row.innerHTML = '<td><input type="date" class="fi" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Reason" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="New QP window" style="font-size:10px"></td>'
-    + '<td><select class="fs" style="font-size:10px"><option>PENDING</option><option>APPROVED</option><option>REJECTED</option></select></td>'
+    + '<td><input type="date" class="fi" style="font-size:10px"></td>'
+    + '<td><input type="number" class="fi" placeholder="Qty ('+uom+')" style="font-size:10px;text-align:right"></td>'
+    + '<td><input type="number" class="fi" placeholder="Rate" style="font-size:10px;text-align:right" value="'+(document.getElementById('rollover-rate-val')?.value||'')+'"></td>'
+    + '<td><input type="number" class="fi" placeholder="Amount" style="font-size:10px;text-align:right"></td>'
+    + '<td><select class="fs" style="font-size:10px"><option>PENDING</option><option>ACCRUED</option><option>INVOICED</option></select></td>'
     + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
   const placeholder = tbody.querySelector('td[colspan]');
   if (placeholder) placeholder.closest('tr').remove();
@@ -6513,6 +6525,12 @@ async function loadContractTabs(contractId, prefix) {
         }).join('');
       } else if (priceTbody) {
         priceTbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines — add via Pricing & QP tab</td></tr>';
+      }
+
+      // C24 fix: sync Rollover Fixing Start Date with this contract's actual QP start date
+      if (prefix === 'pc' && lines.length && lines[0].qp_start_date) {
+        const rollStart = document.getElementById('pcd-rollover-start');
+        if (rollStart) rollStart.value = new Date(lines[0].qp_start_date).toISOString().split('T')[0];
       }
     }
 
