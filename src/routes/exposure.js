@@ -93,8 +93,15 @@ async function getQPAverage(pricingLine, upToDate) {
 // GET /api/exposure — compute full exposure for all deals
 router.get('/', async (req, res) => {
   try {
-    const { deal_id, as_of_date } = req.query;
+    const { deal_id, contract_id, as_of_date } = req.query;
     const today = as_of_date || new Date().toISOString().split('T')[0];
+
+    // C23 fix: support filtering by contract_id directly (the correct primary key for QP),
+    // while keeping deal_id filtering for backward compatibility.
+    let whereClause = "WHERE c.status NOT IN ('CANCELLED', 'CLOSED')";
+    const params = [];
+    if (contract_id) { params.push(contract_id); whereClause += ` AND c.id = $${params.length}`; }
+    else if (deal_id) { params.push(deal_id); whereClause += ` AND d.deal_no = $${params.length}`; }
 
     // Get all contracts with pricing lines
     const contractsRes = await query(`
@@ -110,10 +117,9 @@ router.get('/', async (req, res) => {
       JOIN counterparties cp ON cp.id = c.counterparty_id
       JOIN contract_pricing_lines pl ON pl.contract_id = c.id
       LEFT JOIN deals d ON d.id = c.deal_id
-      WHERE c.status NOT IN ('CANCELLED', 'CLOSED')
-      ${deal_id ? "AND d.deal_no = $1" : ""}
+      ${whereClause}
       ORDER BY c.contract_date DESC
-    `, deal_id ? [deal_id] : []);
+    `, params);
 
     const rows = [];
 
@@ -234,6 +240,32 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/exposure/qp/:deal_no — QP running average for a specific deal
+// C23 fix: QP should key off Contract, not Deal — a deal can have multiple contracts
+// (Deal Basket supports many-buy/many-sell), so picking 'the' pricing line for a deal_no
+// silently grabbed an arbitrary contract and ignored the rest. Contract-based is now the
+// correct primary path; deal-based stays for backward compatibility where only one contract exists.
+router.get('/qp/contract/:contract_id', async (req, res) => {
+  try {
+    const { contract_id } = req.params;
+    const { as_of_date } = req.query;
+
+    const plRes = await query(`
+      SELECT pl.*, c.id as contract_id, c.contract_no, c.deal_id, d.deal_no
+      FROM contract_pricing_lines pl
+      JOIN contracts c ON c.id = pl.contract_id
+      LEFT JOIN deals d ON d.id = c.deal_id
+      WHERE c.id = $1 LIMIT 1
+    `, [contract_id]);
+
+    if (!plRes.rows.length) return res.status(404).json({ error: 'Contract not found or has no pricing line yet' });
+    const pl = plRes.rows[0];
+    const qp = await getQPAverage(pl, as_of_date);
+    res.json({ success: true, contract_id: pl.contract_id, contract_no: pl.contract_no, deal_no: pl.deal_no, data: qp });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get('/qp/:deal_no', async (req, res) => {
   try {
     const { deal_no } = req.params;

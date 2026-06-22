@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.8</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.9</div>
   </div>
   <nav class="sb-nav">
 
@@ -1755,7 +1755,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
 
       <div class="fg mb14">
-        <div class="f"><div class="fl">Select Deal</div>
+        <div class="f"><div class="fl">Select Contract</div>
           <select class="fs" id="qp-deal-select" onchange="renderQPWindow(this.value)">
             <option value="DEAL123">DEAL123 — Glencore Cu MillBerry (Buy) · Event Based</option>
             <option value="DEAL456">DEAL456 — Tata Metals Cu MillBerry (Sell) · Event Based</option>
@@ -3022,7 +3022,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
     <div class="page" id="page-provisional-invoice">
       <div class="ph"><div class="ph-l"><div class="pt">Provisional Invoice</div><div class="ps">Based on provisional price · 90% payment trigger · Sent to buyer after BL date · Adjusted when QP closes</div></div>
-        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Provisional Invoice')">🖨 Print</button><button class="export-btn" onclick="exportToExcel('prov-inv-table','Provisional_Invoice')">⬇ Excel</button><button class="btn bp" onclick="toast('Invoice Created','PINV-2026-001 created · Sent to buyer','success')">＋ Create Invoice</button></div></div></div>
+        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Provisional Invoice')">🖨 Print</button><button class="export-btn" onclick="exportToExcel('prov-inv-table','Provisional_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('PROVISIONAL')">＋ Create Invoice</button></div></div></div>
       <div class="sr">
         <div class="sc"><div class="scl">Draft</div><div class="scv tdim">1</div></div>
         <div class="sc"><div class="scl">Sent</div><div class="scv ta2">1</div></div>
@@ -3100,7 +3100,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <!-- ══ FINAL INVOICE ══ -->
     <div class="page" id="page-final-invoice">
       <div class="ph"><div class="ph-l"><div class="pt">Final Invoice</div><div class="ps">QP window closed · Final price locked · Delta note vs provisional · 10% balance payment trigger</div></div>
-        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Final Invoice')">🖨 Print</button><button class="export-btn" onclick="exportToExcel('final-inv-table','Final_Invoice')">⬇ Excel</button><button class="btn bp" onclick="toast('Final Invoice','FINV-2026-001 created · QP closed at $9,441','success')">＋ Create Final Invoice</button></div></div></div>
+        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Final Invoice')">🖨 Print</button><button class="export-btn" onclick="exportToExcel('final-inv-table','Final_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('FINAL')">＋ Create Final Invoice</button></div></div></div>
       <div class="card">
         <div class="ch"><div class="ct">Final Invoice — FINV-2026-001</div><div class="cs">SC-2026-001 · QP closed May 31 · Final avg $9,441 (buy) / $10,218 (sell)</div></div>
         <div class="fts">
@@ -3684,15 +3684,20 @@ async function renderExposureTable() {
 }
 
 // ── QP WINDOW — reads from /api/exposure/qp/:deal ────────────
-async function renderQPWindow(dealId) {
-  dealId = dealId || document.getElementById('qp-deal-select')?.value || 'DEAL123';
+async function renderQPWindow(contractId) {
+  contractId = contractId || document.getElementById('qp-deal-select')?.value;
   const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v||'—'; };
+  if (!contractId) return;
 
-  const data = await api(`/api/exposure/qp/${dealId}`);
+  // C23 fix: keyed off contract now, not deal — resolves the deal label from the contract for display
+  const contract = (window._qpContracts||[]).find(function(c){ return String(c.id) === String(contractId); });
+  const dealId = contract?.deal_no || null;
+
+  const data = await api(`/api/exposure/qp/contract/${contractId}`);
   if (!data) return;
 
   const qp = data.data || data;
-  set('qp-deal-label', dealId);
+  set('qp-deal-label', (contract?.contract_no || contractId) + (dealId ? ' · ' + dealId : ''));
   set('qp-days-display', `${qp.days} / ${qp.total} business days`);
   set('qp-avg-display', qp.average !== null ? `${fmt(qp.average)} (${qp.days} days)` : '—');
   const statusLabel = qp.status === 'CLOSED'
@@ -3709,8 +3714,9 @@ async function renderQPWindow(dealId) {
     statusEl.style.color = qp.status === 'OPEN' ? 'var(--green)' : qp.status === 'CLOSED' ? 'var(--text2)' : 'var(--accent)';
   }
 
-  // Get fixation state from exposure
-  const expData = await api(`/api/exposure?deal_id=${dealId}`);
+  // Get fixation state from exposure — C23 fix: query by contract_id, always known,
+  // rather than deal_id which may be null if the contract has no deal linked yet
+  const expData = await api(`/api/exposure?contract_id=${contractId}`);
   if (expData && expData.length > 0) {
     const r = expData[0];
     set('qp-rule-display', '—');
@@ -3817,6 +3823,8 @@ async function renderProvInvoice(dealId) {
     body: JSON.stringify({ deal_no: dealId, invoice_type: 'PROVISIONAL' }),
   });
   if (!data) return;
+  window._lastComputedInvoice = data;
+  if (window._activeInvoiceId) await loadInvoiceAdjLines(window._activeInvoiceId);
 
   const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v||'—'; };
   set('prov-ref-price', fmt(data.ref_price));
@@ -3894,7 +3902,7 @@ async function fixToday(dealId) {
   if (data) {
     toast('Price Fixed', `${dealId} · ${fmt(r.F,2)} MT fixed @ ${fmt(price)} · State → PRICED`, 'success');
     renderExposureTable();
-    renderQPWindow(dealId);
+    renderQPWindow(r.contract_id); // C23 fix: pass contract_id, not deal_id
     renderProvInvoice(dealId);
   }
 }
@@ -4072,7 +4080,6 @@ document.addEventListener('DOMContentLoaded', function() {
     await loadContractDropdowns();
     await renderExposureTable();
     await renderHedgeCard();
-    await renderQPWindow('DEAL123');
     await renderProvInvoice('DEAL456');
     await renderFinalInvoice('DEAL456');
     await recalcPricing();
@@ -4918,7 +4925,7 @@ async function submitFixation(){
     closeModal('modal-new-fixation');
     toast('Fixation Recorded', data.lot_ref + ' · ' + fixed_qty_mt + ' MT @ $' + fixed_price + ' · ' + contract.contract_no + ' · State → PRICED','success');
     renderExposureTable();
-    renderQPWindow(contract.deal_no);
+    renderQPWindow(contract.id); // C23 fix: pass contract_id, not deal_no
   }
 }
 
@@ -5267,12 +5274,26 @@ async function submitNewContract(){
   }catch(err){toast('Error',err.message,'error');}
 }
 
-function openCreateInvoice(type){
+async function openCreateInvoice(type){
   openModal('modal-create-invoice');
   const titleEl = document.getElementById('invoice-modal-title');
   if(titleEl) titleEl.textContent = type === 'FINAL' ? 'Create Final Invoice' : 'Create Provisional Invoice';
   const typeEl = document.getElementById('invoice-type-hidden');
   if(typeEl) typeEl.value = type;
+
+  // E (persistence) fix: was hardcoded DEAL123/DEAL456 only — now loads real deals
+  document.getElementById('invoice-computed-section').style.display = 'none';
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    const data = await res.json();
+    const deals = (data.data || []).filter(function(d){ return d.commodity_code && d.qty_mt; });
+    const sel = document.getElementById('inv-deal-id');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select Deal —</option>' + deals.map(function(d){
+        return '<option value="'+d.deal_no+'">'+d.deal_no+' — '+(d.commodity_name||d.commodity_code)+' · '+(d.customer_name||d.supplier_name||'—')+'</option>';
+      }).join('');
+    }
+  } catch(e) { toast('Error', 'Could not load deals: ' + e.message, 'error'); }
 }
 
 async function submitCreateInvoice(){
@@ -5290,13 +5311,14 @@ async function submitCreateInvoice(){
     const data = await res.json();
     if(data.success || data.ref_price){
       const d = data.data || data;
+      window._lastComputedInvoice = d; // E fix: keep exact numeric values for saving, not formatted text
       // Show computed values
       const set = (id, v) => { const el=document.getElementById(id); if(el) el.textContent = v||'—'; };
       set('inv-computed-ref-price', fmt(d.ref_price));
       set('inv-computed-payable-price', fmt(d.payable_price));
       set('inv-computed-gross', fmt(d.gross_amount, 0));
       set('inv-computed-provisional', fmt(d.provisional_amount, 0));
-      set('inv-computed-due', d.payment_due || addWorkingDays(new Date().toISOString().split('T')[0], 5));
+      set('inv-computed-due', d.bl_date ? addWorkingDays(d.bl_date, 5) : '— no BL date yet —');
       document.getElementById('invoice-computed-section').style.display = 'block';
     } else {
       toast('Compute Error', data.error || 'Could not compute invoice amounts', 'warning');
@@ -5312,9 +5334,9 @@ async function saveInvoice(){
   const g = id => document.getElementById(id)?.value;
   const dealId = g('inv-deal-id');
   const invoiceType = g('invoice-type-hidden') || 'PROVISIONAL';
-  const refPrice = parseFloat(document.getElementById('inv-computed-ref-price')?.textContent?.replace(/,/g,'')) || 0;
+  const computed = window._lastComputedInvoice;
   if(!dealId){ toast('Required', 'Please select a deal and compute amounts first', 'warning'); return; }
-  if(!refPrice){ toast('Required', 'Please click Compute Amounts first', 'warning'); return; }
+  if(!computed){ toast('Required', 'Please click Compute Amounts first', 'warning'); return; }
 
   const invNo = (invoiceType === 'FINAL' ? 'INV-F-' : 'INV-P-') + Date.now().toString().slice(-6);
   const res = await fetch(API_BASE + '/api/invoices', {
@@ -5325,12 +5347,23 @@ async function saveInvoice(){
       invoice_type: invoiceType,
       invoice_date: new Date().toISOString().split('T')[0],
       deal_no: dealId,
+      ref_price: computed.ref_price,
+      payable_price: computed.payable_price,
+      qty_mt: computed.qty_mt,
+      gross_amount: computed.gross_amount,
+      net_amount: computed.gross_amount,
+      provisional_pct: computed.payment_pct || 90,
+      provisional_amount: computed.provisional_amount,
+      payment_due_date: computed.bl_date ? addWorkingDays(computed.bl_date, 5) : null,
+      balance_due: computed.balance_due || null
     })
   });
   const data = await res.json();
   if(data.success){
     closeModal('modal-create-invoice');
     toast('Invoice Created', invNo + ' · ' + invoiceType + ' · Deal: ' + dealId, 'success');
+    window._lastComputedInvoice = null;
+    window._activeInvoiceId = data.data.id;
     if(invoiceType === 'PROVISIONAL') renderProvInvoice(dealId);
     else renderFinalInvoice(dealId);
   } else {
@@ -6153,19 +6186,30 @@ async function loadLogisticsList() {
 async function loadQPDealOptions() {
   const sel = document.getElementById('qp-deal-select');
   if (!sel) return;
-  const data = await api('/api/deals');
-  if (!data) return;
-  // C18 fix: only show deals that actually have a commodity and qty set (i.e. real, usable deals) —
-  // excludes empty/placeholder DRAFT deals from cluttering the QP window selector.
-  const usable = data.filter(function(d){ return d.commodity_code && d.qty_mt; });
-  if (!usable.length) {
-    sel.innerHTML = '<option value="">— No deals with qty/commodity set yet —</option>';
-    return;
+  // C23 fix: QP window now keys off Contract, not Deal — a deal can have multiple contracts
+  // (Deal Basket supports many-buy/many-sell), so a deal-level selector couldn't represent
+  // each contract's own QP window correctly. Loads confirmed contracts with pricing lines.
+  try {
+    const [pcRes, scRes] = await Promise.all([
+      fetch(API_BASE + '/api/contracts?type=PC&status=CONTRACTED'),
+      fetch(API_BASE + '/api/contracts?type=SC&status=CONTRACTED')
+    ]);
+    const pcData = await pcRes.json();
+    const scData = await scRes.json();
+    const contracts = [...(pcData.data||[]), ...(scData.data||[])];
+    window._qpContracts = contracts;
+
+    if (!contracts.length) {
+      sel.innerHTML = '<option value="">— No confirmed contracts yet —</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— Select Contract —</option>' + contracts.map(function(c) {
+      const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
+      return '<option value="'+c.id+'">'+c.contract_no+' — '+(c.commodity_name||c.commodity_code)+' · '+(c.qty_mt||'—')+' '+uom+' · '+(c.deal_no||'no deal linked')+'</option>';
+    }).join('');
+  } catch(e) {
+    sel.innerHTML = '<option value="">— Error loading contracts —</option>';
   }
-  sel.innerHTML = '<option value="">— Select Deal —</option>' + usable.map(function(d) {
-    const uom = (window._commodityCache && d.commodity_code && window._commodityCache[d.commodity_code]?.uom) || 'MT';
-    return '<option value="'+d.deal_no+'">'+d.deal_no+' — '+(d.commodity_name||d.commodity_code)+' · '+d.qty_mt+' '+uom+'</option>';
-  }).join('');
 }
 
 // ── WIRE NAV TO LOAD DATA ────────────────────────────────────
@@ -6180,7 +6224,7 @@ function afterNav(pageId) {
     else if (pageId === 'logistics') loadLogisticsList();
     else if (pageId === 'provisional-receipt') loadProvReceiptList();
     else if (pageId === 'shipment') loadQCResultsList();
-    else if (pageId === 'qpwindow') { loadQPDealOptions(); renderQPWindow(); }
+    else if (pageId === 'qpwindow') { loadQPDealOptions().then(function(){ renderQPWindow(); }); }
     else if (pageId === 'exposure') { renderExposureTable(); renderPortfolioRollup(); }
     else if (pageId === 'rfq') { loadRFQList(); loadCommodityDropdowns(); }
     else if (pageId === 'allocation') loadAllocationPage();
@@ -7795,11 +7839,7 @@ async function loadAllocationTable() {
       <input type="hidden" id="invoice-type-hidden" value="PROVISIONAL">
       <div class="fg">
         <div class="f"><div class="fl">Deal <span class="req">*</span></div>
-          <select class="fs" id="inv-deal-id">
-            <option value="">— Select Deal —</option>
-            <option value="DEAL123">DEAL123 — Glencore Cu MillBerry (Buy)</option>
-            <option value="DEAL456">DEAL456 — Tata Metals (Sell)</option>
-          </select>
+          <select class="fs" id="inv-deal-id"><option value="">— Select Deal —</option></select>
         </div>
         <div class="f"><div class="fl">Invoice Date</div><input type="date" class="fi" id="inv-date"></div>
       </div>
@@ -8609,6 +8649,7 @@ async function loadAdjustmentCodesMaster() {
 async function addInvoiceAdjLine() {
   const tbody = document.getElementById('inv-adj-tbody');
   if (!tbody) return;
+  if (!window._activeInvoiceId) { toast('Save Invoice First', 'Create and save an invoice before adding adjustment lines', 'warning'); return; }
   const codes = await loadAdjustmentCodesMaster();
   if (!codes.length) { toast('No Adjustment Codes', 'Adjustment codes master is empty — add one first', 'warning'); return; }
 
@@ -8621,10 +8662,79 @@ async function addInvoiceAdjLine() {
     + '<td><input type="text" class="fi" placeholder="% or USD/MT" style="font-size:10px" value="'+(codes[0]?.calc_type==='PCT_OF_VALUE'?'%':'USD')+'"></td>'
     + '<td class="mono f10 ta2" data-amount>—</td>'
     + '<td><span class="badge '+(codes[0]?.default_direction==='ADDITION'?'bd-confirmed':'bd-danger')+'" style="font-size:7px" data-dir-badge>'+(codes[0]?.default_direction||'DEDUCTION')+'</span></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bg" onclick="saveInvoiceAdjLine(this)">Save</button> <button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
   const placeholder = tbody.querySelector('td[colspan]');
   if (placeholder) placeholder.closest('tr').remove();
   tbody.appendChild(row);
+}
+
+// E (persistence) fix: invoice is now a real saved record (window._activeInvoiceId),
+// so adjustment lines can finally persist to invoice_adjustment_lines instead of being client-side only.
+async function saveInvoiceAdjLine(btn) {
+  const row = btn.closest('tr');
+  const codeSel = row.querySelector('select');
+  const opt = codeSel.options[codeSel.selectedIndex];
+  const inputs = row.querySelectorAll('input');
+  const payableComponent = inputs[0]?.value || null;
+  const calcValue = parseFloat(inputs[1]?.value) || null;
+  const calcUnit = inputs[2]?.value || null;
+  const amountCell = row.querySelector('[data-amount]');
+  const computedAmount = parseFloat(amountCell?.textContent?.replace(/,/g,'')) || null;
+
+  try {
+    const res = await fetch(API_BASE + '/api/invoice-adj-lines', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        invoice_id: window._activeInvoiceId,
+        adjustment_code: codeSel.value,
+        payable_component: payableComponent,
+        calc_value: calcValue,
+        calc_unit: calcUnit,
+        computed_amount: computedAmount,
+        direction: opt.dataset.direction
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Saved', opt.value + ' adjustment line saved', 'success');
+    btn.disabled = true;
+    btn.textContent = 'Saved ✓';
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function loadInvoiceAdjLines(invoiceId) {
+  const tbody = document.getElementById('inv-adj-tbody');
+  if (!tbody || !invoiceId) return;
+  try {
+    const res = await fetch(API_BASE + '/api/invoice-adj-lines?invoice_id=' + invoiceId);
+    const data = await res.json();
+    const lines = data.data || [];
+    if (!lines.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No adjustment lines yet — click + Add Adjustment Line</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lines.map(function(l){
+      const dirCls = l.direction === 'ADDITION' ? 'bd-confirmed' : 'bd-danger';
+      return '<tr>'
+        + '<td class="mono f10 ta2">'+l.adjustment_code+'</td>'
+        + '<td class="f11">'+(l.code_description||'—')+'</td>'
+        + '<td class="f10">'+(l.payable_component||'—')+'</td>'
+        + '<td class="mono f10">'+(l.calc_value!=null?l.calc_value:'—')+'</td>'
+        + '<td class="f10">'+(l.calc_unit||'—')+'</td>'
+        + '<td class="mono f10 ta2">'+(l.computed_amount!=null?l.computed_amount.toLocaleString():'—')+'</td>'
+        + '<td><span class="badge '+dirCls+'" style="font-size:7px">'+l.direction+'</span></td>'
+        + '<td><button class="btn bxs bd" onclick="deleteInvoiceAdjLine('+l.id+', this)">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) { console.warn('loadInvoiceAdjLines:', e); }
+}
+
+async function deleteInvoiceAdjLine(id, btn) {
+  try {
+    await fetch(API_BASE + '/api/invoice-adj-lines/' + id, { method: 'DELETE' });
+    btn.closest('tr').remove();
+    toast('Removed', 'Adjustment line removed', 'info');
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 function onInvAdjCodeChange(sel) {
@@ -8641,10 +8751,14 @@ function onInvAdjCodeChange(sel) {
 }
 
 function recalcInvAdjAmount(input) {
-  // Placeholder calc — real amount depends on the invoice gross value once that's a persisted record
   const row = input.closest('tr');
   const amountCell = row.querySelector('[data-amount]');
-  if (amountCell) amountCell.textContent = input.value ? input.value : '—';
+  const unitInput = row.querySelectorAll('input')[2];
+  const value = parseFloat(input.value) || 0;
+  const isPct = unitInput && unitInput.value && unitInput.value.includes('%');
+  const grossBasis = window._lastComputedInvoice?.gross_amount || 0;
+  const amount = isPct ? (grossBasis * value / 100) : value;
+  if (amountCell) amountCell.textContent = amount ? amount.toLocaleString(undefined,{maximumFractionDigits:2}) : '—';
 }
 
 function openProvRcptDetail(receiptNo) {
