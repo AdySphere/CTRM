@@ -230,15 +230,31 @@ hedgeRouter.get('/', async (req, res) => {
 
 hedgeRouter.post('/', async (req, res) => {
   try {
-    const { req_ref, deal_id, trade_date, hedge_type, commodity_code, exchange_code,
-      qty_mt, entry_price, prompt_date, order_type = 'MARKET', notes } = req.body;
+    const { deal_id, trade_date, hedge_type, commodity_code, exchange_code, instrument,
+      qty_mt, entry_price, prompt_date, order_type = 'MARKET', counterparty_ref,
+      broker_contract_note, notes } = req.body;
+    if (!deal_id || !hedge_type || !commodity_code || !qty_mt || !entry_price) {
+      return res.status(400).json({ error: 'deal_id, hedge_type, commodity_code, qty_mt and entry_price are required' });
+    }
+
+    // Auto-generate req_ref — same pattern as other entities
+    const cnt = await query(`SELECT COUNT(*) FROM hedges WHERE req_ref LIKE 'REQ-%'`);
+    const reqRef = 'REQ-' + String(parseInt(cnt.rows[0].count) + 1).padStart(3, '0');
+
     const result = await query(`
-      INSERT INTO hedges (req_ref, deal_id, trade_date, hedge_type, commodity_code,
-        exchange_code, qty_mt, entry_price, prompt_date, order_type, notes, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'PENDING') RETURNING *
-    `, [req_ref, deal_id, trade_date, hedge_type, commodity_code, exchange_code,
-        qty_mt, entry_price, prompt_date, order_type, notes]);
-    res.json({ success: true, data: result.rows[0] });
+      INSERT INTO hedges (req_ref, deal_id, trade_date, hedge_type, commodity_code, instrument,
+        exchange_code, qty_mt, entry_price, prompt_date, order_type, counterparty_ref,
+        broker_contract_note, notes, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'PENDING') RETURNING *
+    `, [reqRef, deal_id, trade_date, hedge_type, commodity_code, instrument || 'FUTURES',
+        exchange_code, qty_mt, entry_price, prompt_date, order_type, counterparty_ref || null,
+        broker_contract_note || null, notes || null]);
+
+    const hedge = result.rows[0];
+    await logAudit('hedge', hedge.id, hedge.req_ref, 'CREATE', null, null,
+      hedge_type + ' ' + qty_mt + ' MT ' + commodity_code + ' requisition sent to Treasury');
+
+    res.json({ success: true, data: hedge });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 

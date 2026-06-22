@@ -403,6 +403,7 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_price DECIMAL(14,4)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_margin DECIMAL(14,2)`);
     await query(`ALTER TABLE quote_responses ADD COLUMN IF NOT EXISTS deal_id INT REFERENCES deals(id)`);
+    await query(`ALTER TABLE hedges ADD COLUMN IF NOT EXISTS broker_contract_note VARCHAR(60)`);
     await query(`CREATE TABLE IF NOT EXISTS adjustment_codes (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, category VARCHAR(30), calc_type VARCHAR(20) DEFAULT 'PCT_OF_VALUE', default_direction VARCHAR(10) DEFAULT 'DEDUCTION', active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE TABLE IF NOT EXISTS invoice_adjustment_lines (id SERIAL PRIMARY KEY, invoice_id INT NOT NULL REFERENCES invoices(id) ON DELETE CASCADE, adjustment_code VARCHAR(30) REFERENCES adjustment_codes(code), payable_component VARCHAR(50), calc_value DECIMAL(12,4), calc_unit VARCHAR(20), qty_basis VARCHAR(50), computed_amount DECIMAL(15,2), direction VARCHAR(10) DEFAULT 'DEDUCTION', notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE TABLE IF NOT EXISTS audit_log (id SERIAL PRIMARY KEY, entity_type VARCHAR(30) NOT NULL, entity_id INT NOT NULL, entity_ref VARCHAR(40), action VARCHAR(30) NOT NULL, field_name VARCHAR(60), old_value TEXT, new_value TEXT, changed_by VARCHAR(60) DEFAULT 'A. Mallick', changed_at TIMESTAMPTZ DEFAULT NOW())`);
@@ -624,6 +625,7 @@ async function setupDatabase() {
       execution_price DECIMAL(12,4),
       exec_date       DATE,
       counterparty_ref VARCHAR(50),
+      broker_contract_note VARCHAR(60),
       status          VARCHAR(20) DEFAULT 'PENDING',
       notes           TEXT,
       created_at      TIMESTAMPTZ DEFAULT NOW()

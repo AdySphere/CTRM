@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.6</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.7</div>
   </div>
   <nav class="sb-nav">
 
@@ -2811,22 +2811,26 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="card mb14" id="hedge-req-form" style="display:none">
         <div class="ch"><div class="ct">New Hedge Requisition</div><div class="cs">Commercial desk → Treasury · Futures only (Phase 1)</div><button class="btn bd bxs" style="margin-left:auto" onclick="closeHedgeReqForm()">✕ Close</button></div>
         <div class="cb"><div class="fg">
-          <div class="f"><div class="fl">Date <span class="req">*</span></div><input type="date" class="fi" value="2026-04-18"></div>
-          <div class="f"><div class="fl">Trade Type <span class="req">*</span></div><select class="fs"><option>SHORT</option><option>LONG</option></select></div>
-          <div class="f"><div class="fl">Commodity</div><select class="fs"><option>Copper (LME)</option><option>Lead (LME)</option><option>Tin (LME)</option><option>Zinc (LME)</option></select></div>
-          <div class="f"><div class="fl">Instrument</div><select class="fs"><option>FUTURES</option></select></div>
-          <div class="f"><div class="fl">Exchange</div><select class="fs"><option>LME</option><option>CME</option></select></div>
-          <div class="f"><div class="fl">Fixation Lot ID <span class="req">*</span></div><input type="text" class="fi" id="req-fix-lot" placeholder="e.g. FIX123"></div>
-          <div class="f"><div class="fl">Physical Qty (MT)</div><input type="number" class="fi" id="req-phys-qty" value="75" oninput="calcDerivativeQty()"></div>
+          <div class="f"><div class="fl">Deal <span class="req">*</span></div>
+            <select class="fs" id="req-deal-sel"><option value="">— Select Deal —</option></select>
+          </div>
+          <div class="f"><div class="fl">Date <span class="req">*</span></div><input type="date" class="fi" id="req-trade-date"></div>
+          <div class="f"><div class="fl">Trade Type <span class="req">*</span></div><select class="fs" id="req-trade-type"><option>SHORT</option><option>LONG</option></select></div>
+          <div class="f"><div class="fl">Commodity</div><select class="fs" id="req-commodity"><option value="">— Select Commodity —</option></select></div>
+          <div class="f"><div class="fl">Instrument</div><select class="fs" id="req-instrument"><option>FUTURES</option></select></div>
+          <div class="f"><div class="fl">Exchange</div><select class="fs" id="req-exchange"><option>LME</option><option>CME</option></select></div>
+          <div class="f"><div class="fl">Fixation Lot ID</div><input type="text" class="fi" id="req-fix-lot" placeholder="e.g. FIX123"></div>
+          <div class="f"><div class="fl">Physical Qty (MT)</div><input type="number" class="fi" id="req-phys-qty" placeholder="e.g. 75" oninput="calcDerivativeQty()"></div>
           <div class="f"><div class="fl">β Factor (commodity master)</div><input type="number" class="fi" id="req-beta" value="0.91" step="0.01" oninput="calcDerivativeQty()"></div>
-          <div class="f"><div class="fl">Derivative Qty (Phys × β)</div><div class="fc ta fw7" id="req-deriv-display">68.25 MT</div></div>
-          <div class="f"><div class="fl">Price at Requisition (USD/MT)</div><input type="number" class="fi" value="9000"></div>
-          <div class="f"><div class="fl">Prompt Date <span class="req">*</span></div><select class="fs"><option>2026-07-15 (LME-CU-JUL26)</option><option>2026-08-20 (LME-CU-AUG26)</option><option>2026-09-17 (LME-CU-SEP26)</option></select></div>
-          <div class="f"><div class="fl">Order Type</div><select class="fs"><option>MARKET</option><option>GTC (Good Till Cancelled)</option><option>LIMIT</option></select></div>
-          <div class="f"><div class="fl">Counterparty Ref</div><input type="text" class="fi" placeholder="e.g. TOM-FIX123"></div>
-          <div class="f csf"><div class="fl">Instructions to Treasury</div><input type="text" class="fi" placeholder="e.g. Execute at market · Advise when done"></div>
+          <div class="f"><div class="fl">Derivative Qty (Phys × β)</div><div class="fc ta fw7" id="req-deriv-display">—</div></div>
+          <div class="f"><div class="fl">Price at Requisition (USD/MT) <span class="req">*</span></div><input type="number" class="fi" id="req-price" placeholder="e.g. 9000"></div>
+          <div class="f"><div class="fl">Prompt Date</div><input type="date" class="fi" id="req-prompt-date"></div>
+          <div class="f"><div class="fl">Order Type</div><select class="fs" id="req-order-type"><option>MARKET</option><option>GTC (Good Till Cancelled)</option><option>LIMIT</option></select></div>
+          <div class="f"><div class="fl">Counterparty Ref</div><input type="text" class="fi" id="req-cp-ref" placeholder="e.g. TOM-FIX123"></div>
+          <div class="f"><div class="fl">Broker Contract Note</div><input type="text" class="fi" id="req-broker-note" placeholder="e.g. BCN-2026-00412"></div>
+          <div class="f csf"><div class="fl">Instructions to Treasury</div><input type="text" class="fi" id="req-instructions" placeholder="e.g. Execute at market · Advise when done"></div>
         </div>
-        <div class="br-row right mt12"><button class="btn bs2" onclick="closeHedgeReqForm()">Cancel</button><button class="btn bp" onclick="toast('Requisition Sent','REQ-003 sent to Treasury · Awaiting execution','success');closeHedgeReqForm()">Send to Treasury →</button></div>
+        <div class="br-row right mt12"><button class="btn bs2" onclick="closeHedgeReqForm()">Cancel</button><button class="btn bp" id="hedge-req-submit-btn" onclick="submitHedgeRequisition()">Send to Treasury →</button></div>
         </div>
       </div>
 
@@ -2835,7 +2839,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ch"><div class="ct">Futures Portfolio — Allocated Positions</div><div class="cs">LME Futures · Physical lot linked · MTM vs forward curve · Long green / Short red</div></div>
         <div class="cbf">
           <table class="dt" id="hedge-portfolio-table">
-            <thead><tr><th>Req Ref</th><th>Trade Date</th><th>Type</th><th>Commodity</th><th>Instrument</th><th>Qty (MT)</th><th>Entry Price</th><th>Prompt Date</th><th>Fwd Curve Price</th><th>MTM P&L (USD)</th><th>Physical Lot</th><th>Exec Type</th><th>Status</th></tr></thead>
+            <thead><tr><th>Req Ref</th><th>Trade Date</th><th>Type</th><th>Commodity</th><th>Instrument</th><th>Qty (MT)</th><th>Entry Price</th><th>Prompt Date</th><th>Fwd Curve Price</th><th>MTM P&L (USD)</th><th>Broker Contract Note</th><th>Physical Lot</th><th>Exec Type</th><th>Status</th></tr></thead>
             <tbody id="hedge-portfolio-tbody">
               <tr style="border-left:3px solid var(--danger)">
                 <td class="mono ta fw6">REQ-001</td><td class="mono f10">2026-04-18</td>
@@ -3335,13 +3339,94 @@ function printPage(title){
 
 
 
-function openHedgeReqForm(){
+async function openHedgeReqForm(){
   const el=document.getElementById('hedge-req-form');
   if(el){el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});}
+
+  const today = new Date().toISOString().split('T')[0];
+  const dateEl = document.getElementById('req-trade-date');
+  if (dateEl) dateEl.value = today;
+
+  // Load real deals — was previously no deal selector at all
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    const data = await res.json();
+    const deals = data.data || [];
+    const usable = deals.filter(function(d){ return d.commodity_code && d.qty_mt; });
+    const sel = document.getElementById('req-deal-sel');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select Deal —</option>' + usable.map(function(d){
+        return '<option value="'+d.deal_no+'" data-commodity="'+d.commodity_code+'">'+d.deal_no+' — '+(d.commodity_name||d.commodity_code)+'</option>';
+      }).join('');
+    }
+  } catch(e) { console.warn('Could not load deals for hedge requisition:', e); }
+
+  // Load real commodities into the dropdown
+  if (window._commodityCache && Object.keys(window._commodityCache).length) {
+    const cmSel = document.getElementById('req-commodity');
+    if (cmSel) {
+      cmSel.innerHTML = '<option value="">— Select Commodity —</option>' + Object.values(window._commodityCache).map(function(c){
+        return '<option value="'+c.code+'">'+c.name+'</option>';
+      }).join('');
+    }
+  }
 }
 function closeHedgeReqForm(){
   const el=document.getElementById('hedge-req-form');
   if(el)el.style.display='none';
+}
+
+function calcDerivativeQty() {
+  const phys = parseFloat(document.getElementById('req-phys-qty')?.value) || 0;
+  const beta = parseFloat(document.getElementById('req-beta')?.value) || 0;
+  const display = document.getElementById('req-deriv-display');
+  if (display) display.textContent = phys && beta ? (phys * beta).toFixed(2) + ' MT' : '—';
+}
+
+async function submitHedgeRequisition() {
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const dealId = g('req-deal-sel');
+  const commodityCode = g('req-commodity');
+  const qty = g('req-phys-qty');
+  const price = g('req-price');
+
+  if (!dealId) { toast('Required', 'Please select a deal', 'warning'); return; }
+  if (!commodityCode) { toast('Required', 'Please select a commodity', 'warning'); return; }
+  if (!qty) { toast('Required', 'Please enter the physical quantity', 'warning'); return; }
+  if (!price) { toast('Required', 'Please enter the price at requisition', 'warning'); return; }
+
+  const btn = document.getElementById('hedge-req-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/hedges', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        deal_id: dealId,
+        trade_date: g('req-trade-date'),
+        hedge_type: g('req-trade-type'),
+        commodity_code: commodityCode,
+        instrument: g('req-instrument'),
+        exchange_code: g('req-exchange'),
+        qty_mt: parseFloat(qty),
+        entry_price: parseFloat(price),
+        prompt_date: g('req-prompt-date'),
+        order_type: g('req-order-type'),
+        counterparty_ref: g('req-cp-ref'),
+        broker_contract_note: g('req-broker-note'),
+        notes: g('req-instructions')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Requisition Sent', data.data.req_ref + ' sent to Treasury · Awaiting execution', 'success');
+    closeHedgeReqForm();
+    await renderHedgeCard();
+  } catch(e) {
+    toast('Error', e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Send to Treasury →'; }
+  }
 }
 
 function approveItem(ref){
@@ -3718,6 +3803,7 @@ async function renderHedgeCard() {
       <td class="mono f10 ta2">${h.prompt_date?.split('T')[0]||h.prompt_date}</td>
       <td class="mono f10">${fmt(J)}</td>
       <td class="mono fw6" style="color:${mtm>=0?'var(--green)':'var(--danger)'}">${fmtSign(mtm,0)}</td>
+      <td class="mono f10">${h.broker_contract_note || '—'}</td>
       <td class="mono f10 ta">${h.deal_id}</td>
       <td><span class="badge bd-confirmed">${h.status}</span></td>
     </tr>`;
@@ -3726,7 +3812,7 @@ async function renderHedgeCard() {
   html += `<tr style="background:var(--surface2)">
     <td colspan="8" class="mono f10 fw7" style="text-align:right;padding:8px 12px">Net Unrealised P&L</td>
     <td class="mono fw7" style="padding:8px 12px;color:${totalMTM>=0?'var(--green)':'var(--danger)'}">${fmtSign(totalMTM,0)}</td>
-    <td colspan="2"></td>
+    <td colspan="3"></td>
   </tr>`;
 
   tbody.innerHTML = html;
