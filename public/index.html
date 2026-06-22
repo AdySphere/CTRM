@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.5</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.6</div>
   </div>
   <nav class="sb-nav">
 
@@ -4769,31 +4769,84 @@ async function submitNewEnquiry(){
   }
 }
 
-function openNewFixation(){ 
+window._fixContracts = null;
+
+async function openNewFixation(){ 
   const today = new Date().toISOString().split('T')[0];
   const el = document.getElementById('fix-date');
   if(el) el.value = today;
+
+  // F31 fix: load real CONTRACTED contracts (PC + SC) instead of hardcoded fake deals
+  try {
+    const [pcRes, scRes] = await Promise.all([
+      fetch(API_BASE + '/api/contracts?type=PC&status=CONTRACTED'),
+      fetch(API_BASE + '/api/contracts?type=SC&status=CONTRACTED')
+    ]);
+    const pcData = await pcRes.json();
+    const scData = await scRes.json();
+    const contracts = [...(pcData.data||[]), ...(scData.data||[])];
+    window._fixContracts = contracts;
+
+    const sel = document.getElementById('fix-contract-id');
+    if (sel) {
+      if (!contracts.length) {
+        sel.innerHTML = '<option value="">— No confirmed contracts yet —</option>';
+      } else {
+        sel.innerHTML = '<option value="">— Select Contract —</option>' + contracts.map(function(c){
+          const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
+          return '<option value="'+c.id+'">'+c.contract_no+' · '+(c.commodity_name||c.commodity_code)+' · '+(c.qty_mt||'—')+' '+uom+' · '+(c.counterparty_name||'—')+'</option>';
+        }).join('');
+      }
+    }
+  } catch(e) {
+    toast('Error', 'Could not load contracts: ' + e.message, 'error');
+  }
+
   openModal('modal-new-fixation'); 
+}
+
+function onFixContractChange() {
+  const sel = document.getElementById('fix-contract-id');
+  const ctxEl = document.getElementById('fix-deal-context');
+  if (!sel || !ctxEl || !window._fixContracts) return;
+  const contract = window._fixContracts.find(function(c){ return String(c.id) === sel.value; });
+  if (contract) {
+    ctxEl.textContent = contract.deal_no ? ('Deal: ' + contract.deal_no) : 'No deal linked to this contract yet';
+    ctxEl.style.color = contract.deal_no ? 'var(--green)' : 'var(--accent2)';
+  } else {
+    ctxEl.textContent = 'Deal will be resolved from the contract';
+    ctxEl.style.color = 'var(--text3)';
+  }
 }
 
 async function submitFixation(){
   const g = id => document.getElementById(id)?.value;
-  const deal_id = g('fix-deal-id');
+  const contractId = g('fix-contract-id');
   const fixed_price = parseFloat(g('fix-price'));
   const fixed_qty_mt = parseFloat(g('fix-qty'));
   const fix_date = g('fix-date');
-  if(!deal_id || !fixed_price || !fixed_qty_mt || !fix_date){
-    toast('Required','Deal, price, qty and date are required','warning'); return;
+  if(!contractId || !fixed_price || !fixed_qty_mt || !fix_date){
+    toast('Required','Contract, price, qty and date are required','warning'); return;
+  }
+  const contract = (window._fixContracts||[]).find(function(c){ return String(c.id) === contractId; });
+  if (!contract) { toast('Error', 'Could not resolve the selected contract', 'error'); return; }
+  if (!contract.deal_no) {
+    toast('No Deal Linked', 'This contract has no deal attached — link a deal first (✎ button on the contract\'s Linked Deal field)', 'warning');
+    return;
   }
   const data = await api('/api/fixations', {
     method:'POST',
-    body: JSON.stringify({ deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date: g('fix-prompt-date'), hedge_ref: g('fix-hedge-ref') })
+    body: JSON.stringify({
+      deal_id: contract.deal_no, contract_id: contract.id,
+      fixed_price, fixed_qty_mt, fix_date,
+      prompt_date: g('fix-prompt-date'), hedge_ref: g('fix-hedge-ref')
+    })
   });
   if(data){
     closeModal('modal-new-fixation');
-    toast('Fixation Recorded', data.lot_ref + ' · ' + fixed_qty_mt + ' MT @ $' + fixed_price + ' · State → PRICED','success');
+    toast('Fixation Recorded', data.lot_ref + ' · ' + fixed_qty_mt + ' MT @ $' + fixed_price + ' · ' + contract.contract_no + ' · State → PRICED','success');
     renderExposureTable();
-    renderQPWindow(deal_id);
+    renderQPWindow(contract.deal_no);
   }
 }
 
@@ -7580,13 +7633,15 @@ async function loadAllocationTable() {
 <div class="mo" id="modal-new-fixation">
   <div class="modal">
     <div class="modal-hd">
-      <div><div class="modal-title">New Fixation Lot</div><div class="modal-sub">Record a price fixation against an open deal · Changes state to PRICED</div></div>
+      <div><div class="modal-title">New Fixation Lot</div><div class="modal-sub">Record a price fixation against a confirmed contract · Changes state to PRICED</div></div>
       <button class="btn bxs bd" onclick="closeModal('modal-new-fixation')">✕</button>
     </div>
     <div class="modal-body">
       <div class="fg">
-        <div class="f"><div class="fl">Deal <span class="req">*</span></div>
-          <select class="fs" id="fix-deal-id"><option value="DEAL123">DEAL123 — Glencore Cu MillBerry (Buy)</option><option value="DEAL456">DEAL456 — Tata Metals (Sell)</option></select></div>
+        <div class="f"><div class="fl">Contract <span class="req">*</span></div>
+          <select class="fs" id="fix-contract-id" onchange="onFixContractChange()"><option value="">— Select Contract —</option></select>
+          <div style="font-size:9px;color:var(--text3);margin-top:4px" id="fix-deal-context">Deal will be resolved from the contract</div>
+        </div>
         <div class="f"><div class="fl">Fix Date <span class="req">*</span></div><input type="date" class="fi" id="fix-date"></div>
         <div class="f"><div class="fl">Fixed Price (USD/MT) <span class="req">*</span></div><input type="number" class="fi" id="fix-price" placeholder="e.g. 9240.00" step="0.01"></div>
         <div class="f"><div class="fl">Fixed Qty (MT) <span class="req">*</span></div><input type="number" class="fi" id="fix-qty" placeholder="e.g. 68.25" step="0.001"></div>
