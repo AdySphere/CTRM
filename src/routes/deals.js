@@ -1305,3 +1305,141 @@ creditRouter.get('/:counterpartyId', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.creditRouter = creditRouter;
+
+// ── GOODS RECEIPTS (Provisional / Final) ─────────────────────────
+const goodsReceiptRouter = require('express').Router();
+
+goodsReceiptRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { stage } = req.query;
+    let sql = `
+      SELECT gr.*, l.log_no, l.vessel_name, c.contract_no, w.name as warehouse_name,
+        (SELECT COUNT(*) FROM lots lo WHERE lo.receipt_id = gr.id) as lot_count
+      FROM goods_receipts gr
+      LEFT JOIN logistics l ON l.id = gr.logistics_id
+      LEFT JOIN contracts c ON c.id = l.contract_id
+      LEFT JOIN locations w ON w.id = gr.warehouse_id
+      WHERE 1=1`;
+    const params = [];
+    if (stage) { params.push(stage); sql += ` AND gr.receipt_stage=$${params.length}`; }
+    sql += ' ORDER BY gr.created_at DESC';
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+goodsReceiptRouter.get('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const grRes = await query(`
+      SELECT gr.*, l.log_no, l.vessel_name, l.contract_id, c.contract_no, w.name as warehouse_name
+      FROM goods_receipts gr
+      LEFT JOIN logistics l ON l.id = gr.logistics_id
+      LEFT JOIN contracts c ON c.id = l.contract_id
+      LEFT JOIN locations w ON w.id = gr.warehouse_id
+      WHERE gr.id=$1 OR gr.receipt_no=$1
+    `, [req.params.id]);
+    if (!grRes.rows.length) return res.status(404).json({ error: 'Receipt not found' });
+    const lotsRes = await query(`SELECT * FROM lots WHERE receipt_id=$1 ORDER BY lot_no`, [grRes.rows[0].id]);
+    res.json({ success: true, data: { ...grRes.rows[0], lots: lotsRes.rows } });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+goodsReceiptRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { logistics_id, receipt_stage, receipt_date, arrived_qty_mt, warehouse_id, notes } = req.body;
+    if (!logistics_id) return res.status(400).json({ error: 'logistics_id is required — link to the shipment this receipt is for' });
+    const stage = receipt_stage || 'PROVISIONAL';
+    const prefix = stage === 'FINAL' ? 'GRN' : 'PR';
+    const yr = new Date().getFullYear();
+    const cnt = await query(`SELECT COUNT(*) FROM goods_receipts WHERE receipt_no LIKE $1`, [`${prefix}-%`]);
+    const receiptNo = prefix + '-' + String(parseInt(cnt.rows[0].count) + 1).padStart(3, '0');
+    const result = await query(`
+      INSERT INTO goods_receipts (receipt_no, logistics_id, receipt_stage, receipt_date, arrived_qty_mt, warehouse_id, status, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,'DRAFT',$7) RETURNING *
+    `, [receiptNo, logistics_id, stage, receipt_date || new Date().toISOString().split('T')[0], arrived_qty_mt || null, warehouse_id || null, notes || null]);
+    const receipt = result.rows[0];
+    await logAudit('goods_receipt', receipt.id, receipt.receipt_no, 'CREATE', null, null, stage + ' receipt created');
+    res.json({ success: true, data: receipt });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+goodsReceiptRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['receipt_date', 'arrived_qty_mt', 'warehouse_id', 'status', 'notes'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE goods_receipts SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.goodsReceiptRouter = goodsReceiptRouter;
+
+// ── QC RESULTS / ASSAY ────────────────────────────────────────────
+const qcResultsRouter = require('express').Router();
+
+qcResultsRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT qr.*, lo.lot_no, lo.mrn_no, lo.commodity_code, cm.name as commodity_name
+      FROM qc_results qr
+      LEFT JOIN lots lo ON lo.id = qr.lot_id
+      LEFT JOIN commodities cm ON cm.code = lo.commodity_code
+      ORDER BY qr.created_at DESC
+    `);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+qcResultsRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { lot_id, element, actual_value, unit, assay_date, lab_ref } = req.body;
+    if (!lot_id || !element) return res.status(400).json({ error: 'lot_id and element are required' });
+    const result = await query(`
+      INSERT INTO qc_results (lot_id, element, actual_value, unit, assay_date, lab_ref, status)
+      VALUES ($1,$2,$3,$4,$5,$6,'PENDING') RETURNING *
+    `, [lot_id, element, actual_value || null, unit || '%', assay_date || new Date().toISOString().split('T')[0], lab_ref || null]);
+    const qc = result.rows[0];
+    await logAudit('qc_result', qc.id, element, 'CREATE', null, null, 'Assay entry created for lot ' + lot_id);
+    res.json({ success: true, data: qc });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+qcResultsRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['actual_value', 'status', 'lab_ref', 'assay_date'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE qc_results SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.qcResultsRouter = qcResultsRouter;
+
+// ── LOTS (MRN lots — minimal lookup support for QC) ──────────────
+const lotsRouter = require('express').Router();
+lotsRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { lot_no } = req.query;
+    let sql = 'SELECT * FROM lots WHERE 1=1';
+    const params = [];
+    if (lot_no) { params.push(lot_no); sql += ` AND lot_no=$${params.length}`; }
+    sql += ' ORDER BY id DESC';
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.lotsRouter = lotsRouter;

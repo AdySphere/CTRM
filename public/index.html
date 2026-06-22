@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.3</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.4</div>
   </div>
   <nav class="sb-nav">
 
@@ -2287,47 +2287,21 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <div class="page" id="page-provisional-receipt">
       <div class="ph">
         <div class="ph-l"><div class="pt">Stage 2 — Provisional Receipt</div><div class="ps">Material arrives at yard · MRN lot generated · Initially matches shipment lot · Pre-GRN record · Triggers provisional payment</div></div>
-        <div class="ph-r"><button class="btn bp" onclick="toast('Provisional Receipt','New provisional receipt created','success')">＋ New Provisional Receipt</button></div>
+        <div class="ph-r"><button class="btn bp" onclick="openNewReceiptModal('PROVISIONAL')">＋ New Provisional Receipt</button></div>
       </div>
-      <div class="ban bw"><span>⚠</span>Stage 2 of 3. Created when material physically arrives at yard. MRN lots are auto-generated matching the shipment lots. Qty and material may be updated after yard inspection before GRN is finalised. GRN cannot be amended once posted.</div>
+      <div class="ban bw"><span>⚠</span>Stage 2 of 3. Created when material physically arrives at yard. Qty and material may be updated after yard inspection before GRN is finalised. GRN cannot be amended once posted.</div>
       <div class="sr">
-        <div class="sc"><div class="scl">Provisional Receipts</div><div class="scv ta2">3</div></div>
-        <div class="sc"><div class="scl">Pending QC</div><div class="scv ta">3</div></div>
-        <div class="sc"><div class="scl">QC Complete</div><div class="scv tg">0</div></div>
-        <div class="sc"><div class="scl">Ready for GRN</div><div class="scv tdim">0</div></div>
+        <div class="sc"><div class="scl">Provisional Receipts</div><div class="scv ta2" id="pr-stat-total">—</div></div>
+        <div class="sc"><div class="scl">Pending QC</div><div class="scv ta" id="pr-stat-pending">—</div></div>
+        <div class="sc"><div class="scl">QC Complete</div><div class="scv tg" id="pr-stat-complete">—</div></div>
+        <div class="sc"><div class="scl">Ready for GRN</div><div class="scv tdim" id="pr-stat-ready">—</div></div>
       </div>
       <div class="card">
-        <div class="ch"><div class="ct">Provisional Receipt Records</div><div class="cs">Generated from Stage 1 In-Transit records on yard arrival</div></div>
+        <div class="ch"><div class="ct">Provisional Receipt Records</div><div class="cs">Real records from goods_receipts table — linked to a shipment (logistics record)</div></div>
         <div class="cbf"><table class="dt">
-          <thead><tr><th>Receipt No.</th><th>Shipment Lot</th><th>MRN Lot ID</th><th>Contract</th><th>Arrival Date</th><th>Received Qty (MT)</th><th>Warehouse / Yard</th><th>Receipt Type</th><th>Receipt Status</th><th>ERP GRN Status</th><th></th></tr></thead>
-          <tbody>
-            <tr style="cursor:pointer" onclick="openProvRcptDetail('PR-001')">
-              <td class="mono ta fw6">PR-001</td><td class="mono ta">SH1</td><td class="mono ta2 fw6">MRN1</td>
-              <td class="mono">PC-2026-001</td><td class="mono">2026-04-28</td><td class="mono">24</td>
-              <td class="f10">Main Yard — Bay A3</td>
-              <td><span class="badge bd-ship">PROVISIONAL</span></td>
-              <td><span class="badge bd-ship">PENDING_QC</span></td>
-              <td><span class="badge bd-draft">NOT POSTED</span></td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openProvRcptDetail('PR-001')">Open</button></td>
-            </tr>
-            <tr style="cursor:pointer">
-              <td class="mono ta fw6">PR-002</td><td class="mono ta">SH2</td><td class="mono ta2 fw6">MRN2</td>
-              <td class="mono">PC-2026-001</td><td class="mono">2026-04-28</td><td class="mono">25</td>
-              <td class="f10">Main Yard — Bay A4</td>
-              <td><span class="badge bd-ship">PROVISIONAL</span></td>
-              <td><span class="badge bd-ship">PENDING_QC</span></td>
-              <td><span class="badge bd-draft">NOT POSTED</span></td>
-              <td><button class="btn bxs bg">Open</button></td>
-            </tr>
-            <tr style="cursor:pointer">
-              <td class="mono ta fw6">PR-003</td><td class="mono ta">SH3</td><td class="mono ta2 fw6">MRN3</td>
-              <td class="mono">PC-2026-001</td><td class="mono">2026-04-29</td><td class="mono">26</td>
-              <td class="f10">Main Yard — Bay A5</td>
-              <td><span class="badge bd-ship">PROVISIONAL</span></td>
-              <td><span class="badge bd-ship">PENDING_QC</span></td>
-              <td><span class="badge bd-draft">NOT POSTED</span></td>
-              <td><button class="btn bxs bg">Open</button></td>
-            </tr>
+          <thead><tr><th>Receipt No.</th><th>Shipment</th><th>Contract</th><th>Arrival Date</th><th>Received Qty</th><th>Warehouse / Yard</th><th>Status</th><th></th></tr></thead>
+          <tbody id="pr-list-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3);font-size:11px">Loading…</td></tr>
           </tbody>
         </table></div>
       </div>
@@ -2444,12 +2418,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <!-- ══ STAGE 3: GRN / FINAL RECEIPT ══ -->
     <div class="page" id="page-shipment">
       <div class="ph"><div class="ph-l"><div class="pt">Assay & QC</div><div class="ps">QC results by lot · Payable quantity calculation · Multi-element · Multi-payable-metal · Links to GRN and Pricing</div></div>
-        <div class="ph-r"><button class="btn bp" onclick="toast('Assay','New assay entry opened','success')">＋ New Assay Entry</button></div></div>
+        <div class="ph-r"><button class="btn bp" onclick="openNewAssayModal()">＋ New Assay Entry</button></div></div>
       <div class="sr">
-        <div class="sc"><div class="scl">Active QC Records</div><div class="scv ta">6</div></div>
-        <div class="sc"><div class="scl">Pending</div><div class="scv ta2">6</div></div>
-        <div class="sc"><div class="scl">Complete</div><div class="scv tg">0</div></div>
-        <div class="sc"><div class="scl">Disputes</div><div class="scv td">0</div></div>
+        <div class="sc"><div class="scl">Active QC Records</div><div class="scv ta" id="qc-stat-total">—</div></div>
+        <div class="sc"><div class="scl">Pending</div><div class="scv ta2" id="qc-stat-pending">—</div></div>
+        <div class="sc"><div class="scl">Complete</div><div class="scv tg" id="qc-stat-complete">—</div></div>
+        <div class="sc"><div class="scl">Disputes</div><div class="scv td" id="qc-stat-disputes">—</div></div>
       </div>
       <div class="two-col">
         <div class="card">
@@ -6079,6 +6053,8 @@ function afterNav(pageId) {
     else if (pageId === 'purchase-contracts') loadContractList('PC');
     else if (pageId === 'sales-contracts') loadContractList('SC');
     else if (pageId === 'logistics') loadLogisticsList();
+    else if (pageId === 'provisional-receipt') loadProvReceiptList();
+    else if (pageId === 'shipment') loadQCResultsList();
     else if (pageId === 'qpwindow') { loadQPDealOptions(); renderQPWindow(); }
     else if (pageId === 'exposure') { renderExposureTable(); renderPortfolioRollup(); }
     else if (pageId === 'rfq') { loadRFQList(); loadCommodityDropdowns(); }
@@ -8364,6 +8340,148 @@ async function unlinkEnquiry(linkId) {
 <script>
 window._dealBasketOpen = false;
 
+// ── PROVISIONAL RECEIPT (D26 fix — was fully static/fake) ───────
+async function loadProvReceiptList() {
+  const tbody = document.getElementById('pr-list-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3);font-size:11px">Loading…</td></tr>';
+  try {
+    const res = await fetch(API_BASE + '/api/goods-receipts?stage=PROVISIONAL');
+    const data = await res.json();
+    const receipts = data.data || [];
+
+    const set = function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; };
+    set('pr-stat-total', receipts.length);
+    set('pr-stat-pending', receipts.filter(function(r){return r.status==='DRAFT';}).length);
+    set('pr-stat-complete', receipts.filter(function(r){return r.status==='QC_COMPLETE';}).length);
+    set('pr-stat-ready', receipts.filter(function(r){return r.status==='READY_FOR_GRN';}).length);
+
+    if (!receipts.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text3);font-size:11px">No provisional receipts yet — click + New Provisional Receipt to create one</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = receipts.map(function(r) {
+      const stCls = r.status==='READY_FOR_GRN'?'bd-confirmed':r.status==='QC_COMPLETE'?'bd-act':'bd-draft';
+      return '<tr style="cursor:pointer" onclick="openProvRcptDetail(\''+r.receipt_no+'\')">'
+        + '<td class="mono ta fw6" style="color:var(--accent)">'+r.receipt_no+'</td>'
+        + '<td class="mono">'+(r.log_no||'—')+'</td>'
+        + '<td class="mono">'+(r.contract_no||'—')+'</td>'
+        + '<td class="mono">'+(r.receipt_date?new Date(r.receipt_date).toLocaleDateString('en-GB'):'—')+'</td>'
+        + '<td class="mono">'+(r.arrived_qty_mt||'—')+'</td>'
+        + '<td class="f10">'+(r.warehouse_name||'—')+'</td>'
+        + '<td><span class="badge '+stCls+'">'+(r.status||'DRAFT')+'</span></td>'
+        + '<td><button class="btn bxs bg" onclick="event.stopPropagation();openProvRcptDetail(\''+r.receipt_no+'\')">Open</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--accent2);font-size:11px">Error: '+e.message+'</td></tr>';
+  }
+}
+
+// ── ASSAY & QC (D27 fix — was fully static/fake) ────────────────
+async function loadQCResultsList() {
+  try {
+    const res = await fetch(API_BASE + '/api/qc-results');
+    const data = await res.json();
+    const results = data.data || [];
+    const set = function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; };
+    set('qc-stat-total', results.length);
+    set('qc-stat-pending', results.filter(function(r){return r.status==='PENDING';}).length);
+    set('qc-stat-complete', results.filter(function(r){return r.status==='PASS'||r.status==='FAIL';}).length);
+    set('qc-stat-disputes', results.filter(function(r){return r.status==='DISPUTE';}).length);
+  } catch(e) { console.warn('loadQCResultsList:', e); }
+}
+
+async function openNewAssayModal() {
+  try {
+    const res = await fetch(API_BASE + '/api/contracts?type=PC');
+    const data = await res.json();
+    const lotSel = document.getElementById('na-lot-sel');
+    // Lots are linked via receipt/logistics — for now let the user enter the lot number directly
+    // since the full lot-creation flow happens at GRN stage.
+  } catch(e) {}
+  openModal('modal-new-assay');
+}
+
+async function submitNewAssay() {
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const lotNo = g('na-lot-no');
+  const element = g('na-element');
+  if (!lotNo) { toast('Required', 'Please enter the MRN lot number', 'warning'); return; }
+  if (!element) { toast('Required', 'Please enter the element being tested', 'warning'); return; }
+  try {
+    // Resolve lot_id from lot_no
+    const lotRes = await fetch(API_BASE + '/api/lots?lot_no=' + encodeURIComponent(lotNo)).catch(function(){return null;});
+    let lotId = null;
+    if (lotRes && lotRes.ok) {
+      const lotData = await lotRes.json();
+      lotId = lotData.data?.[0]?.id;
+    }
+    if (!lotId) { toast('Lot Not Found', 'Could not find MRN lot "' + lotNo + '" — create the GRN lot first', 'warning'); return; }
+    const res = await fetch(API_BASE + '/api/qc-results', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        lot_id: lotId, element: element,
+        actual_value: parseFloat(g('na-value')) || null,
+        unit: g('na-unit') || '%',
+        assay_date: g('na-date'),
+        lab_ref: g('na-lab-ref')
+      })
+    });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error);
+    toast('Assay Entry Created', element + ' result saved for lot ' + lotNo, 'success');
+    closeModal('modal-new-assay');
+    await loadQCResultsList();
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+function openProvRcptDetail(receiptNo) {
+  toast('Receipt', 'Opening ' + receiptNo + ' — full detail view coming next', 'info');
+}
+
+async function openNewReceiptModal(stage) {
+  window._newReceiptStage = stage;
+  try {
+    const res = await fetch(API_BASE + '/api/logistics');
+    const data = await res.json();
+    const shipments = data.data || [];
+    const sel = document.getElementById('nr-logistics-sel');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select Shipment —</option>' + shipments.map(function(l){
+        return '<option value="'+l.id+'">'+l.log_no+' · '+(l.vessel_name||'—')+' · '+(l.contract_no||'—')+'</option>';
+      }).join('');
+    }
+  } catch(e) { toast('Error', 'Could not load shipments: ' + e.message, 'error'); }
+  openModal('modal-new-receipt');
+}
+
+async function submitNewReceipt() {
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const logisticsId = g('nr-logistics-sel');
+  if (!logisticsId) { toast('Required', 'Please select a shipment', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/goods-receipts', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        logistics_id: parseInt(logisticsId),
+        receipt_stage: window._newReceiptStage || 'PROVISIONAL',
+        receipt_date: g('nr-receipt-date'),
+        arrived_qty_mt: parseFloat(g('nr-qty')) || null,
+        notes: g('nr-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Receipt Created', data.data.receipt_no + ' saved', 'success');
+    closeModal('modal-new-receipt');
+    await loadProvReceiptList();
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+
+
 // ── GENERIC ACTIVITY LOG (reusable across Deal/Quotation/RFQ/Contract) ──
 async function toggleAuditPanel(entityType, entityId, panelId) {
   const panel = document.getElementById(panelId);
@@ -8943,5 +9061,67 @@ async function submitChangeDeal() {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 </script>
+<!-- MODAL: New Provisional/Final Receipt -->
+<div class="mo" id="modal-new-receipt">
+  <div class="md" style="max-width:480px">
+    <div class="mh">
+      <div class="mt">New Provisional Receipt</div>
+      <button class="mc" onclick="closeModal('modal-new-receipt')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>ℹ</span>Create when material physically arrives at the yard. Link to the shipment it belongs to.</div>
+      <div class="f"><div class="fl">Shipment <span class="req">*</span></div>
+        <select class="fs" id="nr-logistics-sel"><option value="">— Select Shipment —</option></select>
+      </div>
+      <div class="f"><div class="fl">Arrival Date</div>
+        <input type="date" class="fi" id="nr-receipt-date">
+      </div>
+      <div class="f"><div class="fl">Received Quantity</div>
+        <input type="number" class="fi" id="nr-qty" placeholder="e.g. 24" step="0.001">
+      </div>
+      <div class="f csf"><div class="fl">Notes</div>
+        <textarea class="fta" id="nr-notes" placeholder="e.g. Yard inspection notes, discrepancies" style="min-height:50px"></textarea>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-receipt')">Cancel</button>
+      <button class="btn bp" onclick="submitNewReceipt()">Create Receipt →</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: New Assay Entry -->
+<div class="mo" id="modal-new-assay">
+  <div class="md" style="max-width:480px">
+    <div class="mh">
+      <div class="mt">New Assay / QC Entry</div>
+      <button class="mc" onclick="closeModal('modal-new-assay')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>ℹ</span>Record an assay result for a material lot. The lot must already exist (created at GRN stage).</div>
+      <div class="f"><div class="fl">MRN Lot No. <span class="req">*</span></div>
+        <input type="text" class="fi" id="na-lot-no" placeholder="e.g. MRN1">
+      </div>
+      <div class="f"><div class="fl">Element <span class="req">*</span></div>
+        <input type="text" class="fi" id="na-element" placeholder="e.g. Cu, Moisture, Pb">
+      </div>
+      <div class="f"><div class="fl">Actual Value</div>
+        <input type="number" class="fi" id="na-value" placeholder="e.g. 91.2" step="0.01">
+      </div>
+      <div class="f"><div class="fl">Unit</div>
+        <select class="fs" id="na-unit"><option value="%">%</option><option value="ppm">ppm</option><option value="g/t">g/t</option></select>
+      </div>
+      <div class="f"><div class="fl">Assay Date</div>
+        <input type="date" class="fi" id="na-date">
+      </div>
+      <div class="f"><div class="fl">Lab Reference</div>
+        <input type="text" class="fi" id="na-lab-ref" placeholder="e.g. SGS report no.">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-assay')">Cancel</button>
+      <button class="btn bp" onclick="submitNewAssay()">Save Entry →</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
