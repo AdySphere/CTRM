@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.9</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.10</div>
   </div>
   <nav class="sb-nav">
 
@@ -1274,7 +1274,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <th>Derived MT Exposure</th>
             </tr></thead>
             <tbody id="pc-price-tbody">
-              <tr><td colspan="15" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading pricing lines…</td></tr>
+              <tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading pricing lines…</td></tr>
             </tbody>
           </table>
           </div>
@@ -1601,10 +1601,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <th>Line</th><th>Source Item</th><th>Pricing Item / Benchmark</th><th>Exchange</th><th>Reporting Agency</th><th>Instrument Code</th>
               <th>Index %</th><th>Payable %</th><th>Premium / Discount</th>
               <th>Pricing Rule</th><th>Calculation Method</th><th>Default Price</th>
-              <th>QP Start</th><th>QP End</th><th>QP Type</th><th>Qty</th>
+              <th>QP Start</th><th>QP End</th><th>TC</th><th>RC</th><th>Pricing Option</th><th>Derived MT Exposure</th>
             </tr></thead>
             <tbody id="sc-price-tbody">
-              <tr><td colspan="16" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines yet — click + Add Pricing Line</td></tr>
+              <tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines yet — click + Add Pricing Line</td></tr>
             </tbody>
           </table>
           </div>
@@ -6607,23 +6607,101 @@ async function addSCMatLine() {
 
 async function addPCPriceLineV10() { await addContractPriceLine('pc'); }
 async function addSCPriceLine() { await addContractPriceLine('sc'); }
+window._nplBenchmarks = null;
 async function addContractPriceLine(prefix) {
   const c = window._currentContract;
   if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
-  const tbody = document.getElementById(prefix + '-price-tbody');
-  if (!tbody) { toast('Error', 'Pricing table not found', 'warning'); return; }
+  window._nplPrefix = prefix;
+
+  // B11 fix: was creating a hardcoded line (index 100%, payable 100%, average/settlement) every
+  // single time with no input — now opens a real form driven by the pricing benchmarks master.
+  const srcSel = document.getElementById('npl-source-item');
+  if (srcSel && window._commodityCache) {
+    srcSel.innerHTML = '<option value="">— Select —</option>' + Object.values(window._commodityCache).map(function(cm){
+      const sel = cm.code === c.commodity_code ? ' selected' : '';
+      return '<option value="'+cm.code+'"'+sel+'>'+cm.name+'</option>';
+    }).join('');
+  }
+
+  try {
+    const res = await fetch(API_BASE + '/api/pricing-benchmarks');
+    const data = await res.json();
+    window._nplBenchmarks = data.data || [];
+    const benchSel = document.getElementById('npl-benchmark');
+    if (benchSel) {
+      if (!window._nplBenchmarks.length) {
+        benchSel.innerHTML = '<option value="">— No benchmarks in master yet —</option>';
+      } else {
+        benchSel.innerHTML = '<option value="">— Select Benchmark —</option>' + window._nplBenchmarks.map(function(b){
+          return '<option value="'+b.code+'">'+b.code+' — '+b.description+'</option>';
+        }).join('');
+      }
+    }
+  } catch(e) { toast('Error', 'Could not load pricing benchmarks: ' + e.message, 'error'); }
+
+  ['npl-exchange','npl-agency','npl-instrument'].forEach(function(id){ const el=document.getElementById(id); if(el) el.textContent='—'; });
+  ['npl-index-pct','npl-payable-pct','npl-prem-disc','npl-tc','npl-rc','npl-qp-start','npl-qp-end'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+
+  openModal('modal-new-pricing-line');
+}
+
+function onNplBenchmarkChange() {
+  const sel = document.getElementById('npl-benchmark');
+  const b = (window._nplBenchmarks||[]).find(function(x){ return x.code === sel.value; });
+  const set = function(id,v){ const el=document.getElementById(id); if(el) el.textContent=v||'—'; };
+  set('npl-exchange', b?.exchange_code);
+  set('npl-agency', b?.reporting_agency);
+  set('npl-instrument', b?.instrument_code);
+  if (b) {
+    const idxEl = document.getElementById('npl-index-pct');
+    const payEl = document.getElementById('npl-payable-pct');
+    if (idxEl && !idxEl.value) idxEl.value = b.default_index_pct;
+    if (payEl && !payEl.value) payEl.value = b.default_payable_pct;
+  }
+}
+
+async function submitNewPricingLine() {
+  const c = window._currentContract;
+  const prefix = window._nplPrefix;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const benchmarkCode = g('npl-benchmark');
+  const indexPct = g('npl-index-pct');
+  const payablePct = g('npl-payable-pct');
+  const pricingRule = g('npl-pricing-rule');
+  const calcMethod = g('npl-calc-method');
+
+  if (!benchmarkCode) { toast('Required', 'Please select a pricing benchmark', 'warning'); return; }
+  if (!indexPct) { toast('Required', 'Please enter the Index %', 'warning'); return; }
+  if (!payablePct) { toast('Required', 'Please enter the Payable %', 'warning'); return; }
+
+  const b = (window._nplBenchmarks||[]).find(function(x){ return x.code === benchmarkCode; });
+
   try {
     const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/pricing-lines', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        source_item_code: c.commodity_code,
-        index_pct: 100, payable_pct: 100,
-        pricing_rule: 'average', calc_method: 'settlement'
+        source_item_code: g('npl-source-item') || c.commodity_code,
+        benchmark_code: benchmarkCode,
+        exchange_code: b?.exchange_code || null,
+        reporting_agency: b?.reporting_agency || null,
+        instrument_code: b?.instrument_code || null,
+        index_pct: parseFloat(indexPct),
+        payable_pct: parseFloat(payablePct),
+        premium_discount: parseFloat(g('npl-prem-disc')) || 0,
+        pricing_rule: pricingRule,
+        calc_method: calcMethod,
+        pricing_option: g('npl-pricing-option'),
+        qp_start_date: g('npl-qp-start'),
+        qp_end_date: g('npl-qp-end'),
+        tc_usd_per_mt: parseFloat(g('npl-tc')) || null,
+        rc_pct: parseFloat(g('npl-rc')) || null
       })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
-    toast('Line Added', 'Pricing line created — edit fields and they will save', 'success');
+    toast('Pricing Line Added', benchmarkCode + ' added to contract', 'success');
+    closeModal('modal-new-pricing-line');
     await loadContractTabs(c.id, prefix);
   } catch(e) { toast('Error', e.message, 'error'); }
 }
@@ -6681,21 +6759,29 @@ async function loadContractTabs(contractId, prefix) {
       const priceTbody = document.getElementById(prefix + '-price-tbody');
       if (priceTbody && lines.length) {
         priceTbody.innerHTML = lines.map(function(pl, i) {
-          const uom = (window._commodityCache && pl.source_item_code && window._commodityCache[pl.source_item_code]?.uom) || 'MT';
           return '<tr>'
             + '<td class="mono f10 fw6">'+(i+1)+'</td>'
             + '<td class="f11 fw6">'+(pl.source_item_code||'—')+'</td>'
             + '<td class="f11">'+(pl.benchmark_code||'—')+'</td>'
+            + '<td class="f10">'+(pl.exchange_code||'—')+'</td>'
+            + '<td class="f10">'+(pl.reporting_agency||'—')+'</td>'
+            + '<td class="mono f10">'+(pl.instrument_code||'—')+'</td>'
             + '<td class="mono f10 ta2">'+(pl.index_pct||'—')+'%</td>'
             + '<td class="mono f10 ta2">'+(pl.payable_pct||'—')+'%</td>'
+            + '<td class="mono f10">'+(pl.premium_discount!=null?pl.premium_discount:'—')+'</td>'
             + '<td class="mono f10">'+(pl.pricing_rule||'—')+'</td>'
             + '<td class="mono f10">'+(pl.calc_method||'—')+'</td>'
+            + '<td class="mono f10">'+(pl.default_price||'—')+'</td>'
             + '<td class="mono f10">'+(pl.qp_start_date?new Date(pl.qp_start_date).toLocaleDateString('en-GB'):'—')+'</td>'
             + '<td class="mono f10">'+(pl.qp_end_date?new Date(pl.qp_end_date).toLocaleDateString('en-GB'):'—')+'</td>'
+            + '<td class="mono f10">'+(pl.tc_usd_per_mt!=null?pl.tc_usd_per_mt:'—')+'</td>'
+            + '<td class="mono f10">'+(pl.rc_pct!=null?pl.rc_pct+'%':'—')+'</td>'
+            + '<td class="f10">'+(pl.pricing_option||'—')+'</td>'
+            + '<td class="mono f10 fw6">'+(pl.qty_mt&&pl.index_pct?(parseFloat(pl.qty_mt||0)*parseFloat(pl.index_pct||0)/100).toFixed(2):'—')+'</td>'
             + '</tr>';
         }).join('');
       } else if (priceTbody) {
-        priceTbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines — add via Pricing & QP tab</td></tr>';
+        priceTbody.innerHTML = '<tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines — add via Pricing & QP tab</td></tr>';
       }
 
       // C24 fix: sync Rollover Fixing Start Date with this contract's actual QP start date
@@ -9444,6 +9530,77 @@ async function submitChangeDeal() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-assay')">Cancel</button>
       <button class="btn bp" onclick="submitNewAssay()">Save Entry →</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: New Pricing Line (B11 fix — master-driven benchmark, never hardcoded) -->
+<div class="mo" id="modal-new-pricing-line">
+  <div class="md" style="max-width:640px">
+    <div class="mh">
+      <div class="mt">New Pricing Line</div>
+      <button class="mc" onclick="closeModal('modal-new-pricing-line')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>ℹ</span>Pick a benchmark from the master — exchange, agency and instrument code auto-fill. Contract-specific terms (premium/discount, QP dates, TC/RC) are entered per line.</div>
+
+      <div class="f"><div class="fl">Source Item (physical commodity)</div>
+        <select class="fs" id="npl-source-item"><option value="">— Select —</option></select>
+      </div>
+      <div class="f"><div class="fl">Pricing Benchmark <span class="req">*</span></div>
+        <select class="fs" id="npl-benchmark" onchange="onNplBenchmarkChange()"><option value="">— Select Benchmark —</option></select>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(3,1fr)">
+        <div class="f"><div class="fl">Exchange</div><div class="fc mono ta2" id="npl-exchange">—</div></div>
+        <div class="f"><div class="fl">Reporting Agency</div><div class="fc mono" id="npl-agency">—</div></div>
+        <div class="f"><div class="fl">Instrument Code</div><div class="fc mono" id="npl-instrument">—</div></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Index % (metal content) <span class="req">*</span></div>
+          <input type="number" class="fi" id="npl-index-pct" step="0.001" placeholder="e.g. 91">
+        </div>
+        <div class="f"><div class="fl">Payable / Recovery % <span class="req">*</span></div>
+          <input type="number" class="fi" id="npl-payable-pct" step="0.001" placeholder="e.g. 96">
+        </div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Premium / Discount (USD/MT)</div>
+          <input type="number" class="fi" id="npl-prem-disc" step="0.01" placeholder="0">
+        </div>
+        <div class="f"><div class="fl">Pricing Option</div>
+          <select class="fs" id="npl-pricing-option"><option value="">—</option><option>SUPPLIER</option><option>LONGER</option><option>NA</option></select>
+        </div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Pricing Rule <span class="req">*</span></div>
+          <select class="fs" id="npl-pricing-rule">
+            <option value="event">EVENT BASED — supplier/buyer picks one day in window</option>
+            <option value="average">AVERAGE — all business days in QP window averaged</option>
+            <option value="specific">SPECIFIC DATE — single fixed date agreed upfront</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Calculation Method <span class="req">*</span></div>
+          <select class="fs" id="npl-calc-method">
+            <option value="lowest4">Lowest of 4</option>
+            <option value="highest4">Highest of 4</option>
+            <option value="cashask">Cash Ask</option>
+            <option value="cashbid">Cash Bid</option>
+            <option value="settlement">Official Settlement</option>
+            <option value="mid">Mid Price</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">QP Start Date</div><input type="date" class="fi" id="npl-qp-start"></div>
+        <div class="f"><div class="fl">QP End Date</div><input type="date" class="fi" id="npl-qp-end"></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">TC — Treatment Charge (USD/MT)</div><input type="number" class="fi" id="npl-tc" step="0.01" placeholder="0"></div>
+        <div class="f"><div class="fl">RC — Refining Charge %</div><input type="number" class="fi" id="npl-rc" step="0.001" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-pricing-line')">Cancel</button>
+      <button class="btn bp" onclick="submitNewPricingLine()">Add Pricing Line →</button>
     </div>
   </div>
 </div>

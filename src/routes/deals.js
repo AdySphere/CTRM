@@ -1519,3 +1519,53 @@ invoiceAdjRouter.delete('/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.invoiceAdjRouter = invoiceAdjRouter;
+
+// ── PRICING BENCHMARKS MASTER ─────────────────────────────────────
+const pricingBenchmarksRouter = require('express').Router();
+pricingBenchmarksRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { commodity_code } = req.query;
+    let sql = `
+      SELECT pb.*, cm.name as commodity_name
+      FROM pricing_benchmarks pb
+      LEFT JOIN commodities cm ON cm.code = pb.commodity_code
+      WHERE pb.active=TRUE`;
+    const params = [];
+    if (commodity_code) { params.push(commodity_code); sql += ` AND pb.commodity_code=$${params.length}`; }
+    sql += ' ORDER BY pb.code';
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+pricingBenchmarksRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { code, description, commodity_code, exchange_code, reporting_agency,
+      instrument_code, default_index_pct, default_payable_pct } = req.body;
+    if (!code || !description || !exchange_code) {
+      return res.status(400).json({ error: 'code, description and exchange_code are required' });
+    }
+    const result = await query(`
+      INSERT INTO pricing_benchmarks (code, description, commodity_code, exchange_code,
+        reporting_agency, instrument_code, default_index_pct, default_payable_pct)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *
+    `, [code, description, commodity_code || null, exchange_code, reporting_agency || null,
+        instrument_code || null, default_index_pct || 100, default_payable_pct || 100]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+pricingBenchmarksRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['description', 'commodity_code', 'exchange_code', 'reporting_agency',
+      'instrument_code', 'default_index_pct', 'default_payable_pct', 'active'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE pricing_benchmarks SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.pricingBenchmarksRouter = pricingBenchmarksRouter;

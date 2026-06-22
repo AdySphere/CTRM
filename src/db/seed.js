@@ -353,6 +353,21 @@ async function seed() {
   `);
   console.log('✓ adjustment_codes seeded');
 
+  // ── PRICING BENCHMARKS MASTER — starter set, fully editable afterward ──
+  await query(`
+    INSERT INTO pricing_benchmarks (code, description, commodity_code, exchange_code, reporting_agency, instrument_code, default_index_pct, default_payable_pct)
+    VALUES
+      ('LME-CU-CASH', 'LME Copper Cash', 'LME-CU-BENCH', 'LME', 'LME', 'MCU-CASH', 100, 96),
+      ('LME-CU-3M', 'LME Copper 3-Month', 'LME-CU-BENCH', 'LME', 'LME', 'MCU-3M', 100, 96),
+      ('LME-PB-CASH', 'LME Lead Cash', 'PB-SN-INGOT', 'LME', 'LME', 'MPB-CASH', 100, 95),
+      ('LME-ZN-CASH', 'LME Zinc Cash', 'ZN-REFINED', 'LME', 'LME', 'MZN-CASH', 100, 95),
+      ('COMEX-CU', 'COMEX Copper Futures', 'CU-CATHODE-A', 'COMEX', 'CME Group', 'HG', 100, 96),
+      ('ICE-BRENT-FM', 'ICE Brent Crude Front Month', 'ICE-BRENT', 'ICE', 'ICE', 'BRN', 100, 100),
+      ('PLATTS-JET', 'Platts Jet Fuel', 'JET-FUEL', 'PLATTS', 'Platts', 'PJET', 100, 100)
+    ON CONFLICT (code) DO NOTHING;
+  `);
+  console.log('✓ pricing_benchmarks seeded');
+
   console.log('\n✅ All seed data loaded.');
   console.log('\nDemo scenario ready:');
   console.log('  DEAL123 → PC-2026-001 → LOG-2026-011 → KMTC121/122/123/MAER232 → FIX123 → REQ-001');
