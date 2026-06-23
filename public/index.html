@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.13</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.14</div>
   </div>
   <nav class="sb-nav">
 
@@ -6754,6 +6754,34 @@ async function addContractPriceLine(prefix) {
   openModal('modal-new-pricing-line');
 }
 
+// Fix 2: M/M+1/M+2 always counts from the Shipment Month — confirmed explicitly on the
+// 23 June call. QP start = 1st day of the target month, QP end = last day of that same
+// month. Was previously pure manual date entry with no concept of shipment month at all,
+// which is exactly what caused the date-to-event mapping confusion Prashant flagged.
+function recalcQPDatesFromShipmentMonth() {
+  const monthInput = document.getElementById('npl-shipment-month')?.value; // 'YYYY-MM'
+  const offset = parseInt(document.getElementById('npl-qp-offset')?.value || '0');
+  const display = document.getElementById('npl-qp-computed');
+  if (!monthInput) { if (display) display.textContent = '— Select shipment month —'; return; }
+
+  const [y, m] = monthInput.split('-').map(Number); // m is 1-12
+  const targetMonthIndex = (m - 1) + offset; // 0-based, can roll into next year
+  const targetDate = new Date(y, targetMonthIndex, 1);
+  const qpStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+  const qpEnd = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0); // last day of that month
+
+  const fmt = function(d){ return d.toISOString().split('T')[0]; };
+  const startEl = document.getElementById('npl-qp-start');
+  const endEl = document.getElementById('npl-qp-end');
+  if (startEl) startEl.value = fmt(qpStart);
+  if (endEl) endEl.value = fmt(qpEnd);
+  if (display) {
+    const label = ['M','M+1','M+2'][offset] || ('M+'+offset);
+    display.textContent = label + ': ' + qpStart.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+      + ' → ' + qpEnd.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  }
+}
+
 function onNplBenchmarkChange() {
   const sel = document.getElementById('npl-benchmark');
   const b = (window._nplBenchmarks||[]).find(function(x){ return x.code === sel.value; });
@@ -6804,6 +6832,8 @@ async function submitNewPricingLine() {
         pricing_rule: pricingRule,
         calc_method: calcMethod,
         pricing_option: g('npl-pricing-option'),
+        shipment_month: g('npl-shipment-month') ? g('npl-shipment-month') + '-01' : null,
+        qp_offset_months: parseInt(g('npl-qp-offset')) || 0,
         qp_start_date: g('npl-qp-start'),
         qp_end_date: g('npl-qp-end'),
         tc_usd_per_mt: parseFloat(g('npl-tc')) || null,
@@ -6908,7 +6938,7 @@ async function loadContractTabs(contractId, prefix) {
             + '<td class="mono f10">'+(pl.pricing_rule||'—')+'</td>'
             + '<td class="mono f10">'+(pl.calc_method||'—')+'</td>'
             + '<td class="mono f10">'+(pl.default_price||'—')+'</td>'
-            + '<td class="mono f10">'+(pl.qp_start_date?new Date(pl.qp_start_date).toLocaleDateString('en-GB'):'—')+'</td>'
+            + '<td class="mono f10">'+(pl.qp_start_date?new Date(pl.qp_start_date).toLocaleDateString('en-GB'):'—')+(pl.shipment_month?'<br><span style="color:var(--text3);font-size:8px">'+(['M','M+1','M+2'][pl.qp_offset_months]||'M+'+pl.qp_offset_months)+' from '+new Date(pl.shipment_month).toLocaleDateString('en-GB',{month:'short',year:'numeric'})+'</span>':'')+'</td>'
             + '<td class="mono f10">'+(pl.qp_end_date?new Date(pl.qp_end_date).toLocaleDateString('en-GB'):'—')+'</td>'
             + '<td class="mono f10">'+(pl.tc_usd_per_mt!=null?pl.tc_usd_per_mt:'—')+'</td>'
             + '<td class="mono f10">'+(pl.rc_pct!=null?pl.rc_pct+'%':'—')+'</td>'
@@ -9799,9 +9829,25 @@ async function submitChangeDeal() {
           </select>
         </div>
       </div>
+      <div class="ban bi mb12" style="margin-top:8px"><span>ℹ</span>M/M+1/M+2 always counts from the Shipment Month, never the BL date — start and end dates compute automatically.</div>
+      <div class="fg" style="grid-template-columns:repeat(3,1fr)">
+        <div class="f"><div class="fl">Shipment Month <span class="req">*</span></div>
+          <input type="month" class="fi" id="npl-shipment-month" onchange="recalcQPDatesFromShipmentMonth()">
+        </div>
+        <div class="f"><div class="fl">QP Offset</div>
+          <select class="fs" id="npl-qp-offset" onchange="recalcQPDatesFromShipmentMonth()">
+            <option value="0">M (same month)</option>
+            <option value="1" selected>M+1</option>
+            <option value="2">M+2</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">QP Window (computed)</div>
+          <div class="fc mono ta2" id="npl-qp-computed">— Select shipment month —</div>
+        </div>
+      </div>
       <div class="fg" style="grid-template-columns:repeat(2,1fr)">
-        <div class="f"><div class="fl">QP Start Date</div><input type="date" class="fi" id="npl-qp-start"></div>
-        <div class="f"><div class="fl">QP End Date</div><input type="date" class="fi" id="npl-qp-end"></div>
+        <div class="f"><div class="fl">QP Start Date <span style="font-size:9px;color:var(--text3)">(auto-filled, editable for BL-averaged terms)</span></div><input type="date" class="fi" id="npl-qp-start"></div>
+        <div class="f"><div class="fl">QP End Date <span style="font-size:9px;color:var(--text3)">(auto-filled, editable for BL-averaged terms)</span></div><input type="date" class="fi" id="npl-qp-end"></div>
       </div>
       <div class="fg" style="grid-template-columns:repeat(2,1fr)">
         <div class="f"><div class="fl">TC — Treatment Charge (USD/MT)</div><input type="number" class="fi" id="npl-tc" step="0.01" placeholder="0"></div>

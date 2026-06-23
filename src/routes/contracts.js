@@ -114,17 +114,18 @@ router.post('/:id/pricing-lines', async (req, res) => {
     const { id } = req.params;
     const { source_item_code, benchmark_code, exchange_code, reporting_agency, instrument_code,
       index_pct, payable_pct, premium_discount = 0, pricing_rule, calc_method,
-      pricing_option, qp_period_code, qp_start_date, qp_end_date, tc_usd_per_mt, rc_pct } = req.body;
+      pricing_option, qp_period_code, shipment_month, qp_offset_months, qp_start_date, qp_end_date,
+      tc_usd_per_mt, rc_pct } = req.body;
     const result = await query(`
       INSERT INTO contract_pricing_lines
         (contract_id, source_item_code, benchmark_code, exchange_code, reporting_agency, instrument_code,
          index_pct, payable_pct, premium_discount, pricing_rule, calc_method,
-         pricing_option, qp_period_code, qp_start_date, qp_end_date, tc_usd_per_mt, rc_pct)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         pricing_option, qp_period_code, shipment_month, qp_offset_months, qp_start_date, qp_end_date, tc_usd_per_mt, rc_pct)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
       RETURNING *
     `, [id, source_item_code, benchmark_code, exchange_code, reporting_agency, instrument_code,
         index_pct, payable_pct, premium_discount, pricing_rule, calc_method,
-        pricing_option, qp_period_code, qp_start_date, qp_end_date, tc_usd_per_mt, rc_pct]);
+        pricing_option, qp_period_code, shipment_month||null, qp_offset_months||0, qp_start_date, qp_end_date, tc_usd_per_mt, rc_pct]);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
