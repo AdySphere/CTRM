@@ -53,14 +53,25 @@ async function getQPAverage(pricingLine, upToDate) {
   const endDate = today > qpEnd ? qpEnd : today;
 
   // Get all prices in the QP window
+  // Fix 1: was keyed 'cashAsk'/'cashBid' (camelCase) but every frontend dropdown sends
+  // lowercase 'cashask'/'cashbid' — these never matched, silently fell through to the
+  // ELSE default on every single query. Also added 3-month ask/bid and mid price as real
+  // calc methods (previously offered everywhere in the UI but had zero backend support),
+  // and average4 alongside the existing lowest4/highest4 metal-only modifiers. Removed
+  // 'settlement' as a distinct branch per Prashant's instruction — it isn't a separate
+  // price, just one of the others under a different name; defaults now correctly fall
+  // back to cash_ask (the universal default) rather than an undefined settlement concept.
   const prices = await query(`
     SELECT quote_date,
       CASE $1
         WHEN 'lowest4'    THEN LEAST(cash_bid, cash_ask, bid_3m, ask_3m)
         WHEN 'highest4'   THEN GREATEST(cash_bid, cash_ask, bid_3m, ask_3m)
-        WHEN 'cashAsk'    THEN cash_ask
-        WHEN 'cashBid'    THEN cash_bid
-        WHEN 'settlement' THEN settlement
+        WHEN 'average4'   THEN (COALESCE(cash_bid,0) + COALESCE(cash_ask,0) + COALESCE(bid_3m,0) + COALESCE(ask_3m,0)) / 4
+        WHEN 'cashask'    THEN cash_ask
+        WHEN 'cashbid'    THEN cash_bid
+        WHEN '3mask'      THEN ask_3m
+        WHEN '3mbid'      THEN bid_3m
+        WHEN 'mid'        THEN (cash_ask + cash_bid) / 2
         ELSE cash_ask
       END as ref_price
     FROM market_prices
