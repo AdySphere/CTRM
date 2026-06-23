@@ -1450,11 +1450,19 @@ const lotsRouter = require('express').Router();
 lotsRouter.get('/', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const { lot_no } = req.query;
-    let sql = 'SELECT * FROM lots WHERE 1=1';
+    const { lot_no, contract_id } = req.query;
+    // Item 7 fix: support filtering lots by contract — joins through logistics since
+    // lots link to logistics_id, and logistics links to contract_id. Needed to surface
+    // real gross/tare/net weight on the PC/SC contract screens instead of nowhere.
+    let sql = `
+      SELECT lo.*, l.log_no, l.contract_id
+      FROM lots lo
+      LEFT JOIN logistics l ON l.id = lo.logistics_id
+      WHERE 1=1`;
     const params = [];
-    if (lot_no) { params.push(lot_no); sql += ` AND lot_no=$${params.length}`; }
-    sql += ' ORDER BY id DESC';
+    if (lot_no) { params.push(lot_no); sql += ` AND lo.lot_no=$${params.length}`; }
+    if (contract_id) { params.push(contract_id); sql += ` AND l.contract_id=$${params.length}`; }
+    sql += ' ORDER BY lo.id DESC';
     const result = await query(sql, params);
     res.json({ success: true, data: result.rows });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }

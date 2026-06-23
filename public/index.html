@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.10</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.11</div>
   </div>
   <nav class="sb-nav">
 
@@ -1410,17 +1410,25 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div id="pc-ship" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Incoterms</div><select class="fs"><option>CIF</option><option>CFR</option><option>FOB</option><option>DDP</option><option>EXW</option><option>FCA</option></select></div>
           <div class="f"><div class="fl">Named Port / Place</div><input type="text" class="fi" value="Nhava Sheva, India"></div>
-          <div class="f"><div class="fl">Port of Loading (POL)</div><input type="text" class="fi" value="Dar es Salaam, Tanzania"></div>
-          <div class="f"><div class="fl">Port of Discharge (POD)</div><input type="text" class="fi" value="Nhava Sheva, India"></div>
-          <div class="f"><div class="fl">Shipment Window From</div><input type="date" class="fi" value="2026-04-15"></div>
-          <div class="f"><div class="fl">Shipment Window To</div><input type="date" class="fi" value="2026-05-15"></div>
-          <div class="f"><div class="fl">Shipment Terms</div><input type="text" class="fi" value="Prompt, but latest by end of May 2026"></div>
+          <div class="f"><div class="fl">Port of Loading (POL)</div><select class="fs" id="pcd-pol"><option value="">— Select —</option></select></div>
+          <div class="f"><div class="fl">Port of Discharge (POD)</div><select class="fs" id="pcd-pod"><option value="">— Select —</option></select></div>
+          <div class="f"><div class="fl">Shipment Window From</div><input type="date" class="fi" id="pcd-ship-from"></div>
+          <div class="f"><div class="fl">Shipment Window To</div><input type="date" class="fi" id="pcd-ship-to"></div>
+          <div class="f"><div class="fl">Shipment Terms</div><input type="text" class="fi" id="pcd-ship-terms" placeholder="e.g. Prompt within QP window"></div>
           <div class="f"><div class="fl">Partial Shipment</div><select class="fs"><option>ALLOWED</option><option>NOT ALLOWED</option></select></div>
           <div class="f"><div class="fl">Container Type</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option><option>N/A — Bulk</option></select></div>
           <div class="f"><div class="fl">Container Limit</div><input type="text" class="fi" placeholder="e.g. Maximum 21.7 MT per 20ft container"></div>
           <div class="f"><div class="fl">Transhipment</div><select class="fs"><option>NOT PERMITTED</option><option>PERMITTED</option></select></div>
           <div class="f cs2"><div class="fl">Shipment Remarks</div><textarea class="fta" style="min-height:48px">Loading photos required at 0%, 25%, 50%, 75%, 100% loaded, door-closed and seal visible stages.</textarea></div>
-        </div></div>
+        </div>
+        <div class="divl mt12">Weight & Quality (from received lots)</div>
+        <div style="overflow-x:auto">
+        <table class="lt">
+          <thead><tr><th>Lot No.</th><th>Container/Logistics</th><th>Gross (MT)</th><th>Tare (MT)</th><th>Net (MT)</th><th>Moisture %</th><th>Dry Wt (MT)</th><th>Payable Qty (MT)</th><th>Status</th></tr></thead>
+          <tbody id="pcd-lots-tbody"><tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No lots received yet — populates once goods are received via Logistics / Provisional Receipt</td></tr></tbody>
+        </table>
+        </div>
+        </div>
         <div id="pc-legal" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Governing Law</div><select class="fs"><option>UAE (DMCC)</option><option>English Law</option><option>Singapore Law</option><option>Swiss Law</option></select></div>
           <div class="f"><div class="fl">Dispute Resolution</div><select class="fs"><option>Arbitration — DIFC-LCIA</option><option>Arbitration — ICC Paris</option><option>Arbitration — LMAA London</option><option>Courts</option></select></div>
@@ -1699,16 +1707,24 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div id="sc-ship" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Incoterms</div><select class="fs"><option>CIF</option><option>CFR</option><option>FOB</option><option>DDP</option></select></div>
           <div class="f"><div class="fl">Named Port / Place</div><input type="text" class="fi" value="Nhava Sheva, India"></div>
-          <div class="f"><div class="fl">Port of Loading (POL)</div><input type="text" class="fi" value="Jebel Ali, UAE"></div>
-          <div class="f"><div class="fl">Port of Discharge (POD)</div><input type="text" class="fi" value="Nhava Sheva, India"></div>
-          <div class="f"><div class="fl">Shipment Window From</div><input type="date" class="fi" value="2026-01-01"></div>
-          <div class="f"><div class="fl">Shipment Window To</div><input type="date" class="fi" value="2026-01-31"></div>
-          <div class="f"><div class="fl">Shipment Terms</div><input type="text" class="fi" value="Prompt, but latest by end of January 2026"></div>
+          <div class="f"><div class="fl">Port of Loading (POL)</div><select class="fs" id="scd-pol"><option value="">— Select —</option></select></div>
+          <div class="f"><div class="fl">Port of Discharge (POD)</div><select class="fs" id="scd-pod"><option value="">— Select —</option></select></div>
+          <div class="f"><div class="fl">Shipment Window From</div><input type="date" class="fi" id="scd-ship-from"></div>
+          <div class="f"><div class="fl">Shipment Window To</div><input type="date" class="fi" id="scd-ship-to"></div>
+          <div class="f"><div class="fl">Shipment Terms</div><input type="text" class="fi" id="scd-ship-terms" placeholder="e.g. Prompt within QP window"></div>
           <div class="f"><div class="fl">Partial Shipment</div><select class="fs"><option>ALLOWED</option><option>NOT ALLOWED</option></select></div>
           <div class="f"><div class="fl">Container Type</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option></select></div>
           <div class="f"><div class="fl">Container Limit</div><input type="text" class="fi" placeholder="e.g. Maximum 21.7 MT per 20ft container"></div>
           <div class="f cs2"><div class="fl">Shipment Remarks</div><textarea class="fta" style="min-height:48px">Loading photos required at 0%, 25%, 50%, 75%, 100%, door-closed, seal visible stages.</textarea></div>
-        </div></div>
+        </div>
+        <div class="divl mt12">Weight & Quality (from received lots)</div>
+        <div style="overflow-x:auto">
+        <table class="lt">
+          <thead><tr><th>Lot No.</th><th>Container/Logistics</th><th>Gross (MT)</th><th>Tare (MT)</th><th>Net (MT)</th><th>Moisture %</th><th>Dry Wt (MT)</th><th>Payable Qty (MT)</th><th>Status</th></tr></thead>
+          <tbody id="scd-lots-tbody"><tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No lots received yet — populates once goods are received via Logistics / Provisional Receipt</td></tr></tbody>
+        </table>
+        </div>
+        </div>
         <div id="sc-legal" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Governing Law</div><select class="fs"><option>UAE (DMCC)</option><option>English Law</option><option>Singapore Law</option></select></div>
           <div class="f"><div class="fl">Dispute Resolution</div><select class="fs"><option>Arbitration — DIFC-LCIA</option><option>Arbitration — ICC Paris</option><option>Courts</option></select></div>
@@ -3719,7 +3735,8 @@ async function renderQPWindow(contractId) {
   const expData = await api(`/api/exposure?contract_id=${contractId}`);
   if (expData && expData.length > 0) {
     const r = expData[0];
-    set('qp-rule-display', '—');
+    set('qp-rule-display', r.pricing_rule ? r.pricing_rule.toUpperCase() : '—');
+    set('qp-calc-display', r.calc_method ? r.calc_method.toUpperCase() : '—');
     set('qp-start-display', r.qp_start);
     set('qp-end-display', r.qp_end);
     const fixState = r.state || 'UNPRICED';
@@ -3832,7 +3849,7 @@ async function renderProvInvoice(dealId) {
   set('prov-gross-amount', fmt(data.gross_amount, 0));
   set('prov-provisional-amount', fmt(data.provisional_amount, 0));
   set('prov-payment-due', data.payment_due || '—');
-  set('prov-payment-pct', (data.payment_pct||90)+'%');
+  set('prov-payment-pct', (data.payment_pct!=null?data.payment_pct:90)+'%');
   set('prov-qty', fmt(data.qty_mt,2));
 }
 
@@ -5214,6 +5231,24 @@ async function loadNewContractDropdowns(){
   }catch(e){console.error('Dropdown load error:',e);}
 }
 
+function onNcDealChange() {
+  // Item 1 fix: previously no validation when a Deal was picked first then Commodity
+  // changed to something unrelated. Deal is now the anchor — picking one auto-sets and
+  // locks the commodity to match, since a contract for a deal must be in that deal's commodity.
+  const dealSel = document.getElementById('nc-deal-sel');
+  const cmSel = document.getElementById('nc-commodity');
+  if (!dealSel || !cmSel || !window._ncAllDeals) return;
+  const dealId = dealSel.value;
+  if (!dealId) { cmSel.disabled = false; return; }
+  const deal = window._ncAllDeals.find(function(d){ return String(d.id) === dealId; });
+  if (deal && deal.commodity_code) {
+    cmSel.value = deal.commodity_code;
+    cmSel.disabled = true;
+    onNcCommodityChange();
+    toast('Commodity Locked', 'Set to ' + (deal.commodity_name||deal.commodity_code) + ' to match the selected deal', 'info');
+  }
+}
+
 function onNcCommodityChange() {
   const cmSel = document.getElementById('nc-commodity');
   const dealSel = document.getElementById('nc-deal-sel');
@@ -5253,6 +5288,7 @@ async function submitNewContract(){
   const incoterms=document.getElementById('nc-incoterms')?.value;
   const pricing=document.getElementById('nc-pricing')?.value?.trim();
   const notes=document.getElementById('nc-notes')?.value?.trim();
+  const paymentPct=document.getElementById('nc-payment-pct')?.value;
   if(!cpId||!commCode||!qty){toast('Required','Counterparty, commodity and quantity are required','warning');return;}
   try{
     const res=await fetch(API_BASE+'/api/contracts',{
@@ -5263,6 +5299,7 @@ async function submitNewContract(){
         counterparty_id:parseInt(cpId),commodity_code:commCode||null,
         qty_mt:parseFloat(qty),incoterms:incoterms||'CIF',
         pricing_formula:pricing||null,notes:notes||null,
+        payment_pct: paymentPct ? parseFloat(paymentPct) : 90,
         contract_date:contractDate||new Date().toISOString().split('T')[0]
       })
     });
@@ -6042,7 +6079,7 @@ async function loadContractList(type) {
       <td class="f11">${c.commodity_name || c.commodity_code}</td>
       <td class="mono">${c.qty_mt}</td>
       <td class="f10">${c.incoterms||'—'}</td>
-      <td class="mono f10">${c.payment_pct||90}%</td>
+      <td class="mono f10">${c.payment_pct!=null?c.payment_pct:90}%</td>
       <td><span class="badge ${c.status==='ACTIVE'?'bd-confirmed':c.status==='DRAFT'?'bd-draft':'bd-ship'}">${c.status}</span></td>
       <td>${c.deal_no ? '<span class="mono f10 ta">'+c.deal_no+'</span>' : '—'}</td>
       <td><button class="btn bxs bg" onclick="event.stopPropagation();openContractDetail(${c.id},'${type}')">Open</button></td>
@@ -6751,6 +6788,30 @@ async function addRolloverEvent() {
 async function loadContractTabs(contractId, prefix) {
   // prefix = 'pc' or 'sc'
   try {
+    // Items 5 fix: POL/POD were hardcoded fake port names — now real dropdowns from the
+    // locations master that already exists and works correctly elsewhere (e.g. New Receipt).
+    if (!window._locationsCache) {
+      try {
+        const locRes = await fetch(API_BASE + '/api/master/locations');
+        const locData = await locRes.json();
+        window._locationsCache = locData.data || [];
+      } catch(e) { window._locationsCache = []; }
+    }
+    const polSel = document.getElementById(prefix + 'd-pol');
+    const podSel = document.getElementById(prefix + 'd-pod');
+    if (polSel && !polSel.options.length || (polSel && polSel.options.length === 1)) {
+      const locOpts = '<option value="">— Select —</option>' + window._locationsCache.map(function(l){
+        return '<option value="'+l.id+'">'+l.name+(l.country?', '+l.country:'')+'</option>';
+      }).join('');
+      if (polSel) polSel.innerHTML = locOpts;
+      if (podSel) podSel.innerHTML = locOpts;
+    }
+    const c = window._currentContract;
+    if (c) {
+      if (polSel && c.pol_id) polSel.value = c.pol_id;
+      if (podSel && c.pod_id) podSel.value = c.pod_id;
+    }
+
     // Load pricing lines
     const plRes = await fetch(API_BASE + '/api/contracts/' + contractId + '/pricing-lines').catch(function(){return null;});
     if (plRes && plRes.ok) {
@@ -6789,6 +6850,48 @@ async function loadContractTabs(contractId, prefix) {
         const rollStart = document.getElementById('pcd-rollover-start');
         if (rollStart) rollStart.value = new Date(lines[0].qp_start_date).toISOString().split('T')[0];
       }
+
+      // Items 2 & 6 fix: Shipment Window From/To were hardcoded fake dates, never synced
+      // to the contract's actual QP dates — same root cause as the Rollover date fix above.
+      if (lines.length) {
+        const shipFrom = document.getElementById(prefix + 'd-ship-from');
+        const shipTo = document.getElementById(prefix + 'd-ship-to');
+        const shipTerms = document.getElementById(prefix + 'd-ship-terms');
+        if (shipFrom && lines[0].qp_start_date) shipFrom.value = new Date(lines[0].qp_start_date).toISOString().split('T')[0];
+        if (shipTo && lines[0].qp_end_date) shipTo.value = new Date(lines[0].qp_end_date).toISOString().split('T')[0];
+        if (shipTerms && !shipTerms.value && lines[0].qp_start_date && lines[0].qp_end_date) {
+          shipTerms.value = 'Within QP window: ' + new Date(lines[0].qp_start_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})
+            + ' to ' + new Date(lines[0].qp_end_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+        }
+      }
+    }
+
+    // Item 7 fix: Gross/Tare/Net weight existed in the database (lots table) but was never
+    // surfaced on PC/SC at all — only visible on the separate Logistics page.
+    const lotsTbody = document.getElementById(prefix + 'd-lots-tbody');
+    if (lotsTbody) {
+      try {
+        const lotsRes = await fetch(API_BASE + '/api/lots?contract_id=' + contractId);
+        const lotsData = await lotsRes.json();
+        const lots = lotsData.data || [];
+        if (!lots.length) {
+          lotsTbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No lots received yet — populates once goods are received via Logistics / Provisional Receipt</td></tr>';
+        } else {
+          lotsTbody.innerHTML = lots.map(function(lo){
+            return '<tr>'
+              + '<td class="mono f10 fw6">'+(lo.lot_no||'—')+'</td>'
+              + '<td class="mono f10">'+(lo.log_no||'—')+'</td>'
+              + '<td class="mono f10">'+(lo.gross_weight_mt!=null?lo.gross_weight_mt:'—')+'</td>'
+              + '<td class="mono f10">'+(lo.tare_mt!=null?lo.tare_mt:'—')+'</td>'
+              + '<td class="mono f10">'+(lo.net_weight_mt!=null?lo.net_weight_mt:'—')+'</td>'
+              + '<td class="mono f10">'+(lo.moisture_pct!=null?lo.moisture_pct:'—')+'</td>'
+              + '<td class="mono f10">'+(lo.dry_weight_mt!=null?lo.dry_weight_mt:'—')+'</td>'
+              + '<td class="mono f10 fw6">'+(lo.payable_qty_mt!=null?lo.payable_qty_mt:'—')+'</td>'
+              + '<td><span class="badge bd-act" style="font-size:8px">'+(lo.lot_status||'PENDING')+'</span></td>'
+              + '</tr>';
+          }).join('');
+        }
+      } catch(e) { console.warn('lots load:', e); }
     }
 
     // Material tab — show empty state; trader builds lines explicitly via + Add Quality / Material Line.
@@ -8150,7 +8253,7 @@ async function loadAllocationTable() {
         <select class="fs" id="nc-counterparty-sel"><option value="">— Select —</option></select>
       </div>
       <div class="f"><div class="fl">Linked Deal</div>
-        <select class="fs" id="nc-deal-sel"><option value="">— None —</option></select>
+        <select class="fs" id="nc-deal-sel" onchange="onNcDealChange()"><option value="">— None —</option></select>
       </div>
       <div class="f"><div class="fl">Commodity <span class="req">*</span></div>
         <select class="fs" id="nc-commodity" onchange="onNcCommodityChange()"><option value="">— Select Commodity —</option></select>
@@ -8169,6 +8272,10 @@ async function loadAllocationTable() {
       </div>
       <div class="f"><div class="fl">Pricing Formula</div>
         <input type="text" class="fi" id="nc-pricing" placeholder="e.g. 91% LME Lowest of 4">
+      </div>
+      <div class="f"><div class="fl">Provisional Payment %</div>
+        <input type="number" class="fi" id="nc-payment-pct" placeholder="e.g. 90" min="0" max="100" step="0.01">
+        <div style="font-size:9px;color:var(--text3);margin-top:4px">% of provisional invoice value paid upfront — defaults to 90% if left blank</div>
       </div>
       <div class="f"><div class="fl">Notes</div>
         <input type="text" class="fi" id="nc-notes" placeholder="Any remarks...">
