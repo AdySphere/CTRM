@@ -408,6 +408,8 @@ async function setupDatabase() {
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS shipment_month DATE`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS qp_offset_months INT DEFAULT 0`);
+    await query(`CREATE TABLE IF NOT EXISTS rollover_events (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, rollover_no INT NOT NULL, period_from DATE NOT NULL, period_to DATE NOT NULL, unfixed_qty DECIMAL(12,3) NOT NULL, rate_basis VARCHAR(20) NOT NULL, rate_value DECIMAL(14,4) NOT NULL, derived_rate_per_mt DECIMAL(14,4), amount_usd DECIMAL(15,2) NOT NULL, new_qp_start_date DATE, new_qp_end_date DATE, debit_note_no VARCHAR(30), status VARCHAR(20) DEFAULT 'PENDING', created_by VARCHAR(50), created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_rollover_contract ON rollover_events(contract_id)`);
     await query(`CREATE TABLE IF NOT EXISTS pricing_benchmarks (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, commodity_code VARCHAR(20) REFERENCES commodities(code), exchange_code VARCHAR(20) NOT NULL, reporting_agency VARCHAR(30), instrument_code VARCHAR(50), default_index_pct DECIMAL(6,3) DEFAULT 100, default_payable_pct DECIMAL(6,3) DEFAULT 100, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE TABLE IF NOT EXISTS adjustment_codes (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, category VARCHAR(30), calc_type VARCHAR(20) DEFAULT 'PCT_OF_VALUE', default_direction VARCHAR(10) DEFAULT 'DEDUCTION', active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE TABLE IF NOT EXISTS invoice_adjustment_lines (id SERIAL PRIMARY KEY, invoice_id INT NOT NULL REFERENCES invoices(id) ON DELETE CASCADE, adjustment_code VARCHAR(30) REFERENCES adjustment_codes(code), payable_component VARCHAR(50), calc_value DECIMAL(12,4), calc_unit VARCHAR(20), qty_basis VARCHAR(50), computed_amount DECIMAL(15,2), direction VARCHAR(10) DEFAULT 'DEDUCTION', notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
@@ -451,6 +453,33 @@ async function setupDatabase() {
     );
   `);
   console.log('✓ contract_pricing_lines');
+
+  // ── ROLLOVER EVENTS (Fix 3 — per-contract, multi-instance, append-only audit trail) ──
+  // Per 23 June call: rollover is a finance charge for not fixing price within the
+  // original QP window. Must support MULTIPLE rollovers per contract (#1, #2...) with a
+  // full audit trail — confirmed explicitly: keep per-contract, not a separate master.
+  await query(`
+    CREATE TABLE IF NOT EXISTS rollover_events (
+      id                  SERIAL PRIMARY KEY,
+      contract_id         INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      rollover_no         INT NOT NULL,            -- sequential per contract: 1, 2, 3...
+      period_from          DATE NOT NULL,
+      period_to            DATE NOT NULL,
+      unfixed_qty         DECIMAL(12,3) NOT NULL,
+      rate_basis          VARCHAR(20) NOT NULL,    -- PER-MT, FIXED-TOTAL, PERCENTAGE
+      rate_value          DECIMAL(14,4) NOT NULL,
+      derived_rate_per_mt DECIMAL(14,4),
+      amount_usd          DECIMAL(15,2) NOT NULL,
+      new_qp_start_date   DATE,                    -- the extended QP window this rollover created
+      new_qp_end_date     DATE,
+      debit_note_no       VARCHAR(30),
+      status              VARCHAR(20) DEFAULT 'PENDING', -- PENDING, ACCRUED, INVOICED
+      created_by          VARCHAR(50),
+      created_at          TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_rollover_contract ON rollover_events(contract_id);
+  `);
+  console.log('✓ rollover_events');
 
   // ── PRICING BENCHMARKS MASTER (B11 fix — master-driven, never hardcoded) ──
   await query(`

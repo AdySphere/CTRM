@@ -172,3 +172,73 @@ router.get('/:id/pricing-lines', async (req, res) => {
     res.json({ success: true, data: result.rows });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
+
+// ── ROLLOVER EVENTS (Fix 3 — multi-instance, append-only, per-contract) ────
+// GET /api/contracts/:id/rollover-events
+router.get('/:id/rollover-events', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(
+      'SELECT * FROM rollover_events WHERE contract_id=$1 ORDER BY rollover_no',
+      [req.params.id]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// POST /api/contracts/:id/rollover-events — creates rollover #N, extends QP on the
+// contract's pricing line, generates a debit note number. Deliberately append-only:
+// no PATCH or DELETE route exists for this resource at all — matches "Immutable once
+// created" and "we cannot lose the audit trail" from the 23 June call.
+router.post('/:id/rollover-events', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { period_from, period_to, unfixed_qty, rate_basis, rate_value,
+      derived_rate_per_mt, amount_usd, new_qp_start_date, new_qp_end_date } = req.body;
+
+    if (!period_from || !period_to || !unfixed_qty || !rate_basis || rate_value == null || amount_usd == null) {
+      return res.status(400).json({ error: 'period_from, period_to, unfixed_qty, rate_basis, rate_value and amount_usd are required' });
+    }
+
+    const contractRes = await query('SELECT contract_no FROM contracts WHERE id=$1', [id]);
+    if (!contractRes.rows.length) return res.status(404).json({ error: 'Contract not found' });
+    const contractNo = contractRes.rows[0].contract_no;
+
+    // Sequential rollover number, scoped to this contract only
+    const cntRes = await query('SELECT COUNT(*) FROM rollover_events WHERE contract_id=$1', [id]);
+    const rolloverNo = parseInt(cntRes.rows[0].count) + 1;
+
+    // Auto-generate debit note number
+    const yr = new Date().getFullYear();
+    const dnCntRes = await query(`SELECT COUNT(*) FROM rollover_events WHERE debit_note_no LIKE 'DN-%'`);
+    const debitNoteNo = 'DN-' + yr + '-' + String(parseInt(dnCntRes.rows[0].count) + 1).padStart(4, '0');
+
+    const result = await query(`
+      INSERT INTO rollover_events
+        (contract_id, rollover_no, period_from, period_to, unfixed_qty, rate_basis,
+         rate_value, derived_rate_per_mt, amount_usd, new_qp_start_date, new_qp_end_date,
+         debit_note_no, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'PENDING')
+      RETURNING *
+    `, [id, rolloverNo, period_from, period_to, unfixed_qty, rate_basis,
+        rate_value, derived_rate_per_mt || null, amount_usd, new_qp_start_date || null,
+        new_qp_end_date || null, debitNoteNo]);
+
+    const rollover = result.rows[0];
+
+    // Extend the contract's QP window to the new period, if provided
+    if (new_qp_start_date && new_qp_end_date) {
+      await query(
+        'UPDATE contract_pricing_lines SET qp_start_date=$1, qp_end_date=$2 WHERE contract_id=$3',
+        [new_qp_start_date, new_qp_end_date, id]
+      );
+    }
+
+    await logAudit('contract', id, contractNo, 'ROLLOVER', null, null,
+      'Rollover #' + rolloverNo + ' — ' + unfixed_qty + ' MT unfixed, ' + amount_usd + ' USD charged, debit note ' + debitNoteNo +
+      (new_qp_start_date ? ', QP extended to ' + new_qp_start_date + ' - ' + new_qp_end_date : ''));
+
+    res.json({ success: true, data: rollover });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
