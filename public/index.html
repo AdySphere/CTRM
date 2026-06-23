@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.15</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.16</div>
   </div>
   <nav class="sb-nav">
 
@@ -2330,33 +2330,32 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
       <!-- PROVISIONAL RECEIPT DETAIL -->
       <div class="card mt14" id="prov-rcpt-detail" style="display:none">
-        <div class="ch"><div class="ct">PR-001 — Provisional Receipt Detail</div><div class="cs">SH1 · KMTC121 · MRN1</div>
-          <button class="btn bp bsm" style="margin-left:auto" onclick="toast('GRN','GRN record initiated from PR-001 · Go to GRN page to finalise','success')">Finalise → GRN Stage 3</button>
+        <div class="ch"><div class="ct" id="prd-title">Provisional Receipt Detail</div><div class="cs" id="prd-summary">—</div>
+          <button class="btn bg bsm" style="margin-left:auto" onclick="document.getElementById('prov-rcpt-detail').style.display='none'">✕ Close</button>
+          <button class="btn bp bsm" onclick="toast('Coming Next','Finalise to GRN Stage 3 is the next build increment — not yet wired','info')">Finalise → GRN Stage 3</button>
         </div>
         <div class="fts">
           <div class="ft active prt" data-tab="pr-gen">General</div>
-          <div class="ft prt" data-tab="pr-lines">Receipt Lines (goods_receipt_lines)</div>
-          <div class="ft prt" data-tab="pr-qc">QC Entry</div>
-          <div class="ft prt" data-tab="pr-attach">Attachments</div>
+          <div class="ft prt" data-tab="pr-lines">Receipt Lines (design preview — not yet wired)</div>
+          <div class="ft prt" data-tab="pr-qc">QC Entry (design preview — not yet wired)</div>
+          <div class="ft prt" data-tab="pr-attach">Attachments (design preview — not yet wired)</div>
         </div>
         <div id="pr-gen" class="ftc active">
-          <div class="ban bi mb12"><span>ℹ</span>This is the <strong>goods_receipts</strong> table record. Created when material physically arrives at yard. Cannot be amended once finalised — creates immutable GRN record in ERP at that point.</div>
+          <div class="ban bi mb12"><span>ℹ</span>This is the <strong>goods_receipts</strong> table record. Created when material physically arrives at yard.</div>
           <div class="fg">
-            <div class="f"><div class="fl">receipt_no <span class="req">*</span></div><div class="fc mono fw7">PR-001</div></div>
-            <div class="f"><div class="fl">receipt_type</div><div class="fc ta2">PROVISIONAL</div></div>
-            <div class="f"><div class="fl">shipment_id (Linked Shipment Lot)</div><div class="fc ta">SH1</div></div>
-            <div class="f"><div class="fl">MRN Lot ID (auto-generated on arrival)</div><div class="fc tg fw7">MRN1</div></div>
-            <div class="f"><div class="fl">contract_id</div><div class="fc">PC-2026-001</div></div>
-            <div class="f"><div class="fl">receipt_date <span class="req">*</span></div><input type="date" class="fi" value="2026-04-28"></div>
-            <div class="f"><div class="fl">received_quantity <span class="req">*</span></div><input type="number" class="fi" value="24"></div>
-            <div class="f"><div class="fl">uom_id</div><div class="fc">MT</div></div>
-            <div class="f"><div class="fl">warehouse_location_id <span class="req">*</span></div><input type="text" class="fi" value="Main Yard — Bay A3"></div>
-            <div class="f"><div class="fl">Bay / Stack Reference</div><input type="text" class="fi" placeholder="e.g. Bay A3, Stack 2"></div>
-            <div class="f"><div class="fl">receipt_status</div><select class="fs"><option>PENDING_QC</option><option>PROVISIONAL</option><option>FINALIZED</option><option>REJECTED</option></select></div>
-            <div class="f"><div class="fl">erp_grn_status</div><div class="fc tdim">NOT_POSTED — set to POSTED when GRN finalised and synced to ERP</div></div>
-            <div class="f"><div class="fl">erp_grn_reference</div><div class="fc tdim">— Pending ERP post</div></div>
-            <div class="f csf"><div class="fl">remarks</div><textarea class="fta" placeholder="Notes on material condition at arrival, seal condition, packing state, any visible discrepancies…" style="min-height:50px"></textarea></div>
+            <div class="f"><div class="fl">receipt_no</div><div class="fc mono fw7" id="prd-receipt-no">—</div></div>
+            <div class="f"><div class="fl">receipt_type</div><div class="fc ta2" id="prd-receipt-type">—</div></div>
+            <div class="f"><div class="fl">Linked Shipment</div><div class="fc ta" id="prd-shipment">—</div></div>
+            <div class="f"><div class="fl">Linked Contract</div><div class="fc tg fw7" id="prd-contract">—</div></div>
+            <div class="f"><div class="fl">receipt_date <span class="req">*</span></div><input type="date" class="fi" id="prd-receipt-date"></div>
+            <div class="f"><div class="fl">received_quantity <span class="req">*</span></div><input type="number" class="fi" id="prd-qty" step="0.001"></div>
+            <div class="f"><div class="fl">uom</div><div class="fc" id="prd-uom">MT</div></div>
+            <div class="f"><div class="fl">warehouse_location <span class="req">*</span></div><select class="fs" id="prd-warehouse"><option value="">— Select —</option></select></div>
+            <div class="f"><div class="fl">receipt_status</div><select class="fs" id="prd-status"><option>DRAFT</option><option>PENDING_QC</option><option>PROVISIONAL</option><option>FINALIZED</option><option>REJECTED</option></select></div>
+            <div class="f"><div class="fl">Lots Received</div><div class="fc mono ta" id="prd-lot-count">—</div></div>
+            <div class="f csf"><div class="fl">remarks</div><textarea class="fta" id="prd-notes" placeholder="Notes on material condition at arrival, seal condition, packing state, any visible discrepancies…" style="min-height:50px"></textarea></div>
           </div>
+          <div class="lar"><button class="btn bp bsm" onclick="saveProvRcptGeneral()">Save Changes</button></div>
         </div>
         <div id="pr-lines" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>This is the <strong>goods_receipt_lines</strong> table. One line per lot/sub-lot. Initially <em>expected_item_code = actual_item_code</em>. When yard inspection reveals a different material, update <em>actual_item_code</em> — this triggers a flag on the linked lot record (<em>lot_status → DISCREPANCY</em>) and queues a PO amendment in ERP. All quantity fields cascade into pricing and exposure.</div>
@@ -9153,8 +9152,80 @@ function recalcInvAdjAmount(input) {
   if (amountCell) amountCell.textContent = amount ? amount.toLocaleString(undefined,{maximumFractionDigits:2}) : '—';
 }
 
-function openProvRcptDetail(receiptNo) {
-  toast('Receipt', 'Opening ' + receiptNo + ' — full detail view coming next', 'info');
+// Was a stub toast — now fetches the real goods_receipts record and populates
+// the General tab. Receipt Lines/QC/Attachments tabs remain a static design preview
+// since those need new tables (goods_receipt_lines) not yet built — clearly labeled
+// as such rather than presenting them as real, working data.
+async function openProvRcptDetail(receiptNo) {
+  const card = document.getElementById('prov-rcpt-detail');
+  if (!card) return;
+  try {
+    const res = await fetch(API_BASE + '/api/goods-receipts/' + receiptNo);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Receipt not found');
+    const r = data.data;
+    window._currentReceipt = r;
+
+    document.getElementById('prd-title').textContent = r.receipt_no + ' — Provisional Receipt Detail';
+    document.getElementById('prd-summary').textContent = [r.log_no, r.contract_no, r.vessel_name].filter(Boolean).join(' · ') || '—';
+    const set = function(id, v){ const el = document.getElementById(id); if (el) el.textContent = v || '—'; };
+    set('prd-receipt-no', r.receipt_no);
+    set('prd-receipt-type', r.receipt_stage);
+    set('prd-shipment', r.log_no);
+    set('prd-contract', r.contract_no);
+    set('prd-lot-count', (r.lots || []).length + ' lot(s)');
+
+    const dateEl = document.getElementById('prd-receipt-date');
+    if (dateEl) dateEl.value = r.receipt_date ? r.receipt_date.split('T')[0] : '';
+    const qtyEl = document.getElementById('prd-qty');
+    if (qtyEl) qtyEl.value = r.arrived_qty_mt || '';
+    const statusEl = document.getElementById('prd-status');
+    if (statusEl) statusEl.value = r.status || 'DRAFT';
+    const notesEl = document.getElementById('prd-notes');
+    if (notesEl) notesEl.value = r.notes || '';
+
+    // Warehouse dropdown — real locations master, same one used elsewhere
+    const whSel = document.getElementById('prd-warehouse');
+    if (whSel) {
+      try {
+        const locRes = await fetch(API_BASE + '/api/master/locations');
+        const locData = await locRes.json();
+        const locs = locData.data || [];
+        whSel.innerHTML = '<option value="">— Select —</option>' + locs.map(function(l){
+          const sel = String(l.id) === String(r.warehouse_id) ? ' selected' : '';
+          return '<option value="'+l.id+'"'+sel+'>'+l.name+(l.country?', '+l.country:'')+'</option>';
+        }).join('');
+      } catch(e) {}
+    }
+
+    card.style.display = 'block';
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    wireTabs('prt');
+  } catch(e) {
+    toast('Error', 'Could not load receipt: ' + e.message, 'error');
+  }
+}
+
+async function saveProvRcptGeneral() {
+  const r = window._currentReceipt;
+  if (!r) { toast('No Receipt', 'Open a receipt first', 'warning'); return; }
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  try {
+    const res = await fetch(API_BASE + '/api/goods-receipts/' + r.id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        receipt_date: g('prd-receipt-date'),
+        arrived_qty_mt: parseFloat(g('prd-qty')) || null,
+        warehouse_id: g('prd-warehouse') ? parseInt(g('prd-warehouse')) : null,
+        status: g('prd-status'),
+        notes: g('prd-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Saved', r.receipt_no + ' updated', 'success');
+    await loadProvReceiptList();
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 async function openNewReceiptModal(stage) {
