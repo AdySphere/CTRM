@@ -166,6 +166,7 @@ async function setupDatabase() {
       pricing_intent  TEXT,
       status          VARCHAR(20) DEFAULT 'OPEN',  -- OPEN, QUOTED, CONVERTED, CLOSED
       notes           TEXT,
+      uom_override    VARCHAR(10),           -- Item 4 fix: lets trader override the commodity's default UOM
       created_by      VARCHAR(50),
       created_at      TIMESTAMPTZ DEFAULT NOW()
     );
@@ -404,6 +405,7 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_margin DECIMAL(14,2)`);
     await query(`ALTER TABLE quote_responses ADD COLUMN IF NOT EXISTS deal_id INT REFERENCES deals(id)`);
     await query(`ALTER TABLE hedges ADD COLUMN IF NOT EXISTS broker_contract_note VARCHAR(60)`);
+    await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);
     await query(`CREATE TABLE IF NOT EXISTS pricing_benchmarks (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, commodity_code VARCHAR(20) REFERENCES commodities(code), exchange_code VARCHAR(20) NOT NULL, reporting_agency VARCHAR(30), instrument_code VARCHAR(50), default_index_pct DECIMAL(6,3) DEFAULT 100, default_payable_pct DECIMAL(6,3) DEFAULT 100, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE TABLE IF NOT EXISTS adjustment_codes (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, category VARCHAR(30), calc_type VARCHAR(20) DEFAULT 'PCT_OF_VALUE', default_direction VARCHAR(10) DEFAULT 'DEDUCTION', active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE TABLE IF NOT EXISTS invoice_adjustment_lines (id SERIAL PRIMARY KEY, invoice_id INT NOT NULL REFERENCES invoices(id) ON DELETE CASCADE, adjustment_code VARCHAR(30) REFERENCES adjustment_codes(code), payable_component VARCHAR(50), calc_value DECIMAL(12,4), calc_unit VARCHAR(20), qty_basis VARCHAR(50), computed_amount DECIMAL(15,2), direction VARCHAR(10) DEFAULT 'DEDUCTION', notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);

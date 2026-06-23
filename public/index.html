@@ -401,7 +401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.11</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.12</div>
   </div>
   <nav class="sb-nav">
 
@@ -529,6 +529,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-right">
           <button class="btn bg" onclick="nav('enquiry',document.querySelector('[data-page=enquiry]'))">← Back</button>
           <button class="btn bs" onclick="toast('Enquiry','Status → OPEN. Mandatory fields validated.','success')">Set OPEN</button>
+          <button class="btn bg" onclick="createRFQFromEnquiry()">Create RFQ →</button>
           <button class="btn bp" onclick="createQuotation()">Create Quotation →</button>
         </div>
       </div>
@@ -695,6 +696,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <button class="btn bg" onclick="nav('enquiry',document.querySelector('[data-page=enquiry]'))">← Back to List</button>
         <div class="br gap7">
           <button class="btn bs" onclick="saveEnquiryDraft()">Save Draft</button>
+          <button class="btn bg" onclick="createRFQFromEnquiry()">Create RFQ →</button>
           <button class="btn bp" onclick="createQuotation()">Create Quotation →</button>
         </div>
       </div>
@@ -4651,6 +4653,19 @@ function createQuotation() {
   }, 600);
 }
 
+// Item 3 fix: there was no shortcut to create an RFQ directly from the enquiry detail page —
+// the only path was going to Quotation -> RFQ sub-tab and finding the enquiry in a dropdown there.
+async function createRFQFromEnquiry() {
+  const enqNo = document.getElementById('enqd-no')?.textContent;
+  await openNewRFQ();
+  if (!enqNo) return;
+  const sel = document.getElementById('rfq-enquiry-sel');
+  if (!sel) return;
+  for (const opt of sel.options) {
+    if (opt.text.startsWith(enqNo)) { sel.value = opt.value; onRFQEnquiryChange(); break; }
+  }
+}
+
 async function loadAdjLines(qtId) {
   const tbody = document.getElementById('adj-lines-tbody');
   if (!tbody || !qtId) return;
@@ -4839,7 +4854,8 @@ async function submitNewEnquiry(){
         destination: g('enq-destination') || null,
         pricing_intent: g('enq-pricing-intent') || null,
         notes: g('enq-notes') || null,
-        status: 'OPEN'
+        status: 'OPEN',
+        uom_override: g('enq-qty-uom-override') || null
       })
     });
     const data = await res.json();
@@ -4849,10 +4865,11 @@ async function submitNewEnquiry(){
       toast('Enquiry Created', enqNo + ' · ' + commodity + ' · ' + qty, 'success');
       // Reset form
       ['enq-commodity','enq-qty','enq-tolerance','enq-supplier','enq-customer','enq-origin','enq-destination','enq-pricing-intent','enq-notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-      document.getElementById('enq-qty-label').innerHTML = 'Quantity (MT) <span class="req">*</span>';
+      document.getElementById('enq-qty-label').innerHTML = 'Quantity <span class="req">*</span>';
       document.getElementById('enq-dir-buy').checked = true;
       onEnqDirChange();
-      document.getElementById('enq-qty-uom-badge').style.display = 'none';
+      const uomResetSel = document.getElementById('enq-qty-uom-override');
+      if (uomResetSel) { uomResetSel.style.display = 'none'; uomResetSel.dataset.autoSet = '1'; }
       nav('enquiry', document.querySelector('[data-page=enquiry]'));
       await loadEnquiryList();
     } else {
@@ -5569,7 +5586,7 @@ async function openEnquiryDetail(ref) {
     set('enqd-status', enq.status || 'DRAFT');
     set('enqd-date', (enq.enquiry_date || enq.deal_date || '').split('T')[0] || '—');
     set('enqd-deal-type', (enq.deal_type||'—').replace(/-/g,' '));
-    const uom = (window._commodityCache[enq.commodity_code]?.uom) || enq.uom || 'MT';
+    const uom = enq.uom_override || (window._commodityCache[enq.commodity_code]?.uom) || 'MT';
     set('enqd-qty', (enq.qty_mt || '—') + ' ' + uom);
     set('enqd-supplier', enq.supplier_name || '—');
     set('enqd-customer', enq.customer_name || '—');
@@ -5995,6 +6012,17 @@ function onEnqCommodityChange(sel) {
   updateQtyLabels(uom);
 }
 
+function onEnqUomOverride() {
+  const uomSel = document.getElementById('enq-qty-uom-override');
+  if (!uomSel) return;
+  uomSel.dataset.autoSet = '0'; // trader has now manually overridden it
+  const short = UOM_SHORT[uomSel.value] || uomSel.value;
+  const label = document.getElementById('enq-qty-label');
+  if (label) label.innerHTML = 'Quantity (' + short + ') <span class="req">*</span>';
+  const input = document.getElementById('enq-qty');
+  if (input) input.placeholder = 'e.g. 100 ' + short;
+}
+
 function updateQtyLabels(uom) {
   const short = UOM_SHORT[uom] || uom;
   const long = UOM_LABELS[uom] || uom;
@@ -6003,9 +6031,14 @@ function updateQtyLabels(uom) {
   if(label) label.innerHTML = 'Quantity ('+short+') <span class="req">*</span>';
   const input = document.getElementById('enq-qty');
   if(input) input.placeholder = 'e.g. 100 '+short;
-  // Show UOM badge next to input if it exists
-  const badge = document.getElementById('enq-qty-uom-badge');
-  if(badge) { badge.textContent = long; badge.style.display = 'block'; }
+  // Item 4 fix: was a read-only badge with no way to override — now a real select.
+  // Auto-sets to match the commodity's default unit, but the trader can change it.
+  const uomSel = document.getElementById('enq-qty-uom-override');
+  if(uomSel) {
+    uomSel.value = uom;
+    uomSel.style.display = 'block';
+    uomSel.dataset.autoSet = '1'; // mark as auto-set vs manually overridden
+  }
   // Buy leg modal
   const blLabel = document.getElementById('bl-qty-label');
   if(blLabel) blLabel.innerHTML = 'Quantity ('+short+') <span class="req">*</span>';
@@ -6028,7 +6061,7 @@ async function loadEnquiryList() {
       return;
     }
     tbody.innerHTML = deals.map(function(d) {
-      const uom = (window._commodityCache[d.commodity_code]?.uom) || 'MT';
+      const uom = d.uom_override || (window._commodityCache[d.commodity_code]?.uom) || 'MT';
       const dtClass = d.deal_type==='BACK-TO-BACK'?'bd-act':d.deal_type==='OPEN-BUY'?'bd-ship':'bd-draft';
       const cp = d.deal_type==='OPEN-BUY' ? (d.supplier_name||'—') : d.deal_type==='OPEN-SELL' ? (d.customer_name||'—') : [d.supplier_name,d.customer_name].filter(Boolean).join(' / ') || '—';
       const stClass = d.status==='QUOTED'?'bd-act':d.status==='CONVERTED'?'bd-confirmed':d.status==='CLOSED'?'bd-ship':'bd-draft';
@@ -7290,7 +7323,7 @@ async function openNewRFQ() {
     const enqs = (data.data||[]).filter(function(e){return e.status==='OPEN'||e.status==='QUOTED';});
     enqSel.innerHTML = '<option value="">— None (standalone RFQ) —</option>'
       + enqs.map(function(e){
-        const uom=(window._commodityCache&&e.commodity_code&&window._commodityCache[e.commodity_code]?.uom)||'MT';
+        const uom = e.uom_override || (window._commodityCache&&e.commodity_code&&window._commodityCache[e.commodity_code]?.uom) || 'MT';
         return '<option value="'+e.id+'" data-comm="'+(e.commodity_code||'')+'" data-qty="'+(e.qty_mt||'')+'" data-uom="'+uom+'" data-inco="'+(e.incoterms||'')+'" data-origin="'+(e.origin||'')+'" data-dest="'+(e.destination||'')+'" data-dir="'+(e.direction||'BUY')+'">'
           + e.enquiry_no + ' · ' + (e.direction||'BUY') + ' · ' + (e.commodity_name||e.commodity_code||'—') + ' · ' + (e.qty_mt||'—') + ' ' + uom
           + '</option>';
@@ -7928,10 +7961,14 @@ async function loadAllocationTable() {
               <div><div style="font-weight:700;font-size:12px">SELL</div><div style="font-size:9px;color:var(--text3)">We sell to customer</div></div>
             </label>
           </div></div>
-        <div class="f"><div class="fl" id="enq-qty-label">Quantity (MT) <span class="req">*</span></div>
+        <div class="f"><div class="fl" id="enq-qty-label">Quantity <span class="req">*</span></div>
           <div style="display:flex;gap:8px;align-items:center;">
             <input type="number" class="fi" id="enq-qty" placeholder="e.g. 100" style="flex:1">
-            <span id="enq-qty-uom-badge" class="badge bd-act" style="display:none;white-space:nowrap;font-size:9px;padding:4px 8px;"></span>
+            <select id="enq-qty-uom-override" class="fs" style="display:none;width:auto;flex:0 0 90px;font-size:11px" onchange="onEnqUomOverride()">
+              <option value="MT">MT</option><option value="BBL">BBL</option><option value="L">L</option>
+              <option value="GAL">GAL</option><option value="KG">KG</option><option value="LB">LB</option>
+              <option value="TOZ">TOZ</option><option value="BU">BU</option><option value="MMBTU">MMBTU</option>
+            </select>
           </div></div>
         <div class="f"><div class="fl">Tolerance (%)</div><input type="number" class="fi" id="enq-tolerance" placeholder="e.g. 5" value="5"></div>
       </div>
@@ -8607,7 +8644,7 @@ async function openLinkEnquiryModal() {
       const data = await res.json();
       const enqs = (data.data || []).filter(function(e){ return e.status === 'OPEN' || e.status === 'QUOTED'; });
       sel.innerHTML = '<option value="">— Select Enquiry —</option>' + enqs.map(function(e) {
-        const uom = (window._commodityCache && e.commodity_code && window._commodityCache[e.commodity_code]?.uom) || 'MT';
+        const uom = e.uom_override || (window._commodityCache && e.commodity_code && window._commodityCache[e.commodity_code]?.uom) || 'MT';
         const dir = e.direction || 'BUY';
         const cp = dir === 'BUY' ? (e.supplier_name||'—') : (e.customer_name||'—');
         return '<option value="' + e.id + '" data-dir="' + dir + '" data-cp="' + cp + '" data-comm="' + (e.commodity_name||e.commodity_code||'') + '" data-qty="' + (e.qty_mt||'') + '" data-uom="' + uom + '">'

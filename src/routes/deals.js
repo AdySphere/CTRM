@@ -386,7 +386,7 @@ enquiriesRouter.post('/', async (req, res) => {
   try {
     const { enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
       supplier_id, customer_id, incoterms, origin, destination,
-      pricing_intent, status, created_by, notes } = req.body;
+      pricing_intent, status, created_by, notes, uom_override } = req.body;
     // Auto-generate sequential enquiry number if not provided
     let enqNo = enquiry_no;
     if (!enqNo) {
@@ -405,13 +405,13 @@ enquiriesRouter.post('/', async (req, res) => {
     const result = await query(`
       INSERT INTO enquiries (enquiry_no, enquiry_date, commodity_code, deal_type, qty_mt,
         supplier_id, customer_id, incoterms, origin, destination,
-        pricing_intent, status, created_by, notes)
+        pricing_intent, status, created_by, notes, uom_override)
       VALUES ($1,COALESCE($2::date,CURRENT_DATE),$3,$4,$5,$6,$7,$8,$9,$10,$11,
-              COALESCE($12,'OPEN'),$13,$14) RETURNING *
+              COALESCE($12,'OPEN'),$13,$14,$15) RETURNING *
     `, [enqNo, enquiry_date||null, commodity_code, deal_type||'BACK-TO-BACK', qty_mt,
         supplier_id||null, customer_id||null, incoterms||null,
         origin||null, destination||null, pricing_intent||null,
-        status, created_by||null, notes||null]);
+        status, created_by||null, notes||null, uom_override||null]);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
