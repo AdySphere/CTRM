@@ -272,6 +272,7 @@ html,body{height:100%;margin:0;padding:0}
 /* LIFECYCLE BAR */
 .lcb{display:flex;gap:0;background:var(--surface2);border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
 .lcs{flex:1;padding:6px 10px;text-align:center;font-family:var(--font-mono);font-size:8px;letter-spacing:.5px;color:var(--text3);border-right:1px solid var(--border);cursor:default}
+.lcs.clickable{cursor:pointer}.lcs.clickable:hover{background:var(--surface2);color:var(--text)}
 .lcs:last-child{border-right:none}.lcs.done{background:var(--green-dim);color:var(--green)}.lcs.cur{background:var(--accent-dim);color:var(--accent);font-weight:700}.lcs.future{opacity:.5}
 /* UTILITY */
 .mono{font-family:var(--font-mono)}.ta{color:var(--accent)}.ta2{color:var(--accent2)}.ta3{color:var(--accent3)}
@@ -401,14 +402,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.16</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.17</div>
   </div>
   <nav class="sb-nav">
 
     <div class="sb-group">Commercial</div>
     <div class="ni" data-page="enquiry" onclick="nav('enquiry',this);afterNav('enquiry')">Enquiries<span class="nb">4</span></div>
     <div class="ni" data-page="quotation" onclick="nav('quotation',this);afterNav('quotation')">Quotation<span class="nb" id="quot-nav-badge">2</span></div>
-    <div class="ni" data-page="deals" onclick="nav('deals',this);afterNav('deals')">Deal Confirmation<span class="nb">3</span></div>
+    <div class="ni" data-page="deals" onclick="nav('deals',this);afterNav('deals')">Deal Management<span class="nb">3</span></div>
     <div class="sb-group">Contracts</div>
     <div class="ni" data-page="purchase-contracts" onclick="nav('purchase-contracts',this);afterNav('purchase-contracts')">Purchase Contracts<span class="nb">2</span></div>
     <div class="ni" data-page="sales-contracts" onclick="nav('sales-contracts',this);afterNav('sales-contracts')">Sales Contracts<span class="nb">2</span></div>
@@ -453,12 +454,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         onkeydown="onGlobalSearchKeydown(event)"
         onfocus="onGlobalSearchFocus()"
         style="width:100%;padding:7px 12px 7px 32px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:12px;font-family:var(--font-mono)">
-      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3);pointer-events:none">🔍</span>
+      
       <div id="global-search-results" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-height:360px;overflow-y:auto;z-index:500"></div>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
       <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()">
-        <span id="theme-icon">☀️</span><span id="theme-label">Light</span>
+        <span id="theme-icon"></span><span id="theme-label">Light</span>
       </button>
       <a href="/setup" style="font-family:var(--font-mono);font-size:10px;color:var(--accent2);text-decoration:none;padding:4px 10px;border:1px solid rgba(240,165,0,.3);border-radius:6px">⊞ Setup</a>
     </div>
@@ -769,7 +770,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span class="badge" id="rfqd-dir-badge" style="margin-left:8px;font-size:9px">VENDOR</span>
           <button class="btn bp bsm" id="rfqd-send-btn" style="margin-left:8px" onclick="sendRFQ()">Send RFQ →</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="openLogResponse()">+ Log Response</button>
-          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('rfq', window._activeRFQ?.id, 'rfqd-audit-panel')">📜 History</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('rfq', window._activeRFQ?.id, 'rfqd-audit-panel')">History</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('rfq-detail-card').style.display='none'">✕</button>
         </div>
         <div id="rfqd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
@@ -870,8 +871,8 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span class="badge bd-draft" id="qd-version-badge" style="margin-left:auto;font-size:9px">v1</span>
           <span class="badge" id="qd-status-badge" style="margin-left:8px">—</span>
           <button class="btn bs2 bsm" id="qd-new-version-btn" style="margin-left:8px" onclick="createNewQuotationVersion()">+ New Version</button>
-          <button class="btn bg bsm" id="qd-version-history-btn" style="margin-left:4px" onclick="toggleVersionHistory()">📋 Versions</button>
-          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('quotation', window._activeQuotDbId, 'qd-audit-panel')">📜 History</button>
+          <button class="btn bg bsm" id="qd-version-history-btn" style="margin-left:4px" onclick="toggleVersionHistory()">Versions</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('quotation', window._activeQuotDbId, 'qd-audit-panel')">History</button>
         </div>
         <div id="qd-version-history-panel" style="display:none;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
           <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:8px">Version History</div>
@@ -971,7 +972,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-left"><div class="pt">Deal Management</div><div class="ps">From Quotation acceptance, Deal Basket, or direct entry · Multi-vendor buy legs · Full lifecycle</div></div>
         <div class="ph-right">
           <button class="btn bp" onclick="openNewDealModal()">+ New Deal</button>
-          <button class="btn bp" onclick="openDealFeasibility()">🧺 Deal Basket <span class="badge bd-ship" id="deal-basket-badge" style="margin-left:6px;font-size:9px">0</span></button>
+          <button class="btn bp" onclick="openDealFeasibility()">Deal Basket <span class="badge bd-ship" id="deal-basket-badge" style="margin-left:6px;font-size:9px">0</span></button>
           <button class="btn bg" onclick="toast('Info','Three ways to create a deal: 1) Accept a Quotation, 2) Confirm the Deal Basket from RFQ responses, 3) + New Deal for a known counterparty / repeat trade with no RFQ or Quote needed','info')">How deals are created?</button>
         </div>
       </div>
@@ -996,7 +997,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span id="dd-badge" style="margin-right:8px"></span>
           <span id="dd-comm-chip"></span>
           <div style="margin-left:auto" class="br gap7">
-            <button class="btn bg bsm" onclick="toggleAuditPanel('deal', window._activeDeal?.id, 'dd-audit-panel')">📜 History</button>
+            <button class="btn bg bsm" onclick="toggleAuditPanel('deal', window._activeDeal?.id, 'dd-audit-panel')">History</button>
             <button class="btn bg bsm" onclick="erpStub('ERP Sync')">Sync to ERP</button>
           </div>
         </div>
@@ -1022,8 +1023,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <div class="fl">Confirmation Remarks <span class="opt">(e.g. confirmed via WhatsApp with John at Glencore, 14:32 IST)</span></div>
               <input type="text" class="fi" id="deal-confirm-remarks" placeholder="Channel, contact name, time, any verbal terms…" disabled>
             </div>
-            <div id="deal-confirm-actions" class="hidden" style="display:flex;align-items:flex-end;gap:7px">
-              <button class="btn bp bsm" onclick="saveDealConfirmation()">Save & Generate Contracts →</button>
+            <div id="deal-confirm-actions" class="hidden" style="display:flex;align-items:flex-end;gap:7px;flex-wrap:wrap">
+              <button class="btn bp bsm" onclick="saveDealConfirmation()">Save Confirmation</button>
+            </div>
+            <div id="deal-create-contract-actions" class="hidden" style="display:flex;align-items:flex-end;gap:7px">
+              <button class="btn bg bsm" onclick="openNewPCContract()">Create Purchase Contract</button>
+              <button class="btn bg bsm" onclick="openNewSCContract()">Create Sales Contract</button>
             </div>
           </div>
         </div>
@@ -1065,9 +1070,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
 
         <div class="lcb" id="dd-lifecycle">
-          <div class="lcs done" id="dd-lcs-enquiry">Enquiry</div><div class="lcs done" id="dd-lcs-rfq">RFQ</div><div class="lcs done" id="dd-lcs-quotation">Quotation</div><div class="lcs cur" id="dd-lcs-confirmed">Deal Confirmed</div>
-          <div class="lcs future" id="dd-lcs-po">PO / SO</div><div class="lcs future" id="dd-lcs-shipment">Shipment</div><div class="lcs future" id="dd-lcs-qp">QP Final</div>
-          <div class="lcs future" id="dd-lcs-invoice">Invoice</div><div class="lcs future" id="dd-lcs-settled">Settled</div>
+          <div class="lcs done clickable" id="dd-lcs-enquiry" onclick="jumpToLifecycleStage('enquiry')">Enquiry</div><div class="lcs done clickable" id="dd-lcs-rfq" onclick="jumpToLifecycleStage('rfq')">RFQ</div><div class="lcs done clickable" id="dd-lcs-quotation" onclick="jumpToLifecycleStage('quotation')">Quotation</div><div class="lcs cur" id="dd-lcs-confirmed">Deal Confirmed</div>
+          <div class="lcs future clickable" id="dd-lcs-po" onclick="jumpToLifecycleStage('po')">PO / SO</div><div class="lcs future clickable" id="dd-lcs-shipment" onclick="jumpToLifecycleStage('shipment')">Shipment</div><div class="lcs future clickable" id="dd-lcs-qp" onclick="jumpToLifecycleStage('qp')">QP Final</div>
+          <div class="lcs future clickable" id="dd-lcs-invoice" onclick="jumpToLifecycleStage('invoice')">Invoice</div><div class="lcs future" id="dd-lcs-settled">Settled</div>
         </div>
         <div class="two-col cb">
           <!-- SELL LEG -->
@@ -1148,7 +1153,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-r">
           <button class="btn bs2" onclick="nav('purchase-orders',document.querySelector('[data-page=purchase-orders]'))">View POs →</button>
           <button class="btn bp" onclick="openNewPCContract()">＋ New Contract</button>
-          <button class="print-btn" onclick="printPCContract()">🖨 Print Contract</button>
+          <button class="print-btn" onclick="printPCContract()">Print Contract</button>
           <button class="export-btn" onclick="exportToExcel('pc-detail-card','Purchase_Contract_PC-2026-001')">⬇ Export</button>
         </div>
       </div>
@@ -1189,8 +1194,8 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span class="badge bd-act" style="margin-left:auto" id="pcd-status-badge">DRAFT</span>
           <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','New version drafted','info')">New Version</button>
           <button class="btn bp bsm" style="margin-left:7px" onclick="confirmContract('PC')">Confirm Contract →</button>
-          <button class="btn bg bsm" style="margin-left:7px" onclick="printPCContract()">🖨 Print</button>
-          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'pcd-audit-panel')">📜 History</button>
+          <button class="btn bg bsm" style="margin-left:7px" onclick="printPCContract()">Print</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'pcd-audit-panel')">History</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('pc-detail-card').style.display='none'">✕ Close</button>
         </div>
         <div id="pcd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
@@ -1217,7 +1222,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Linked Deal</div>
             <div style="display:flex;gap:6px;align-items:center">
               <div class="fc mono ta fw6" id="pcd-deal" style="color:var(--accent);cursor:pointer;flex:1" onclick="jumpToLinkedDeal()">—</div>
-              <button class="btn bxs bg" onclick="openChangeDealModal('PC')" title="Attach or change linked deal">✎</button>
+              <button class="btn bxs bg" onclick="openChangeDealModal('PC')" title="Attach or change linked deal">Edit</button>
             </div>
           </div>
           <div class="f"><div class="fl">Contract Date</div><div class="fc mono" id="pcd-date">—</div></div>
@@ -1477,19 +1482,19 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bi mb12"><span>ℹ</span>Document checklist per payment milestone. Auto-generated from Incoterms + payment terms + LC flag. Upload scans when received.</div>
           <table class="lt"><thead><tr><th>Document</th><th>Copies</th><th>Payment Milestone</th><th>Received</th><th>Date Received</th><th>Ref No.</th><th>Upload</th></tr></thead>
           <tbody>
-            <tr><td class="f11 fw6">Full Set Original B/L (clean on board)</td><td class="mono f10">3/3</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','Requires backend','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Seller's Provisional Invoice</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Packing List / Weight Certificate</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Certificate of Origin</td><td class="mono f10">1 original</td><td class="f10">Provisional / Customs</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Insurance Policy / Certificate</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Provisional Assay Certificate</td><td class="mono f10">1 copy</td><td class="f10">Provisional Pricing</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Final Assay Certificate</td><td class="mono f10">1 original</td><td class="f10">Final Payment / QP trigger</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Seller's Final Invoice</td><td class="mono f10">1 original</td><td class="f10">Final Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">IJCEPA / FTA Certificate</td><td class="mono f10">1 original</td><td class="f10">Customs (if applicable)</td><td><select class="fs" style="width:55px;font-size:10px"><option>N/A</option><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
+            <tr><td class="f11 fw6">Full Set Original B/L (clean on board)</td><td class="mono f10">3/3</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','Requires backend','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Seller's Provisional Invoice</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Packing List / Weight Certificate</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Certificate of Origin</td><td class="mono f10">1 original</td><td class="f10">Provisional / Customs</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Insurance Policy / Certificate</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Provisional Assay Certificate</td><td class="mono f10">1 copy</td><td class="f10">Provisional Pricing</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Final Assay Certificate</td><td class="mono f10">1 original</td><td class="f10">Final Payment / QP trigger</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Seller's Final Invoice</td><td class="mono f10">1 original</td><td class="f10">Final Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">IJCEPA / FTA Certificate</td><td class="mono f10">1 original</td><td class="f10">Customs (if applicable)</td><td><select class="fs" style="width:55px;font-size:10px"><option>N/A</option><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="fileUploadStub()">+ Add Document</button></div>
           <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;margin-top:12px" onclick="toast('Upload','Requires backend','info')">
-            <div style="font-size:20px;margin-bottom:6px">📄</div>
+            
             <div style="font-size:12px;font-weight:600;color:var(--text)">Upload signed contract PDF</div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:3px">Signed copy, amendments, addenda</div>
           </div>
@@ -1509,7 +1514,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-r">
           <button class="btn bs2" onclick="nav('sales-orders',document.querySelector('[data-page=sales-orders]'))">View SOs →</button>
           <button class="btn bp" onclick="openNewSCContract()">＋ New Contract</button>
-          <button class="print-btn" onclick="printSCContract()">🖨 Print Contract</button>
+          <button class="print-btn" onclick="printSCContract()">Print Contract</button>
           <button class="export-btn" onclick="exportToExcel('sc-detail-card','Sales_Contract_SC-2026-001')">⬇ Export</button>
         </div>
       </div>
@@ -1550,8 +1555,8 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <span class="badge bd-act" style="margin-left:auto" id="scd-status-badge">DRAFT</span>
           <button class="btn bs2 bsm" style="margin-left:8px" onclick="toast('Version','New version drafted','info')">New Version</button>
           <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
-          <button class="btn bg bsm" style="margin-left:7px" onclick="printSCContract()">🖨 Print</button>
-          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'scd-audit-panel')">📜 History</button>
+          <button class="btn bg bsm" style="margin-left:7px" onclick="printSCContract()">Print</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'scd-audit-panel')">History</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('sc-detail-card').style.display='none'">✕ Close</button>
         </div>
         <div id="scd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
@@ -1577,7 +1582,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Linked Deal</div>
             <div style="display:flex;gap:6px;align-items:center">
               <div class="fc mono ta fw6" id="scd-deal" style="color:var(--accent);cursor:pointer;flex:1" onclick="jumpToLinkedDeal()">—</div>
-              <button class="btn bxs bg" onclick="openChangeDealModal('SC')" title="Attach or change linked deal">✎</button>
+              <button class="btn bxs bg" onclick="openChangeDealModal('SC')" title="Attach or change linked deal">Edit</button>
             </div>
           </div>
           <div class="f"><div class="fl">Contract Date</div><div class="fc mono" id="scd-date">—</div></div>
@@ -1761,15 +1766,15 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bi mb12"><span>ℹ</span>Documents we (Seller) must provide. Tracks sending and buyer confirmation.</div>
           <table class="lt"><thead><tr><th>Document</th><th>Copies</th><th>Payment Milestone</th><th>Sent</th><th>Date Sent</th><th>Buyer Confirmed</th><th>Upload</th></tr></thead>
           <tbody>
-            <tr><td class="f11 fw6">Original B/L (full set 3/3)</td><td class="mono f10">3/3</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Our Provisional Invoice</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Packing List / Weight Certificate</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Certificate of Origin</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Insurance Policy</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
-            <tr><td class="f11 fw6">Our Final Invoice</td><td class="mono f10">1 original</td><td class="f10">Final Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">📎</button></td></tr>
+            <tr><td class="f11 fw6">Original B/L (full set 3/3)</td><td class="mono f10">3/3</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Our Provisional Invoice</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Packing List / Weight Certificate</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Certificate of Origin</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Insurance Policy</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+            <tr><td class="f11 fw6">Our Final Invoice</td><td class="mono f10">1 original</td><td class="f10">Final Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
           </tbody></table>
           <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;margin-top:12px" onclick="toast('Upload','Requires backend','info')">
-            <div style="font-size:20px;margin-bottom:6px">📄</div>
+            
             <div style="font-size:12px;font-weight:600;color:var(--text)">Upload signed contract PDF</div>
           </div>
         </div>
@@ -2285,7 +2290,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="fg mb12">
             <div class="f csf"><div class="fl">Upload Attachments</div>
               <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer" onclick="fileUploadStub()">
-                <div style="font-size:24px;margin-bottom:8px">📎</div>
+                
                 <div style="font-size:12px;font-weight:600;color:var(--text)">Click to upload or drag files here</div>
                 <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">BL, Packing List, Assay Cert, Insurance, Loading Photos, COO, Any other docs</div>
               </div>
@@ -2427,7 +2432,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="pr-attach" class="ftc hidden">
           <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer;margin-bottom:12px" onclick="fileUploadStub()">
-            <div style="font-size:24px;margin-bottom:8px">📎</div>
+            
             <div style="font-size:12px;font-weight:600;color:var(--text)">Click to upload or drag files here</div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">Assay certs, delivery notes, yard photos, weight certs</div>
           </div>
@@ -2622,7 +2627,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="grn-attach" class="ftc hidden">
           <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:28px;text-align:center;cursor:pointer" onclick="fileUploadStub()">
-            <div style="font-size:24px;margin-bottom:8px">📎</div>
+            
             <div style="font-size:12px;font-weight:600;color:var(--text)">Click to upload</div>
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:4px">GRN docs, discrepancy photos, assay certs, AHK analysis reports</div>
           </div>
@@ -2824,7 +2829,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <!-- PAGE: INVOICING -->
     <div class="page" id="page-hedge">
       <div class="ph"><div class="ph-l"><div class="pt">Hedge Card</div><div class="ps">Futures positions (LME) · Forward curve MTM · Physical lot linkage · β-adjusted sizing · Forced spec · Broker execution</div></div>
-        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Hedge Card')">🖨 Print</button><button class="export-btn" onclick="exportToExcel('hedge-portfolio-table','Hedge_Card')">⬇ Export</button><button class="btn bp" onclick="openHedgeReqForm()">＋ New Requisition</button></div></div></div>
+        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Hedge Card')">Print</button><button class="export-btn" onclick="exportToExcel('hedge-portfolio-table','Hedge_Card')">⬇ Export</button><button class="btn bp" onclick="openHedgeReqForm()">＋ New Requisition</button></div></div></div>
 
       <!-- HEDGE SUMMARY STATS -->
       <div class="sr">
@@ -3064,7 +3069,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
     <div class="page" id="page-provisional-invoice">
       <div class="ph"><div class="ph-l"><div class="pt">Provisional Invoice</div><div class="ps">Based on provisional price · 90% payment trigger · Sent to buyer after BL date · Adjusted when QP closes</div></div>
-        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Provisional Invoice')">🖨 Print</button><button class="export-btn" onclick="exportToExcel('prov-inv-table','Provisional_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('PROVISIONAL')">＋ Create Invoice</button></div></div></div>
+        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Provisional Invoice')">Print</button><button class="export-btn" onclick="exportToExcel('prov-inv-table','Provisional_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('PROVISIONAL')">＋ Create Invoice</button></div></div></div>
       <div class="sr">
         <div class="sc"><div class="scl">Draft</div><div class="scv tdim">1</div></div>
         <div class="sc"><div class="scl">Sent</div><div class="scv ta2">1</div></div>
@@ -3142,7 +3147,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <!-- ══ FINAL INVOICE ══ -->
     <div class="page" id="page-final-invoice">
       <div class="ph"><div class="ph-l"><div class="pt">Final Invoice</div><div class="ps">QP window closed · Final price locked · Delta note vs provisional · 10% balance payment trigger</div></div>
-        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Final Invoice')">🖨 Print</button><button class="export-btn" onclick="exportToExcel('final-inv-table','Final_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('FINAL')">＋ Create Final Invoice</button></div></div></div>
+        <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Final Invoice')">Print</button><button class="export-btn" onclick="exportToExcel('final-inv-table','Final_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('FINAL')">＋ Create Final Invoice</button></div></div></div>
       <div class="card">
         <div class="ch"><div class="ct">Final Invoice — FINV-2026-001</div><div class="cs">SC-2026-001 · QP closed May 31 · Final avg $9,441 (buy) / $10,218 (sell)</div></div>
         <div class="fts">
@@ -3290,7 +3295,7 @@ function nav(pageId,navEl){
   const el=navEl||document.querySelector(`.ni[data-page="${pageId}"]`);
   if(el)el.classList.add('active');
   const labels={
-    enquiry:'Enquiries',quotation:'Quotation / RFQ',deals:'Deal Confirmation',
+    enquiry:'Enquiries',quotation:'Quotation / RFQ',deals:'Deal Management',
     'purchase-contracts':'Purchase Contracts','sales-contracts':'Sales Contracts',
     'purchase-orders':'Purchase Orders','sales-orders':'Sales Orders',
     'qpwindow':'QP & Rollover Window',logistics:'Logistics',
@@ -3340,7 +3345,7 @@ function toggleTheme(){
   const isLight=document.body.classList.toggle('light-mode');
   const icon=document.getElementById('theme-icon');
   const label=document.getElementById('theme-label');
-  if(icon)icon.textContent=isLight?'🌙':'☀️';
+  if(icon)icon.textContent='';
   if(label)label.textContent=isLight?'Dark':'Light';
   try{localStorage.setItem('ctrm-theme',isLight?'light':'dark');}catch(e){}
 }
@@ -4118,7 +4123,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.classList.add('light-mode');
       const i = document.getElementById('theme-icon');
       const l = document.getElementById('theme-label');
-      if (i) i.textContent = '🌙';
+      if (i) i.textContent = '';
       if (l) l.textContent = 'Dark';
     }
   } catch(e) {}
@@ -4477,7 +4482,7 @@ async function acceptQuotation(overrideCredit) {
 
     if (data.success) {
       const dealNo = data.data?.deal?.deal_no;
-      toast('Deal Created', 'Quotation accepted · ' + (dealNo || 'New deal') + ' created → go to Deal Confirmation', 'success');
+      toast('Deal Created', 'Quotation accepted · ' + (dealNo || 'New deal') + ' created — go to Deal Management', 'success');
       await loadQuotationList();
       await openQuotationDetail(_activeQuotId);
     } else {
@@ -4982,7 +4987,7 @@ async function submitFixation(){
   const contract = (window._fixContracts||[]).find(function(c){ return String(c.id) === contractId; });
   if (!contract) { toast('Error', 'Could not resolve the selected contract', 'error'); return; }
   if (!contract.deal_no) {
-    toast('No Deal Linked', 'This contract has no deal attached — link a deal first (✎ button on the contract\'s Linked Deal field)', 'warning');
+    toast("No Deal Linked", "This contract has no deal attached — link a deal first (Edit button on the contract's Linked Deal field)", "warning");
     return;
   }
   const data = await api('/api/fixations', {
@@ -6437,6 +6442,8 @@ async function openDealDetail(dealNo) {
     if (remarks) { remarks.value = deal.notes || ''; remarks.disabled = !deal.confirmed; }
     if (confBadge) { confBadge.className = 'badge ' + (deal.confirmed ? 'bd-confirmed' : 'bd-draft'); confBadge.textContent = deal.confirmed ? 'CONFIRMED' : 'DRAFT'; }
     if (actDiv) actDiv.classList.toggle('hidden', !deal.confirmed);
+    const createDiv = document.getElementById('deal-create-contract-actions');
+    if (createDiv) createDiv.classList.toggle('hidden', !deal.confirmed);
 
     // Sell leg section header — was permanently hardcoded "Sell Leg — Tata Metals Ltd"
     const slTitle = document.getElementById('dd-sl-title');
@@ -6459,14 +6466,16 @@ async function openDealDetail(dealNo) {
         + '</div>';
     }
 
-    // H34/H35 fix: lifecycle bar was permanently static — now reflects actual deal status
+    // H34/H35 fix: lifecycle bar was permanently static — now reflects actual deal status.
+    // Preserve the clickable modifier added for lifecycle navigation — className was
+    // previously overwritten outright, which would silently strip it on every deal open.
     const lcsConfirmed = document.getElementById('dd-lcs-confirmed');
     const lcsPo = document.getElementById('dd-lcs-po');
     if (lcsConfirmed) {
       lcsConfirmed.className = 'lcs ' + (deal.confirmed ? 'done' : 'cur');
     }
     if (lcsPo) {
-      lcsPo.className = 'lcs ' + (deal.confirmed ? 'cur' : 'future');
+      lcsPo.className = 'lcs clickable ' + (deal.confirmed ? 'cur' : 'future');
     }
 
     // Scroll to deal detail card
@@ -6499,6 +6508,8 @@ function onDealConfirm(chk) {
   if (dt) { dt.disabled = !confirmed; if (confirmed && !dt.value) dt.value = new Date().toISOString().slice(0,16); }
   if (remarks) remarks.disabled = !confirmed;
   if (actDiv) actDiv.classList.toggle('hidden', !confirmed);
+  const createDiv = document.getElementById('deal-create-contract-actions');
+  if (createDiv) createDiv.classList.toggle('hidden', !confirmed);
   if (confBadge) {
     confBadge.className = 'badge ' + (confirmed ? 'bd-confirmed' : 'bd-draft');
     confBadge.textContent = confirmed ? 'CONFIRMED' : 'DRAFT';
@@ -6534,7 +6545,7 @@ async function saveDealConfirmation() {
       }
     });
 
-    toast('Saved', _activeDeal.deal_no + ' confirmed. Purchase & Sales contracts auto-generated on next ERP sync.', 'success');
+    toast('Saved', _activeDeal.deal_no + ' confirmed. Use Create Purchase Contract / Create Sales Contract below to proceed.', 'success');
     await loadDealList(); // full refresh to sync stat cards
   } catch (err) {
     toast('Error', err.message, 'error');
@@ -8777,6 +8788,7 @@ async function loadDealLinkedEnquiries(dealId) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No enquiries linked — click + Link Enquiry to add legs</td></tr>';
       return;
     }
+    window._activeDealEnquiries = legs; // cached for lifecycle bar navigation
     tbody.innerHTML = legs.map(function(l) {
       const dirClass = l.leg_role === 'BUY' ? 'bd-ship' : 'bd-act';
       const cp = l.leg_role === 'BUY' ? (l.supplier_name||'—') : (l.customer_name||'—');
@@ -9797,9 +9809,41 @@ async function submitNewDeal() {
 <script>
 window._ccdContractType = null;
 
+// Lifecycle bar stages on the Deal screen are now real navigation, not static labels —
+// jumps to the most relevant page for that stage, pre-loading the deal's first linked
+// enquiry where applicable. Deal Confirmed and Settled have no separate destination page,
+// so they remain informational only.
+function jumpToLifecycleStage(stage) {
+  const enquiries = window._activeDealEnquiries || [];
+  const firstEnq = enquiries[0];
+
+  if (stage === 'enquiry') {
+    if (!firstEnq) { toast('No Enquiry Linked', 'This deal has no linked enquiries yet', 'info'); return; }
+    nav('enquiry', document.querySelector('[data-page=enquiry]'));
+    afterNav('enquiry');
+    setTimeout(function(){ openEnquiryDetail(firstEnq.enquiry_no); }, 350);
+  } else if (stage === 'rfq' || stage === 'quotation') {
+    nav('quotation', document.querySelector('[data-page=quotation]'));
+    afterNav('quotation');
+  } else if (stage === 'po') {
+    const target = window._activeDeal && window._activeDeal.deal_type === 'SELL' ? 'sales-orders' : 'purchase-orders';
+    nav(target, document.querySelector('[data-page=' + target + ']'));
+    afterNav(target);
+  } else if (stage === 'shipment') {
+    nav('logistics', document.querySelector('[data-page=logistics]'));
+    afterNav('logistics');
+  } else if (stage === 'qp') {
+    nav('qpwindow', document.querySelector('[data-page=qpwindow]'));
+    afterNav('qpwindow');
+  } else if (stage === 'invoice') {
+    nav('provisional-invoice', document.querySelector('[data-page=provisional-invoice]'));
+    afterNav('provisional-invoice');
+  }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
-  if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click ✎ to attach one', 'info'); return; }
+  if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
   nav('deals', document.querySelector('[data-page=deals]'));
   afterNav('deals');
   setTimeout(function(){ openDealDetail(c.deal_no); }, 350);
