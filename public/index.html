@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.36</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.37</div>
   </div>
   <nav class="sb-nav">
 
@@ -1071,6 +1071,35 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="lar"><button class="btn bp bsm" onclick="saveDealBudgeting()">Save Budgeting Parameters</button></div>
           </div>
         </div>
+
+        <!-- DEAL FEASIBILITY / PROCEED DECISION (D4) — deliberately separate from Deal
+             Budgeting above and from the unrelated Deal Basket (RFQ comparison before a
+             deal exists) -->
+        <div id="dd-feasibility-panel" style="padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div class="br-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">Deal Feasibility</div>
+            <span class="badge bd-draft" id="dfeas-decision-badge">PENDING</span>
+          </div>
+          <div class="fg">
+            <div class="f"><div class="fl">Margin %</div><input type="number" class="fi" id="dfeas-margin-pct" step="0.01" placeholder="e.g. 4.5"></div>
+            <div class="f"><div class="fl">Earliest Delivery Date</div><input type="date" class="fi" id="dfeas-earliest-delivery"></div>
+          </div>
+          <div class="divl mt12">Decision Checklist</div>
+          <table class="lt"><thead><tr><th>Question</th><th>Answer</th><th>Notes</th></tr></thead>
+            <tbody id="dfeas-checklist-tbody">
+              <tr><td colspan="3" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>
+            </tbody>
+          </table>
+          <div class="f csf mt12"><div class="fl">Feasibility Notes</div><textarea class="fta" id="dfeas-notes" style="min-height:50px"></textarea></div>
+          <div class="br-row" style="justify-content:space-between;margin-top:10px">
+            <button class="btn bg bsm" onclick="saveDealFeasibility()">Save</button>
+            <div class="br-row g7">
+              <button class="btn bd bsm" onclick="decideDealFeasibility('NOT_PROCEED')">Not Proceed</button>
+              <button class="btn bp bsm" onclick="decideDealFeasibility('PROCEED')">Proceed</button>
+            </div>
+          </div>
+        </div>
+
         <!-- BUDGET vs ACTUAL P&L -->
         <div id="dd-budget-panel" style="display:none;padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px">Budget vs Actual P&L · Locked at deal confirmation</div>
@@ -1121,7 +1150,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <div class="ft active slt" data-tab="sl-info">Details</div>
               <div class="ft slt" data-tab="sl-pricing">Pricing</div>
               <div class="ft slt" data-tab="sl-payment">Payment</div>
-              <div class="ft slt" data-tab="sl-pen">Penalties</div>
             </div>
             <div id="sl-info" class="ftc active">
               <div class="fg">
@@ -1138,9 +1166,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             </div>
             <div id="sl-payment" class="ftc hidden">
               <div class="ban bi mb12"><span>ℹ</span>Payment terms live on the linked Sales Contract(s) — open the contract to see terms, schedule and due dates.</div>
-            </div>
-            <div id="sl-pen" class="ftc hidden">
-              <div class="ban bi mb12"><span>ℹ</span>Penalties live on the linked Sales Contract(s) — open the contract to see penalty codes and rates.</div>
             </div>
           </div>
                     <!-- LINKED ENQUIRIES -->
@@ -6588,6 +6613,7 @@ async function openDealDetail(dealNo) {
     await loadDealLinkedEnquiries(deal.id);
     await loadBudgetActual(deal.id);
     await loadDealBudgeting(deal.id);
+    await loadDealFeasibility(deal.id);
 
     toast('Deal Opened', deal.deal_no + ' — ' + (deal.commodity_name || deal.commodity_code || ''), 'info');
   } catch (err) {
@@ -8768,7 +8794,6 @@ async function loadAllocationTable() {
         <div class="ft blt active" data-tab="bld-info">Details</div>
         <div class="ft blt" data-tab="bld-pricing">Pricing</div>
         <div class="ft blt" data-tab="bld-payment">Payment</div>
-        <div class="ft blt" data-tab="bld-penalties">Penalties</div>
       </div>
       <div id="bld-info" class="ftc active">
         <div class="fg">
@@ -8796,11 +8821,6 @@ async function loadAllocationTable() {
         <div class="divl">Payment Schedule</div>
         <table class="lt"><thead><tr><th>#</th><th>%</th><th>Trigger</th><th>Due</th><th>Status</th></tr></thead>
           <tbody><tr><td class="mono f11">1</td><td class="mono f11">100%</td><td class="f11">AGAINST-BL</td><td class="mono f11">2026-06-15</td><td><span class="badge bd-draft">PENDING</span></td></tr></tbody>
-        </table>
-      </div>
-      <div id="bld-penalties" class="ftc hidden">
-        <table class="lt"><thead><tr><th>Code</th><th>Type</th><th>Element</th><th>Threshold</th><th>Rate</th></tr></thead>
-          <tbody><tr><td class="mono f11 ta2">PEN-LATE-SHIP</td><td><span class="ctp ct-flat">FLAT-RATE</span></td><td class="mono f11">Days Late</td><td class="f11">—</td><td class="mono f11">$3/MT/day</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -10833,6 +10853,113 @@ function onNewEnqCPChange(sel, side) {
   } else {
     fetchLiveCreditStatus(cpId, creditEl, null, null);
   }
+}
+
+// D4: Deal Feasibility / Proceed decision — margin %, earliest delivery date, a standard
+// decision checklist, and a deliberate PROCEED/NOT_PROCEED action. Separate from Deal
+// Budgeting above it and from the unrelated Deal Basket (RFQ comparison before a deal
+// exists — a different screen entirely).
+async function loadDealFeasibility(dealId) {
+  try {
+    const res = await fetch(API_BASE + '/api/deal-feasibility/' + dealId);
+    const data = await res.json();
+    if (!data.success) return;
+    const d = data.data;
+    const sv = function(id, v){ const el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
+    sv('dfeas-margin-pct', d.feasibility_margin_pct);
+    sv('dfeas-earliest-delivery', d.feasibility_earliest_delivery ? d.feasibility_earliest_delivery.split('T')[0] : '');
+    sv('dfeas-notes', d.feasibility_notes);
+
+    const badge = document.getElementById('dfeas-decision-badge');
+    if (badge) {
+      const dec = d.feasibility_decision || 'PENDING';
+      badge.textContent = dec;
+      badge.className = 'badge ' + (dec === 'PROCEED' ? 'bd-confirmed' : dec === 'NOT_PROCEED' ? 'bd-danger' : 'bd-draft');
+    }
+
+    const tbody = document.getElementById('dfeas-checklist-tbody');
+    if (tbody) {
+      const items = d.checklist || [];
+      if (!items.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No checklist items</td></tr>';
+      } else {
+        tbody.innerHTML = items.map(function(item){
+          return '<tr data-checklist-id="' + item.id + '">'
+            + '<td class="f11">' + item.question_text + '</td>'
+            + '<td><select class="fs" style="font-size:10px" onchange="onDfeasChecklistAnswer(this)">'
+              + '<option value="">— Not Answered —</option>'
+              + '<option value="YES"' + (item.answer==='YES'?' selected':'') + '>YES</option>'
+              + '<option value="NO"' + (item.answer==='NO'?' selected':'') + '>NO</option>'
+              + '<option value="N/A"' + (item.answer==='N/A'?' selected':'') + '>N/A</option>'
+            + '</select></td>'
+            + '<td><input type="text" class="fi" style="font-size:10px" value="' + (item.notes||'') + '" onblur="onDfeasChecklistNotes(this)"></td>'
+            + '</tr>';
+        }).join('');
+      }
+    }
+  } catch(e) { console.warn('loadDealFeasibility:', e); }
+}
+
+async function onDfeasChecklistAnswer(sel) {
+  const deal = window._activeDeal;
+  const row = sel.closest('tr');
+  const itemId = row?.dataset.checklistId;
+  if (!deal || !itemId) return;
+  try {
+    await fetch(API_BASE + '/api/deal-feasibility/' + deal.id + '/checklist/' + itemId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ answer: sel.value || null })
+    });
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function onDfeasChecklistNotes(input) {
+  const deal = window._activeDeal;
+  const row = input.closest('tr');
+  const itemId = row?.dataset.checklistId;
+  if (!deal || !itemId) return;
+  try {
+    await fetch(API_BASE + '/api/deal-feasibility/' + deal.id + '/checklist/' + itemId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ notes: input.value })
+    });
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function saveDealFeasibility() {
+  const deal = window._activeDeal;
+  if (!deal) { toast('No Deal', 'Open a deal first', 'warning'); return; }
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  try {
+    const res = await fetch(API_BASE + '/api/deal-feasibility/' + deal.id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        feasibility_margin_pct: g('dfeas-margin-pct') ? parseFloat(g('dfeas-margin-pct')) : null,
+        feasibility_earliest_delivery: g('dfeas-earliest-delivery'),
+        feasibility_notes: g('dfeas-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Saved', 'Feasibility details saved', 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function decideDealFeasibility(decision) {
+  const deal = window._activeDeal;
+  if (!deal) { toast('No Deal', 'Open a deal first', 'warning'); return; }
+  const label = decision === 'PROCEED' ? 'Proceed' : 'Not Proceed';
+  if (!confirm('Mark this deal as "' + label + '"? This records a deliberate feasibility decision.')) return;
+  try {
+    const res = await fetch(API_BASE + '/api/deal-feasibility/' + deal.id + '/decide', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ decision: decision })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Decision Recorded', deal.deal_no + ' marked ' + label, decision === 'PROCEED' ? 'success' : 'warning');
+    await loadDealFeasibility(deal.id);
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 function jumpToLinkedDeal() {

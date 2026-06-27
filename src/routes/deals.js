@@ -1740,3 +1740,101 @@ taxCodeRouter.post('/', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.taxCodeRouter = taxCodeRouter;
+
+// ── DEAL FEASIBILITY / PROCEED DECISION (D4) — separate from Deal Budgeting and from
+// the unrelated Deal Basket feasibility (RFQ comparison before a deal exists).
+const dealFeasibilityRouter = require('express').Router();
+
+const STANDARD_CHECKLIST = [
+  { code: 'CREDIT_CLEAR', text: 'Counterparty credit limit checked and clear' },
+  { code: 'LOGISTICS_VIABLE', text: 'Logistics route and timeline confirmed viable' },
+  { code: 'PRICING_LOCKED', text: 'Pricing formula and QP terms agreed with both sides' },
+  { code: 'DOCS_AVAILABLE', text: 'Required documents (COO, quality certs, etc.) confirmed obtainable' },
+  { code: 'HEDGE_PLAN', text: 'Hedging plan in place if pricing exposure applies' },
+  { code: 'MARGIN_ACCEPTABLE', text: 'Margin meets minimum threshold for this commodity/route' },
+];
+
+dealFeasibilityRouter.get('/:dealId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { dealId } = req.params;
+    const dealRes = await query(`
+      SELECT id, deal_no, feasibility_margin_pct, feasibility_earliest_delivery,
+        feasibility_decision, feasibility_decided_by, feasibility_decided_at, feasibility_notes
+      FROM deals WHERE id=$1 OR deal_no=$1
+    `, [dealId]);
+    if (!dealRes.rows.length) return res.status(404).json({ error: 'Deal not found' });
+    const deal = dealRes.rows[0];
+
+    // Auto-create the standard checklist on first open, rather than pre-seeding rows
+    // for deals that don't exist yet.
+    const existingRes = await query('SELECT * FROM deal_feasibility_checklist WHERE deal_id=$1 ORDER BY id', [deal.id]);
+    let checklist = existingRes.rows;
+    if (!checklist.length) {
+      for (const q of STANDARD_CHECKLIST) {
+        await query(`
+          INSERT INTO deal_feasibility_checklist (deal_id, question_code, question_text)
+          VALUES ($1,$2,$3) ON CONFLICT (deal_id, question_code) DO NOTHING
+        `, [deal.id, q.code, q.text]);
+      }
+      const reloadRes = await query('SELECT * FROM deal_feasibility_checklist WHERE deal_id=$1 ORDER BY id', [deal.id]);
+      checklist = reloadRes.rows;
+    }
+
+    res.json({ success: true, data: { ...deal, checklist } });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+dealFeasibilityRouter.patch('/:dealId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { dealId } = req.params;
+    const allowed = ['feasibility_margin_pct', 'feasibility_earliest_delivery', 'feasibility_notes'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE deals SET ${sets} WHERE id=$1 RETURNING *`, [dealId, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Decision is a separate, deliberate action — same pattern as locking the BL date —
+// not just another field update.
+dealFeasibilityRouter.post('/:dealId/decide', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { dealId } = req.params;
+    const { decision, decided_by } = req.body;
+    if (!['PROCEED', 'NOT_PROCEED'].includes(decision)) {
+      return res.status(400).json({ error: "decision must be 'PROCEED' or 'NOT_PROCEED'" });
+    }
+    const result = await query(`
+      UPDATE deals
+      SET feasibility_decision = $2, feasibility_decided_by = $3, feasibility_decided_at = NOW()
+      WHERE id = $1 RETURNING *
+    `, [dealId, decision, decided_by || null]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Deal not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+dealFeasibilityRouter.patch('/:dealId/checklist/:itemId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { dealId, itemId } = req.params;
+    const { answer, notes } = req.body;
+    if (answer && !['YES', 'NO', 'N/A'].includes(answer)) {
+      return res.status(400).json({ error: "answer must be 'YES', 'NO', or 'N/A'" });
+    }
+    const result = await query(`
+      UPDATE deal_feasibility_checklist
+      SET answer = COALESCE($3, answer), notes = COALESCE($4, notes), answered_at = NOW()
+      WHERE id = $1 AND deal_id = $2 RETURNING *
+    `, [itemId, dealId, answer || null, notes != null ? notes : null]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Checklist item not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports.dealFeasibilityRouter = dealFeasibilityRouter;

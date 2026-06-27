@@ -11,7 +11,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
 
-const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter, buyLegsRouter, dealEnqRouter, adjLinesRouter, penaltiesRouter, rfqRouter, quoteResponseRouter, feasibilityRouter, budgetActualRouter, searchRouter, auditRouter, creditRouter, goodsReceiptRouter, qcResultsRouter, lotsRouter, adjCodesRouter, invoiceAdjRouter, pricingBenchmarksRouter, dateEventMasterRouter, currencyMasterRouter, uomMasterRouter, taxCodeRouter } = require('./routes/deals');
+const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter, buyLegsRouter, dealEnqRouter, adjLinesRouter, penaltiesRouter, rfqRouter, quoteResponseRouter, feasibilityRouter, budgetActualRouter, searchRouter, auditRouter, creditRouter, goodsReceiptRouter, qcResultsRouter, lotsRouter, adjCodesRouter, invoiceAdjRouter, pricingBenchmarksRouter, dateEventMasterRouter, currencyMasterRouter, uomMasterRouter, taxCodeRouter, dealFeasibilityRouter } = require('./routes/deals');
 const { invoiceRouter, masterRouter } = require('./routes/invoices');
 
 app.use('/api/market-prices',   require('./routes/marketPrices'));
@@ -38,6 +38,7 @@ app.use('/api/date-event-master', dateEventMasterRouter);
 app.use('/api/master/currencies', currencyMasterRouter);
 app.use('/api/master/uom', uomMasterRouter);
 app.use('/api/master/tax-codes', taxCodeRouter);
+app.use('/api/deal-feasibility', dealFeasibilityRouter);
 app.use('/api/penalties',       penaltiesRouter);
 app.use('/api/enquiries',       enquiriesRouter);
 app.use('/api/quotations',      quotationsRouter);

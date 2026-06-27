@@ -452,6 +452,15 @@ async function setupDatabase() {
       budget_payment_terms     TEXT,
       budget_finance_cost      DECIMAL(14,2),
       budget_hedging_cost      DECIMAL(14,2),
+      -- D4 — Deal Feasibility / Proceed decision, deliberately separate from Deal
+      -- Budgeting and from the unrelated Deal Basket (feasibilityRouter, which compares
+      -- RFQ responses BEFORE a deal exists — this is a decision made AFTER one does).
+      feasibility_margin_pct      DECIMAL(8,4),
+      feasibility_earliest_delivery DATE,
+      feasibility_decision        VARCHAR(20),  -- PROCEED, NOT_PROCEED, PENDING
+      feasibility_decided_by      VARCHAR(50),
+      feasibility_decided_at      TIMESTAMPTZ,
+      feasibility_notes           TEXT,
       confirmed       BOOLEAN DEFAULT FALSE,
       confirmed_at    TIMESTAMPTZ,
       confirmed_by    VARCHAR(50),
@@ -494,6 +503,22 @@ async function setupDatabase() {
     );
   `);
   console.log('✓ buy_legs');
+
+  // D4 — Deal Feasibility decision questionnaire. A small, fixed checklist the trader
+  // works through before marking PROCEED / NOT PROCEED on a deal.
+  await query(`
+    CREATE TABLE IF NOT EXISTS deal_feasibility_checklist (
+      id              SERIAL PRIMARY KEY,
+      deal_id         INT NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
+      question_code   VARCHAR(40) NOT NULL,
+      question_text   TEXT NOT NULL,
+      answer          VARCHAR(10),  -- YES, NO, N/A
+      notes           TEXT,
+      answered_at     TIMESTAMPTZ,
+      UNIQUE(deal_id, question_code)
+    );
+  `);
+  console.log('✓ deal_feasibility_checklist');
 
   // ── CONTRACTS ───────────────────────────────────────────────────
 
@@ -560,6 +585,13 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_payment_terms TEXT`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_finance_cost DECIMAL(14,2)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_hedging_cost DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS feasibility_margin_pct DECIMAL(8,4)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS feasibility_earliest_delivery DATE`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS feasibility_decision VARCHAR(20)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS feasibility_decided_by VARCHAR(50)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS feasibility_decided_at TIMESTAMPTZ`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS feasibility_notes TEXT`);
+    await query(`CREATE TABLE IF NOT EXISTS deal_feasibility_checklist (id SERIAL PRIMARY KEY, deal_id INT NOT NULL REFERENCES deals(id) ON DELETE CASCADE, question_code VARCHAR(40) NOT NULL, question_text TEXT NOT NULL, answer VARCHAR(10), notes TEXT, answered_at TIMESTAMPTZ, UNIQUE(deal_id, question_code))`);
     await query(`ALTER TABLE quote_responses ADD COLUMN IF NOT EXISTS deal_id INT REFERENCES deals(id)`);
     await query(`ALTER TABLE hedges ADD COLUMN IF NOT EXISTS broker_contract_note VARCHAR(60)`);
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);
