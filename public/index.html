@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.25</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.26</div>
   </div>
   <nav class="sb-nav">
 
@@ -1339,6 +1339,15 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             </div>
           </div>
 
+          <!-- COMMISSION AGENTS (Group D) — multiple agents, each with their own commission % -->
+          <div class="divl mt12">Commission Agents</div>
+          <div class="ban bi mb8"><span>ℹ</span>Multiple agents can be attached to a single contract, each with their own commission percentage. Stored as charge items (Pricing & QP shows commission-type charges only — see the Charge Items tab for freight, insurance and other charge types on this contract).</div>
+          <table class="lt"><thead><tr><th>Agent</th><th>Commission %</th><th>Computed Amount</th><th>GL Account</th><th>Accrual Status</th><th></th></tr></thead>
+          <tbody id="pc-commission-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No commission agents yet — click + Add Commission Agent</td></tr>
+          </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="addPCCommissionAgent()">+ Add Commission Agent</button></div>
+
           <!-- COMPOSITE PRICE SOURCE (Weighted Average) -->
           <div class="divl mt12">Price Source — Simple or Composite (Weighted Average)</div>
           <div class="ban bi mb8"><span>ℹ</span>For single benchmark: select one source. For weighted average (e.g. 70% Brent + 30% Platts Dubai): add component rows below. System calculates blended daily price = Σ(source price × weight%). QP window runs on the blended price.</div>
@@ -1672,6 +1681,15 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               </div>
             </div>
           </div>
+
+          <!-- COMMISSION AGENTS (Group D) — multiple agents, each with their own commission % -->
+          <div class="divl mt12">Commission Agents</div>
+          <div class="ban bi mb8"><span>ℹ</span>Multiple agents can be attached to a single contract, each with their own commission percentage. Stored as charge items (Pricing & QP shows commission-type charges only — see the Charge Items tab for freight, insurance and other charge types on this contract).</div>
+          <table class="lt"><thead><tr><th>Agent</th><th>Commission %</th><th>Computed Amount</th><th>GL Account</th><th>Accrual Status</th><th></th></tr></thead>
+          <tbody id="sc-commission-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No commission agents yet — click + Add Commission Agent</td></tr>
+          </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="addSCCommissionAgent()">+ Add Commission Agent</button></div>
 
           <div class="divl mt12">Price Source</div>
           <table class="lt">
@@ -7286,6 +7304,10 @@ async function loadContractTabs(contractId, prefix) {
       // Group D: load real saved charge items.
       await loadChargeLines(contractId, prefix);
 
+      // Group D: load commission agents — filtered view of the same charge data, shown
+      // on Pricing & QP per the spec rather than only in the general Charge Items tab.
+      await loadCommissionAgents(contractId, prefix);
+
       // Fix 1: sync the Calculation Method panel with the contract's real saved pricing line —
       // was previously fully disconnected static UI with a dead onchange handler.
       if (lines.length) {
@@ -10215,6 +10237,7 @@ async function submitNewChargeLine() {
     toast('Charge Item Added', (data.data.description || data.data.charge_code || 'Charge') + ' added', 'success');
     closeModal('modal-new-charge-line');
     await loadChargeLines(c.id, prefix);
+    await loadCommissionAgents(c.id, prefix); // keep the Pricing & QP commission view in sync too
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
@@ -10273,6 +10296,106 @@ async function deleteChargeLine(lineId, btn, contractId) {
     btn.closest('tr').remove();
     toast('Removed', 'Charge item removed', 'info');
   } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// Group D: Commission Agents — surfaces commission-category charges directly on
+// Pricing & QP (per the spec: 'multiple agents, commission percentage — should be in
+// pricing & QP'), reusing the same contract_charge_lines storage built for Charge Items
+// rather than a separate table, since a commission genuinely is just a charge.
+window._commissionPrefix = null;
+function addPCCommissionAgent() { window._commissionPrefix = 'pc'; openNewCommissionAgentModal(); }
+function addSCCommissionAgent() { window._commissionPrefix = 'sc'; openNewCommissionAgentModal(); }
+
+async function openNewCommissionAgentModal() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  ['nca-pct','nca-computed','nca-notes'].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('nca-gl').textContent = '—';
+
+  try {
+    const res = await fetch(API_BASE + '/api/adjustment-codes');
+    const data = await res.json();
+    const codes = (data.data || []).filter(function(ac){ return ac.category === 'COMMISSION'; });
+    window._commissionCodes = codes;
+    const sel = document.getElementById('nca-code');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Manual —</option>' + codes.map(function(ac){
+        return '<option value="'+ac.code+'">'+ac.description+'</option>';
+      }).join('');
+    }
+  } catch(e) { toast('Error', 'Could not load commission types: ' + e.message, 'error'); }
+
+  try {
+    const cpRes = await fetch(API_BASE + '/api/master/counterparties');
+    const cpData = await cpRes.json();
+    const cps = cpData.data || [];
+    const cpSel = document.getElementById('nca-counterparty');
+    if (cpSel) {
+      cpSel.innerHTML = '<option value="">— Select —</option>' + cps.map(function(cp){
+        return '<option value="'+cp.id+'">'+cp.name+'</option>';
+      }).join('');
+    }
+  } catch(e) { /* non-fatal */ }
+
+  openModal('modal-new-commission-agent');
+}
+
+async function submitNewCommissionAgent() {
+  const c = window._currentContract;
+  const prefix = window._commissionPrefix;
+  if (!c) return;
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const agentId = g('nca-counterparty');
+  const pct = g('nca-pct');
+  if (!agentId) { toast('Required', 'Please select an agent', 'warning'); return; }
+  if (!pct) { toast('Required', 'Please enter the commission percentage', 'warning'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/charge-lines', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        charge_code: g('nca-code') || null,
+        description: g('nca-code') ? null : 'Commission agent',
+        calc_basis: 'PERCENTAGE', calc_value: parseFloat(pct),
+        computed_amount: g('nca-computed') ? parseFloat(g('nca-computed')) : null,
+        counterparty_id: parseInt(agentId),
+        notes: g('nca-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Commission Agent Added', pct + '% commission added', 'success');
+    closeModal('modal-new-commission-agent');
+    await loadCommissionAgents(c.id, prefix);
+    await loadChargeLines(c.id, prefix); // same underlying data — keep Charge Items tab in sync too
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function loadCommissionAgents(contractId, prefix) {
+  const tbody = document.getElementById(prefix + '-commission-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines');
+    const data = await res.json();
+    const lines = (data.data || []).filter(function(cl){ return cl.charge_category === 'COMMISSION'; });
+    if (!lines.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No commission agents yet — click + Add Commission Agent</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lines.map(function(cl){
+      const stCls = cl.accrual_status === 'POSTED' ? 'bd-confirmed' : cl.accrual_status === 'ACCRUED' ? 'bd-act' : 'bd-draft';
+      return '<tr>'
+        + '<td class="f11 fw6">'+(cl.counterparty_name||'—')+'</td>'
+        + '<td class="mono f10">'+cl.calc_value+'%</td>'
+        + '<td class="mono f10 fw6">'+(cl.computed_amount!=null?parseFloat(cl.computed_amount).toLocaleString():'—')+'</td>'
+        + '<td class="mono f10">'+(cl.gl_account||'—')+'</td>'
+        + '<td><span class="badge '+stCls+'">'+cl.accrual_status+'</span></td>'
+        + '<td><button class="btn bxs bd" onclick="deleteChargeLine('+cl.id+', this, '+contractId+')">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) { console.warn('loadCommissionAgents:', e); }
 }
 
 function jumpToLinkedDeal() {
@@ -10591,6 +10714,35 @@ async function submitChangeDeal() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-charge-line')">Cancel</button>
       <button class="btn bp" onclick="submitNewChargeLine()">Add Charge Item</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: New Commission Agent -->
+<div class="mo" id="modal-new-commission-agent">
+  <div class="md" style="max-width:480px">
+    <div class="mh">
+      <div class="mt">New Commission Agent</div>
+      <button class="mc" onclick="closeModal('modal-new-commission-agent')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="f"><div class="fl">Agent <span class="req">*</span></div>
+        <select class="fs" id="nca-counterparty"><option value="">— Select —</option></select>
+      </div>
+      <div class="f"><div class="fl">Commission Type</div>
+        <select class="fs" id="nca-code"><option value="">— Manual —</option></select>
+      </div>
+      <div class="f"><div class="fl">Commission % <span class="req">*</span></div>
+        <input type="number" class="fi" id="nca-pct" step="0.0001" placeholder="e.g. 1.5">
+      </div>
+      <div class="f"><div class="fl">Computed Amount (USD)</div>
+        <input type="number" class="fi" id="nca-computed" step="0.01" placeholder="auto-calculated where contract value is known, editable">
+      </div>
+      <div class="f"><div class="fl">GL Account</div><div class="fc mono ta2" id="nca-gl">—</div></div>
+      <div class="f"><div class="fl">Notes</div><input type="text" class="fi" id="nca-notes"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-commission-agent')">Cancel</button>
+      <button class="btn bp" onclick="submitNewCommissionAgent()">Add Agent</button>
     </div>
   </div>
 </div>
