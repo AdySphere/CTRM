@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.30</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.31</div>
   </div>
   <nav class="sb-nav">
 
@@ -1351,11 +1351,18 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
                     <option value="cashask">Cash Ask (default — spot price)</option>
                     <option value="cashbid">Cash Bid</option>
                     <option value="3mask">3-Month Ask</option>
+                    <option value="3mbid">3-Month Bid</option>
                     <option value="mid">Mid Price</option>
-                    <option value="lowest4">Lowest of 4 (metals only)</option>
-                    <option value="highest4">Highest of 4 (metals only)</option>
                   </select>
                   <div style="font-size:9px;color:var(--text3);margin-top:4px">For Average of Cash Ask / Average of 3-Month Ask, set Pricing Rule to AVERAGE with this method selected.</div>
+                </div>
+                <div class="f"><div class="fl">Metal Highest/Lowest/Average of 4 <span style="font-size:9px;color:var(--text3)">(metals only — 10% of contracts)</span></div>
+                  <select class="fs" id="pc-calc-metal4">
+                    <option value="">— Not applicable —</option>
+                    <option value="lowest4">Lowest of 4</option>
+                    <option value="highest4">Highest of 4</option>
+                    <option value="average4">Average of 4</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1690,11 +1697,18 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
                     <option value="cashask">Cash Ask (default — spot price)</option>
                     <option value="cashbid">Cash Bid</option>
                     <option value="3mask">3-Month Ask</option>
+                    <option value="3mbid">3-Month Bid</option>
                     <option value="mid">Mid Price</option>
-                    <option value="lowest4">Lowest of 4 (metals only)</option>
-                    <option value="highest4">Highest of 4 (metals only)</option>
                   </select>
                   <div style="font-size:9px;color:var(--text3);margin-top:4px">For Average of Cash Ask / Average of 3-Month Ask, set Pricing Rule to AVERAGE with this method selected.</div>
+                </div>
+                <div class="f"><div class="fl">Metal Highest/Lowest/Average of 4 <span style="font-size:9px;color:var(--text3)">(metals only — 10% of contracts)</span></div>
+                  <select class="fs" id="sc-calc-metal4">
+                    <option value="">— Not applicable —</option>
+                    <option value="lowest4">Lowest of 4</option>
+                    <option value="highest4">Highest of 4</option>
+                    <option value="average4">Average of 4</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -2753,11 +2767,18 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
                 <option value="cashask">Cash Ask (default — spot price)</option>
                 <option value="cashbid">Cash Bid</option>
                 <option value="3mask">3-Month Ask</option>
+                <option value="3mbid">3-Month Bid</option>
                 <option value="mid">Mid Price</option>
-                <option value="lowest4">Lowest of 4 (metals only)</option>
-                <option value="highest4">Highest of 4 (metals only)</option>
               </select>
               <div style="font-size:9px;color:var(--text3);margin-top:4px">For Average of Cash Ask / Average of 3-Month Ask, set the Pricing Rule on the contract to AVERAGE with this method selected.</div>
+            </div>
+            <div class="f"><div class="fl">Metal Highest/Lowest/Average of 4 <span style="font-size:9px;color:var(--text3)">(metals only — 10% of contracts)</span></div>
+              <select class="fs" id="price-metal4-sel" onchange="recalcPricing()">
+                <option value="">— Not applicable —</option>
+                <option value="lowest4">Lowest of 4 (Cash Ask/Bid, 3M Ask/Bid)</option>
+                <option value="highest4">Highest of 4</option>
+                <option value="average4">Average of 4</option>
+              </select>
             </div>
             <div class="f" id="eng-avg-note" style="display:none"><div class="fl">Average note</div><div class="fc ta2">Lowest/Highest of 4 disabled — Cash Ask averaged across all QP days</div></div>
             <div class="f"><div class="fl">Default Price</div><div class="fc mono ta2">Cash Ask — system default for daily price pickup</div></div>
@@ -4120,14 +4141,22 @@ async function recalcPricing() {
   const payablePct = parseFloat(document.getElementById('payable-pct')?.value) || 91;
   const premDisc   = parseFloat(document.getElementById('prem-disc')?.value) || 0;
   const refSel     = document.getElementById('price-ref-sel')?.value || 'cashask';
+  const metal4Sel  = document.getElementById('price-metal4-sel')?.value || '';
 
   // Fix 1: was keyed cashAsk/cashBid (camelCase) but the dropdown sends lowercase
   // cashask/cashbid — never matched, always silently fell through to lowest.
-  // 24 June correction: Highest/Lowest of 4 folded back into this single dropdown
-  // per Prashant's note — was previously split into a separate metal-only toggle.
+  // Reverted the v17.29 merge after re-checking Prashant's original Excel — Lowest/Highest/
+  // Average of 4 is genuinely metal-only and conditional, confirmed in his own words on the
+  // call ('only be hard-coded for metal... will not even seem to others') — restored as a
+  // separate toggle that overrides the base price source when set.
   const mid = (ca!=null && cb!=null) ? (ca+cb)/2 : null;
-  const refMap = { cashask: ca, cashbid: cb, '3mask': a3, mid: mid, lowest4: lowest, highest4: highest };
-  const ref = refMap[refSel] ?? ca;
+  const all4 = [cb,ca,b3,a3].filter(Boolean);
+  const average4 = all4.length ? all4.reduce((s,v)=>s+v,0)/all4.length : null;
+  const refMap = { cashask: ca, cashbid: cb, '3mask': a3, '3mbid': b3, mid: mid };
+  const ref = metal4Sel === 'lowest4' ? lowest
+    : metal4Sel === 'highest4' ? highest
+    : metal4Sel === 'average4' ? average4
+    : (refMap[refSel] ?? ca);
   const netPrice = ref * (payablePct / 100) + premDisc;
 
   const rEl = document.getElementById('ref-price-display');
@@ -6795,7 +6824,7 @@ async function addContractPriceLine(prefix) {
   } catch(e) { toast('Error', 'Could not load pricing benchmarks: ' + e.message, 'error'); }
 
   ['npl-exchange','npl-agency','npl-instrument'].forEach(function(id){ const el=document.getElementById(id); if(el) el.textContent='—'; });
-  ['npl-index-pct','npl-payable-pct','npl-prem-disc','npl-tc','npl-rc','npl-qp-start','npl-qp-end'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
+  ['npl-index-pct','npl-payable-pct','npl-prem-disc','npl-tc','npl-rc','npl-qp-start','npl-qp-end','npl-calc-metal4'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
 
   // Add Pricing Line fix: the benchmark dropdown's first real option is pre-selected by
   // the browser automatically, but its onchange handler (which fills Index%/Payable% from
@@ -6859,9 +6888,12 @@ async function submitNewPricingLine() {
   const indexPct = g('npl-index-pct');
   const payablePct = g('npl-payable-pct');
   const pricingRule = g('npl-pricing-rule');
-  // 24 June correction: Highest/Lowest of 4 folded back into the same Calculation Method
-  // dropdown per Prashant's note — was previously split into a separate metal-only toggle.
-  const calcMethod = g('npl-calc-method');
+  // Reverted the v17.29 change after re-checking against Prashant's original Excel: Lowest/
+  // Highest/Average of 4 is genuinely metal-only and conditional (his own words: 'only be
+  // hard-coded for metal... will not even seem to others') — a separate toggle is correct,
+  // not folded into the same dropdown everyone sees.
+  const metal4 = g('npl-calc-metal4');
+  const calcMethod = metal4 || g('npl-calc-method');
 
   if (!benchmarkCode) { toast('Required', 'Please select a pricing benchmark', 'warning'); return; }
   if (!indexPct) { toast('Required', 'Please enter the Index %', 'warning'); return; }
@@ -7324,15 +7356,20 @@ async function loadContractTabs(contractId, prefix) {
       // on Pricing & QP per the spec rather than only in the general Charge Items tab.
       await loadCommissionAgents(contractId, prefix);
 
-      // Fix 1 / 24 June correction: sync the Calculation Method panel with the contract's
-      // real saved pricing line. Highest/Lowest of 4 folded back into the single dropdown
-      // per the correction — no longer a separate metal-only toggle.
+      // Fix 1: sync the Calculation Method panel with the contract's real saved pricing
+      // line. Reverted the v17.29 merge — Lowest/Highest/Average of 4 is genuinely
+      // metal-only and conditional, restored as a separate toggle per Prashant's Excel.
       if (lines.length) {
         const calcSel = document.getElementById(prefix + '-calc-method');
+        const metal4Sel = document.getElementById(prefix + '-calc-metal4');
         const ruleSel = document.getElementById(prefix === 'sc' ? 'sc-pricing-rule' : 'pc-pricing-rule');
         const savedMethod = (lines[0].calc_method || '').toLowerCase();
-        if (calcSel && ['cashask','cashbid','3mask','mid','lowest4','highest4'].includes(savedMethod)) {
+        if (['lowest4','highest4','average4'].includes(savedMethod)) {
+          if (metal4Sel) metal4Sel.value = savedMethod;
+          if (calcSel) calcSel.value = 'cashask';
+        } else if (calcSel && ['cashask','cashbid','3mask','3mbid','mid'].includes(savedMethod)) {
           calcSel.value = savedMethod;
+          if (metal4Sel) metal4Sel.value = '';
         }
         if (ruleSel && lines[0].pricing_rule) ruleSel.value = lines[0].pricing_rule;
       }
@@ -10889,11 +10926,18 @@ async function submitChangeDeal() {
             <option value="cashask">Cash Ask (default — spot price)</option>
             <option value="cashbid">Cash Bid</option>
             <option value="3mask">3-Month Ask</option>
+            <option value="3mbid">3-Month Bid</option>
             <option value="mid">Mid Price</option>
-            <option value="lowest4">Lowest of 4 (metals only)</option>
-            <option value="highest4">Highest of 4 (metals only)</option>
           </select>
           <div style="font-size:9px;color:var(--text3);margin-top:4px">For Average of Cash Ask / Average of 3-Month Ask, set Pricing Rule above to AVERAGE with this method selected.</div>
+        </div>
+        <div class="f"><div class="fl">Metal Highest/Lowest/Average of 4 <span style="font-size:9px;color:var(--text3)">(metals only — 10% of contracts)</span></div>
+          <select class="fs" id="npl-calc-metal4">
+            <option value="">— Not applicable —</option>
+            <option value="lowest4">Lowest of 4</option>
+            <option value="highest4">Highest of 4</option>
+            <option value="average4">Average of 4</option>
+          </select>
         </div>
       </div>
       <div class="ban bi mb12" style="margin-top:8px"><span>ℹ</span>M/M+1/M+2 always counts from the Shipment Month, never the BL date — start and end dates compute automatically.</div>
