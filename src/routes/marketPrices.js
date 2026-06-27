@@ -4,6 +4,7 @@ const { query } = require('../db');
 // GET /api/market-prices?commodity=LME_CU&date=2026-05-09
 // Returns latest prices for a commodity (or all if no filter)
 router.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { commodity, date, days = 30 } = req.query;
     let sql = `
@@ -26,6 +27,7 @@ router.get('/', async (req, res) => {
 
 // GET /api/market-prices/latest — one row per commodity, most recent date
 router.get('/latest', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query(`
       SELECT DISTINCT ON (commodity_code)

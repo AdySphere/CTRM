@@ -3,6 +3,7 @@ const dealsRouter = require('express').Router();
 const { query, logAudit } = require('../db');
 
 dealsRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query(`
       SELECT 
@@ -141,6 +142,7 @@ logRouter.get('/', async (req, res) => {
 });
 
 logRouter.get('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const [log, containers] = await Promise.all([
       query(`SELECT l.*, pol.name as pol_name, pod.name as pod_name FROM logistics l
@@ -186,6 +188,7 @@ module.exports.logRouter = logRouter;
 const conRouter = require('express').Router();
 
 conRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { logistics_id } = req.query;
     let sql = `SELECT c.*,

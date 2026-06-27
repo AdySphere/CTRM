@@ -3,6 +3,7 @@ const { query } = require('../db');
 
 // GET /api/forward-curve?commodity=LME-CU-BENCH&curve_date=2026-05-09
 router.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { commodity, curve_date } = req.query;
     let sql = `
@@ -32,6 +33,7 @@ router.get('/', async (req, res) => {
 // GET /api/forward-curve/price?commodity=LME-CU-BENCH&prompt_date=2026-07-15
 // Returns settlement price for a specific prompt — interpolates if needed
 router.get('/price', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { commodity, prompt_date, curve_date } = req.query;
     if (!commodity || !prompt_date) return res.status(400).json({ error: 'commodity and prompt_date required' });

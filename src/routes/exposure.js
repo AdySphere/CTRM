@@ -103,6 +103,7 @@ async function getQPAverage(pricingLine, upToDate) {
 
 // GET /api/exposure — compute full exposure for all deals
 router.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { deal_id, contract_id, as_of_date } = req.query;
     const today = as_of_date || new Date().toISOString().split('T')[0];
@@ -256,6 +257,7 @@ router.get('/', async (req, res) => {
 // silently grabbed an arbitrary contract and ignored the rest. Contract-based is now the
 // correct primary path; deal-based stays for backward compatibility where only one contract exists.
 router.get('/qp/contract/:contract_id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { contract_id } = req.params;
     const { as_of_date } = req.query;
@@ -278,6 +280,7 @@ router.get('/qp/contract/:contract_id', async (req, res) => {
 });
 
 router.get('/qp/:deal_no', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { deal_no } = req.params;
     const { as_of_date } = req.query;
@@ -300,6 +303,7 @@ router.get('/qp/:deal_no', async (req, res) => {
 
 // GET /api/exposure/portfolio — net position rollup by commodity across the whole book
 router.get('/portfolio', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { as_of_date } = req.query;
     const today = as_of_date || new Date().toISOString().split('T')[0];

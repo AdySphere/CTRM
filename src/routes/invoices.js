@@ -5,6 +5,7 @@ const { getSettlement, getQPAverage } = require('./exposure');
 
 // GET /api/invoices
 invoiceRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query(`
       SELECT i.*, cp.name as counterparty_name, c.contract_no
@@ -124,6 +125,7 @@ module.exports.invoiceRouter = invoiceRouter;
 const masterRouter = require('express').Router();
 
 masterRouter.get('/commodities', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query('SELECT * FROM commodities WHERE active=TRUE ORDER BY name');
     res.json({ success: true, data: result.rows });
@@ -131,6 +133,7 @@ masterRouter.get('/commodities', async (req, res) => {
 });
 
 masterRouter.get('/counterparties', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const { type } = req.query;
     let sql = 'SELECT * FROM counterparties WHERE active=TRUE';
@@ -143,6 +146,7 @@ masterRouter.get('/counterparties', async (req, res) => {
 });
 
 masterRouter.get('/locations', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query('SELECT * FROM locations WHERE active=TRUE ORDER BY name');
     res.json({ success: true, data: result.rows });
@@ -150,6 +154,7 @@ masterRouter.get('/locations', async (req, res) => {
 });
 
 masterRouter.get('/qp-periods', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   try {
     const result = await query('SELECT * FROM qp_period_master WHERE active=TRUE ORDER BY code');
     res.json({ success: true, data: result.rows });
