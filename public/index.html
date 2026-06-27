@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.32</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.33</div>
   </div>
   <nav class="sb-nav">
 
@@ -3693,8 +3693,16 @@ async function renderExposureTable() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="17" style="text-align:center;padding:20px;color:var(--text3);font-family:var(--font-mono);font-size:10px">Loading MTM from database...</td></tr>';
 
-  const result = await fetch(API_BASE + '/api/exposure');
-  const json = await result.json();
+  // Was unguarded — same risk as loadContractList/loadContractDropdowns: a failed fetch
+  // here would throw uncaught and halt every startup step queued after this one.
+  let json;
+  try {
+    const result = await fetch(API_BASE + '/api/exposure');
+    json = await result.json();
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;padding:20px;color:var(--danger)">Could not load exposure: ${e.message}</td></tr>`;
+    return;
+  }
   if (!json.success) {
     tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;padding:20px;color:var(--danger)">${json.error}</td></tr>`;
     return;
@@ -6209,9 +6217,18 @@ async function loadContractList(type) {
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
 
-  const res = await fetch(API_BASE + '/api/contracts?type=' + type);
-  const data = await res.json();
-  const contracts = data.data || data;
+  let contracts;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts?type=' + type);
+    const data = await res.json();
+    contracts = data.data || data;
+  } catch(e) {
+    // Was unguarded — a single failed fetch here during the startup sequence would
+    // throw uncaught and stop every subsequent startup step from running, since this
+    // is called with await inside a sequential chain on page load.
+    console.warn('loadContractList(' + type + '):', e);
+    return;
+  }
   if (!Array.isArray(contracts)) return;
 
   tbody.innerHTML = contracts.map(c => `
@@ -8137,11 +8154,16 @@ function onContainerSelect() {
 }
 
 async function loadContractDropdowns() {
-  const [pcs, scs, fixes] = await Promise.all([
-    fetch(API_BASE + '/api/contracts?type=PC').then(r=>r.json()),
-    fetch(API_BASE + '/api/contracts?type=SC').then(r=>r.json()),
-    fetch(API_BASE + '/api/fixations').then(r=>r.json()),
-  ]);
+  // Was unguarded — same risk as loadContractList: any one of these three failing would
+  // throw uncaught and halt every startup step queued after this one.
+  let pcs = {}, scs = {}, fixes = {};
+  try {
+    [pcs, scs, fixes] = await Promise.all([
+      fetch(API_BASE + '/api/contracts?type=PC').then(r=>r.json()),
+      fetch(API_BASE + '/api/contracts?type=SC').then(r=>r.json()),
+      fetch(API_BASE + '/api/fixations').then(r=>r.json()),
+    ]);
+  } catch(e) { console.warn('loadContractDropdowns:', e); }
   const pcData = Array.isArray(pcs.data) ? pcs.data : [];
   const scData = Array.isArray(scs.data) ? scs.data : [];
   const fixData = Array.isArray(fixes.data) ? fixes.data : [];
