@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.23</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.24</div>
   </div>
   <nav class="sb-nav">
 
@@ -1453,7 +1453,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bw mb12"><span>⚠</span>Rollover applies when counterparty misses fixing window. Each missed period = one append-only row. Rate basis: PER-MT, FIXED-TOTAL (÷ contract qty), or PERCENTAGE (× provisional price). All resolve to per-MT for accounting.</div>
           <div class="fg mb12">
             <div class="f"><div class="fl">Rollover Applicable</div><select class="fs"><option>YES</option><option>NO</option></select></div>
-            <div class="f"><div class="fl">Fixing Start Date</div><input type="date" class="fi" id="pcd-rollover-start"></div>
+            <div class="f"><div class="fl">Fixing Trigger Date (QP End)</div><input type="date" class="fi" id="pcd-rollover-start" readonly></div>
             <div class="f"><div class="fl">Fixing Frequency</div><select class="fs"><option>MONTHLY</option><option>WEEKLY</option><option>CUSTOM</option></select></div>
             <div class="f"><div class="fl">Fixing Rule</div><select class="fs"><option>CALENDAR-MONTH</option><option>BL-MONTH</option><option>CUSTOM-PERIOD</option></select></div>
             <div class="f"><div class="fl">Rate Basis</div><select class="fs" id="rollover-rate-basis" onchange="toggleRolloverRateBasis()"><option value="PER-MT">PER-MT (USD/MT/period)</option><option value="FIXED-TOTAL">FIXED-TOTAL (total ÷ contract qty)</option><option value="PERCENTAGE">PERCENTAGE (% of provisional price)</option></select></div>
@@ -7064,12 +7064,16 @@ async function loadPaymentLines(contractId, prefix) {
 // 'Immutable once created' right next to a button that could delete it. No save, no
 // numbering, no audit trail. Per the 23 June call: rollover must support multiple
 // instances per contract (#1, #2...) with a real, unloseable audit trail.
-function openNewRolloverModal() {
+// Group C fix (per 24 June notes): the rollover trigger is the LAST DAY OF THE QP WINDOW,
+// not a separately-typed start date — the system already knows this from the contract's
+// pricing line. A new rollover only needs ONE new input: the new end date the QP rolls to.
+// The new start date is simply the day after the old end date, computed automatically.
+async function openNewRolloverModal() {
   const c = window._currentContract;
   if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
   const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
   document.getElementById('nr-qty-label').textContent = 'Unfixed Qty (' + uom + ')';
-  ['nr-period-from','nr-period-to','nr-qty','nr-amount','nr-new-qp-start','nr-new-qp-end'].forEach(function(id){
+  ['nr-qty','nr-amount','nr-new-qp-end'].forEach(function(id){
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const rateBasis = document.getElementById('rollover-rate-basis')?.value || 'PER-MT';
@@ -7078,6 +7082,36 @@ function openNewRolloverModal() {
     || document.getElementById('rollover-pct-val')?.value || '';
   document.getElementById('nr-rate-basis').value = rateBasis;
   document.getElementById('nr-rate-value').value = rateVal;
+
+  const triggerEl = document.getElementById('nr-trigger-date');
+  window._rolloverTriggerDate = null;
+  window._rolloverMissedPeriodStart = null;
+  if (triggerEl) triggerEl.textContent = 'Loading…';
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/pricing-lines');
+    const data = await res.json();
+    const lines = data.data || [];
+    if (lines.length && lines[0].qp_end_date) {
+      window._rolloverTriggerDate = lines[0].qp_end_date.split('T')[0];
+      window._rolloverMissedPeriodStart = lines[0].qp_start_date ? lines[0].qp_start_date.split('T')[0] : window._rolloverTriggerDate;
+      if (triggerEl) triggerEl.textContent = new Date(lines[0].qp_end_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+    } else if (triggerEl) {
+      triggerEl.textContent = 'No QP window set on this contract yet';
+    }
+  } catch(e) {
+    if (triggerEl) triggerEl.textContent = 'Could not load QP window';
+  }
+
+  // Pre-fill Unfixed Qty from real fixation data rather than leaving it purely manual.
+  try {
+    const uRes = await fetch(API_BASE + '/api/contracts/' + c.id + '/unfixed-qty');
+    const uData = await uRes.json();
+    if (uData.success && uData.data.unfixed_qty > 0) {
+      const qtyEl = document.getElementById('nr-qty');
+      if (qtyEl) qtyEl.value = uData.data.unfixed_qty.toFixed(3);
+    }
+  } catch(e) { /* non-fatal — trader can still enter manually */ }
+
   openModal('modal-new-rollover');
 }
 
@@ -7085,30 +7119,36 @@ async function submitNewRollover() {
   const c = window._currentContract;
   if (!c) return;
   const g = function(id){ return document.getElementById(id)?.value || null; };
-  const periodFrom = g('nr-period-from');
-  const periodTo = g('nr-period-to');
   const qty = g('nr-qty');
   const rateBasis = g('nr-rate-basis');
   const rateValue = g('nr-rate-value');
   const amount = g('nr-amount');
+  const newQpEnd = g('nr-new-qp-end');
 
-  if (!periodFrom || !periodTo) { toast('Required', 'Please enter the missed period dates', 'warning'); return; }
+  if (!window._rolloverTriggerDate) { toast('No QP Window', 'This contract has no QP window set — add a pricing line first', 'warning'); return; }
   if (!qty) { toast('Required', 'Please enter the unfixed quantity', 'warning'); return; }
   if (!rateValue) { toast('Required', 'Please enter the rate', 'warning'); return; }
   if (!amount) { toast('Required', 'Please enter the calculated amount', 'warning'); return; }
+  if (!newQpEnd) { toast('Required', 'Please enter the new QP end date', 'warning'); return; }
 
   const derivedText = document.getElementById('rollover-derived-rate')?.textContent || '';
   const derivedMatch = derivedText.match(/[0-9.]+/);
+
+  // New QP simply starts the day after the missed window's trigger (end) date.
+  const newStart = new Date(window._rolloverTriggerDate);
+  newStart.setDate(newStart.getDate() + 1);
+  const newQpStart = newStart.toISOString().split('T')[0];
 
   try {
     const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/rollover-events', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        period_from: periodFrom, period_to: periodTo, unfixed_qty: parseFloat(qty),
+        period_from: window._rolloverMissedPeriodStart, period_to: window._rolloverTriggerDate,
+        unfixed_qty: parseFloat(qty),
         rate_basis: rateBasis, rate_value: parseFloat(rateValue),
         derived_rate_per_mt: derivedMatch ? derivedMatch[0] : null,
         amount_usd: parseFloat(amount),
-        new_qp_start_date: g('nr-new-qp-start'), new_qp_end_date: g('nr-new-qp-end')
+        new_qp_start_date: newQpStart, new_qp_end_date: newQpEnd
       })
     });
     const data = await res.json();
@@ -7205,10 +7245,11 @@ async function loadContractTabs(contractId, prefix) {
         priceTbody.innerHTML = '<tr><td colspan="18" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No pricing lines — add via Pricing & QP tab</td></tr>';
       }
 
-      // C24 fix: sync Rollover Fixing Start Date with this contract's actual QP start date
-      if (prefix === 'pc' && lines.length && lines[0].qp_start_date) {
+      // Group C fix (per 24 June notes): this field should reflect the QP END date — the
+      // actual rollover trigger — not the start date as originally built in C24.
+      if (prefix === 'pc' && lines.length && lines[0].qp_end_date) {
         const rollStart = document.getElementById('pcd-rollover-start');
-        if (rollStart) rollStart.value = new Date(lines[0].qp_start_date).toISOString().split('T')[0];
+        if (rollStart) rollStart.value = new Date(lines[0].qp_end_date).toISOString().split('T')[0];
       }
 
       // Fix 3: load real saved rollover events for this contract — was always empty
@@ -10264,9 +10305,9 @@ async function submitChangeDeal() {
     </div>
     <div class="mb">
       <div class="ban bw mb12"><span>⚠</span>Saved permanently once created — cannot be edited or deleted afterward. Sequential rollover number is assigned automatically.</div>
-      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
-        <div class="f"><div class="fl">Missed Period From <span class="req">*</span></div><input type="date" class="fi" id="nr-period-from"></div>
-        <div class="f"><div class="fl">Missed Period To <span class="req">*</span></div><input type="date" class="fi" id="nr-period-to"></div>
+      <div class="f"><div class="fl">Rollover Trigger Date</div>
+        <div class="fc mono fw7" id="nr-trigger-date">—</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:4px">Last day of the current QP window — price was not fixed by this date</div>
       </div>
       <div class="f"><div class="fl" id="nr-qty-label">Unfixed Qty <span class="req">*</span></div>
         <input type="number" class="fi" id="nr-qty" step="0.001" placeholder="e.g. 100">
@@ -10281,10 +10322,9 @@ async function submitChangeDeal() {
         <input type="number" class="fi" id="nr-amount" step="0.01" placeholder="e.g. 1000">
         <div style="font-size:9px;color:var(--text3);margin-top:4px">Pre-filled from the Rate Basis panel above — confirm or adjust before saving</div>
       </div>
-      <div class="divl mt12">New QP Window (optional — extends the contract's pricing window)</div>
-      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
-        <div class="f"><div class="fl">New QP Start</div><input type="date" class="fi" id="nr-new-qp-start"></div>
-        <div class="f"><div class="fl">New QP End</div><input type="date" class="fi" id="nr-new-qp-end"></div>
+      <div class="f"><div class="fl">New QP End Date <span class="req">*</span></div>
+        <input type="date" class="fi" id="nr-new-qp-end">
+        <div style="font-size:9px;color:var(--text3);margin-top:4px">QP automatically extends from the day after the trigger date to this new end date</div>
       </div>
     </div>
     <div class="modal-ft">

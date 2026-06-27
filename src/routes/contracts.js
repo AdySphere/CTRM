@@ -324,4 +324,28 @@ router.delete('/:id/qc-specs/:specId', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// Group C: surfaces unfixed (still-not-priced) quantity for a contract, so the rollover
+// form can pre-fill instead of relying purely on the trader to type a number that may not
+// match reality — answers Prashant's 'and if the price is not fixed' note directly.
+router.get('/:id/unfixed-qty', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const cRes = await query('SELECT qty_mt, index_pct FROM contracts c LEFT JOIN contract_pricing_lines pl ON pl.contract_id = c.id WHERE c.id=$1 LIMIT 1', [id]);
+    if (!cRes.rows.length) return res.status(404).json({ error: 'Contract not found' });
+    const qtyMt = parseFloat(cRes.rows[0].qty_mt) || 0;
+    const indexPct = parseFloat(cRes.rows[0].index_pct) || 100;
+    const payableQty = qtyMt * (indexPct / 100);
+
+    const fixRes = await query(
+      'SELECT COALESCE(SUM(fixed_qty_mt),0) as priced_qty FROM fixation_lots WHERE contract_id=$1',
+      [id]
+    );
+    const pricedQty = parseFloat(fixRes.rows[0].priced_qty) || 0;
+    const unfixedQty = Math.max(0, payableQty - pricedQty);
+
+    res.json({ success: true, data: { payable_qty: payableQty, priced_qty: pricedQty, unfixed_qty: unfixedQty } });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports = router;
