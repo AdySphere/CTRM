@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.34</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.35</div>
   </div>
   <nav class="sb-nav">
 
@@ -896,7 +896,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Customer <span class="req">*</span></div><select class="fs" id="qd-customer-sel"><option value="">— Select Customer —</option></select></div>
             <div class="f"><div class="fl">Commodity <span class="req">*</span></div><select class="fs" id="qd-commodity-sel"><option value="">— Select Commodity —</option></select></div>
             <div class="f"><div class="fl">Quantity <span class="req">*</span></div><input type="number" class="fi" id="qd-qty-input" placeholder="e.g. 500" step="0.001" oninput="recalcProvValue()"></div>
-            <div class="f"><div class="fl">Quantity UOM</div><div class="fc"><span class="badge bd-act" id="qd-uom-badge" style="font-size:10px">MT</span></div></div>
+            <div class="f"><div class="fl">Quantity UOM</div><select class="fs" id="qd-uom-badge" onchange="this.dataset.userSet='1'"><option value="MT">MT</option><option value="BBL">BBL</option><option value="L">L</option><option value="GAL">GAL</option><option value="KG">KG</option><option value="LB">LB</option><option value="TOZ">TOZ</option><option value="BU">BU</option><option value="MMBTU">MMBTU</option></select></div>
             <div class="f"><div class="fl">Incoterms</div><select class="fs" id="qd-incoterms-sel"><option value="">—</option><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option><option>EXW</option><option>DAP</option></select></div>
             <div class="f"><div class="fl">Port of Discharge</div><input type="text" class="fi" id="qd-pod-input" placeholder="e.g. Nhava Sheva, IN"></div>
             <div class="f"><div class="fl">Delivery From</div><input type="date" class="fi" id="qd-delivery-from"></div>
@@ -4369,12 +4369,15 @@ async function openQuotationDetail(quotNo) {
       if (q.commodity_code) commSel2.value = q.commodity_code;
       const selOpt = commSel2.options[commSel2.selectedIndex];
       const uom2 = (selOpt && selOpt.dataset.uom) || (window._commodityCache[q.commodity_code] && window._commodityCache[q.commodity_code].uom) || 'MT';
+      // B-fix: was a read-only badge — .textContent on it never reflected a real editable
+      // value. Now a genuine select; .value is correct, and userSet tracks a manual override
+      // so it doesn't get clobbered by a later commodity change.
       const uomBadge2 = document.getElementById('qd-uom-badge');
-      if (uomBadge2) uomBadge2.textContent = uom2;
+      if (uomBadge2) { uomBadge2.value = q.uom_override || uom2; if (q.uom_override) uomBadge2.dataset.userSet = '1'; }
       commSel2.onchange = function() {
         const opt = commSel2.options[commSel2.selectedIndex];
         const badge = document.getElementById('qd-uom-badge');
-        if (badge) badge.textContent = (opt && opt.dataset.uom) || 'MT';
+        if (badge && !badge.dataset.userSet) badge.value = (opt && opt.dataset.uom) || 'MT';
       };
     }
 
@@ -4436,18 +4439,18 @@ async function openQuotationDetail(quotNo) {
       const selOpt = commSel.options[commSel.selectedIndex];
       const uom = selOpt?.dataset?.uom || (window._commodityCache[q.commodity_code]?.uom) || 'MT';
       const uomBadge = document.getElementById('qd-uom-badge');
-      if (uomBadge) uomBadge.textContent = uom;
+      if (uomBadge) { uomBadge.value = q.uom_override || uom; if (q.uom_override) uomBadge.dataset.userSet = '1'; }
     }
 
     // Qty input
     setInput('qd-qty-input', q.qty_mt);
 
-    // Wire commodity change to update UOM badge
+    // Wire commodity change to update UOM (editable select, not a frozen badge)
     if (commSel) commSel.onchange = function() {
       const opt = commSel.options[commSel.selectedIndex];
       const uom = opt?.dataset?.uom || 'MT';
       const badge = document.getElementById('qd-uom-badge');
-      if (badge) badge.textContent = uom;
+      if (badge && !badge.dataset.userSet) badge.value = uom;
     };
     const pp = document.getElementById('qd-prov-price');
     if (pp) pp.value = q.provisional_price || '';
@@ -4509,6 +4512,7 @@ async function saveQuotation() {
         customer_id: document.getElementById('qd-customer-sel')?.value || null,
         commodity_code: document.getElementById('qd-commodity-sel')?.value || null,
         qty_mt: parseFloat(document.getElementById('qd-qty-input')?.value) || null,
+        uom_override: document.getElementById('qd-uom-badge')?.value || null,
         incoterms: document.getElementById('qd-incoterms-sel')?.value || null,
         port_of_discharge: document.getElementById('qd-pod-input')?.value || null,
         delivery_from: document.getElementById('qd-delivery-from')?.value || null,
@@ -4617,10 +4621,14 @@ async function openNewQuotation() {
   const cpSel = document.getElementById('nq-customer-sel');
   const cmSel = document.getElementById('nq-commodity-sel');
   if (enqSel && enqRes.data) {
+    // B-fix: data-sid (vendor/supplier id) and data-dir were never set on these options at
+    // all, only data-cid (customer). onNqEnquiryChange() reads d.sid for BUY enquiries and
+    // d.dir for the BUY/SELL auto-lock — meaning the vendor never carried across from a BUY
+    // enquiry into a new quotation, and the quote-type lock silently never worked either.
     enqSel.innerHTML = '<option value="">— None (standalone quotation) —</option>' +
       enqRes.data.filter(e => e.status !== 'CONVERTED').map(e =>
-        `<option value="${e.id}" data-cid="${e.customer_id||''}" data-comm="${e.commodity_code||''}" data-qty="${e.qty_mt||''}">` +
-        `${e.enquiry_no} · ${e.commodity_name||e.commodity_code||'—'} · ${e.qty_mt||'—'} MT · ${e.customer_name||'—'}</option>`
+        `<option value="${e.id}" data-cid="${e.customer_id||''}" data-sid="${e.supplier_id||''}" data-dir="${e.direction||''}" data-comm="${e.commodity_code||''}" data-qty="${e.qty_mt||''}">` +
+        `${e.enquiry_no} · ${e.commodity_name||e.commodity_code||'—'} · ${e.qty_mt||'—'} MT · ${e.direction==='BUY' ? (e.supplier_name||'—') : (e.customer_name||'—')}</option>`
       ).join('');
   }
   window._allCPs = cpRes.data || [];
@@ -4694,11 +4702,10 @@ function onNqEnquiryChange() {
   const polEl = document.getElementById('nq-pol');
   if (polEl && d.origin) polEl.value = d.origin;
 
-  // Update UOM badge
+  // C2 fix: header stays generic 'Quantity' per Prashant's explicit ask — the UOM lives
+  // in the editable select next to it, not baked into the label text.
   const uomBadge = document.getElementById('nq-uom-badge');
-  if (uomBadge && d.uom) uomBadge.textContent = d.uom;
-  const qtyLbl = document.getElementById('nq-qty-label');
-  if (qtyLbl && d.uom) qtyLbl.innerHTML = 'Quantity (' + d.uom + ') <span class="req">*</span>';
+  if (uomBadge && d.uom && !uomBadge.dataset.userSet) uomBadge.value = d.uom;
 
   // Show linked enquiry reference banner
   const enqRef = document.getElementById('nq-enq-ref');
@@ -4712,9 +4719,7 @@ function onNqCommodityChange() {
   if (!code) return;
   const uom = (window._commodityCache[code]?.uom) || 'MT';
   const badge = document.getElementById('nq-uom-badge');
-  if (badge) badge.textContent = uom;
-  const lbl = document.getElementById('nq-qty-label');
-  if (lbl) lbl.innerHTML = 'Quantity (' + uom + ') <span class="req">*</span>';
+  if (badge && !badge.dataset.userSet) badge.value = uom;
 }
 
 async function submitNewQuotation() {
@@ -4727,6 +4732,7 @@ async function submitNewQuotation() {
     customer_id: qtype === 'SQ' ? cpId : null,
     supplier_id: qtype === 'PQ' ? cpId : null,
     qty_mt: parseFloat(g('nq-qty')) || null,
+    uom_override: g('nq-uom-badge') || null,
     incoterms: g('nq-incoterms') || null,
     port_of_discharge: g('nq-pod') || null,
     delivery_from: g('nq-delivery-from') || null,
@@ -8403,10 +8409,14 @@ async function loadAllocationTable() {
             <option value="">— Select Commodity —</option>
           </select>
         </div>
-        <div class="f"><div class="fl">Quantity (MT) <span class="req">*</span></div>
+        <div class="f"><div class="fl" id="nq-qty-label">Quantity <span class="req">*</span></div>
           <div style="display:flex;gap:8px;align-items:center">
               <input type="number" class="fi" id="nq-qty" placeholder="e.g. 100" step="0.001" style="flex:1">
-              <span class="badge bd-act" id="nq-uom-badge" style="font-size:9px;white-space:nowrap">MT</span>
+              <select class="fs" id="nq-uom-badge" style="width:auto;flex:0 0 90px;font-size:11px" onchange="this.dataset.userSet='1'">
+                <option value="MT">MT</option><option value="BBL">BBL</option><option value="L">L</option>
+                <option value="GAL">GAL</option><option value="KG">KG</option><option value="LB">LB</option>
+                <option value="TOZ">TOZ</option><option value="BU">BU</option><option value="MMBTU">MMBTU</option>
+              </select>
             </div>
         </div>
       </div>
@@ -8494,9 +8504,15 @@ async function loadAllocationTable() {
       <div class="divl mt12">Counterparties</div>
       <div class="fg">
         <div class="f" id="enq-supplier-row"><div class="fl">Supplier / Vendor</div>
-          <select class="fs" id="enq-supplier"><option value="">— Select Vendor —</option></select></div>
+          <select class="fs" id="enq-supplier" onchange="onNewEnqCPChange(this,'buy')"><option value="">— Select Vendor —</option></select></div>
+        <div class="f" id="enq-supplier-kyc-row"><div class="fl">Vendor KYC Status</div>
+          <div class="fc" id="enq-new-buy-kyc"><span class="badge bd-draft">— select vendor —</span></div></div>
         <div class="f"><div class="fl">Customer / Buyer</div>
-          <select class="fs" id="enq-customer"><option value="">— Select Customer —</option></select></div>
+          <select class="fs" id="enq-customer" onchange="onNewEnqCPChange(this,'sell')"><option value="">— Select Customer —</option></select></div>
+        <div class="f" id="enq-customer-kyc-row"><div class="fl">Customer KYC Status</div>
+          <div class="fc" id="enq-new-sell-kyc"><span class="badge bd-draft">— select customer —</span></div></div>
+        <div class="f csf" id="enq-new-credit-row"><div class="fl">Credit Limit Available</div>
+          <div class="fc" id="enq-new-credit-limit">— select counterparty first</div></div>
       </div>
       <div class="divl mt12">Route & Pricing</div>
       <div class="fg">
@@ -10789,6 +10805,33 @@ async function runAutomaticRolloverCheck(silent) {
     }
   } catch(e) {
     if (!silent) toast('Error', e.message, 'error');
+  }
+}
+
+// B2/B3 fix: the New Enquiry creation modal had zero KYC or credit-status display at all —
+// only the Enquiry detail/edit view had this wired (onEnqCPChange). Reuses the same real
+// fetchLiveCreditStatus() call rather than duplicating that logic for a second time.
+function onNewEnqCPChange(sel, side) {
+  const cpId = sel.value;
+  const cp = cpId && window._cpCache ? window._cpCache[cpId] : null;
+  const kycId = side === 'buy' ? 'enq-new-buy-kyc' : 'enq-new-sell-kyc';
+  const kycEl = document.getElementById(kycId);
+  if (kycEl) {
+    if (!cpId) {
+      kycEl.innerHTML = '<span class="badge bd-draft">— select ' + (side==='buy'?'vendor':'customer') + ' —</span>';
+    } else if (cp) {
+      const kyc = cp.kyc_status || 'APPROVED';
+      const cls = kyc === 'APPROVED' ? 'bd-confirmed' : kyc === 'PENDING' ? 'bd-ship' : 'bd-danger';
+      kycEl.innerHTML = '<span class="badge ' + cls + '">' + kyc + '</span>';
+    } else {
+      kycEl.innerHTML = '<span class="badge bd-confirmed">APPROVED</span>';
+    }
+  }
+  const creditEl = document.getElementById('enq-new-credit-limit');
+  if (!cpId) {
+    if (creditEl) creditEl.textContent = '— select counterparty first';
+  } else {
+    fetchLiveCreditStatus(cpId, creditEl, null, null);
   }
 }
 

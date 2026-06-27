@@ -365,6 +365,8 @@ async function setupDatabase() {
       pricing_template VARCHAR(50),
       provisional_price DECIMAL(14,4),
       provisional_value DECIMAL(16,2),
+      uom_override    VARCHAR(10),  -- B-fix: same pattern as enquiries — Quantity UOM was
+                                     -- a read-only badge with no editable override at all.
       quoted_by       VARCHAR(50),
       status          VARCHAR(20) DEFAULT 'OPEN',  -- OPEN, ACCEPTED, DECLINED, EXPIRED, CONVERTED
       deal_id         INT REFERENCES deals(id),
@@ -561,6 +563,7 @@ async function setupDatabase() {
     await query(`ALTER TABLE quote_responses ADD COLUMN IF NOT EXISTS deal_id INT REFERENCES deals(id)`);
     await query(`ALTER TABLE hedges ADD COLUMN IF NOT EXISTS broker_contract_note VARCHAR(60)`);
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);
+    await query(`ALTER TABLE quotations ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS shipment_month DATE`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS qp_offset_months INT DEFAULT 0`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS rollover_applicable BOOLEAN DEFAULT FALSE`);
