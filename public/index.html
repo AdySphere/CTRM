@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.37</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.38</div>
   </div>
   <nav class="sb-nav">
 
@@ -1272,10 +1272,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div class="fts">
           <div class="ft active pct" data-tab="pc-gen">General</div>
-          <div class="ft pct" data-tab="pc-material">Material & Qty</div>
+          <div class="ft pct" data-tab="pc-material">Material & Charges</div>
           <div class="ft pct" data-tab="pc-price">Pricing & QP</div>
           <div class="ft pct" data-tab="pc-pay">Payment Terms</div>
-          <div class="ft pct" data-tab="pc-charges">Charge Items</div>
           <div class="ft pct" data-tab="pc-qc">QC & Assay Terms</div>
           <div class="ft pct" data-tab="pc-ship">Shipment & Logistics</div>
           <div class="ft pct" data-tab="pc-legal">Legal & Other</div>
@@ -1312,15 +1311,37 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="lar"><button class="btn bp bsm" onclick="saveContractGeneral('pc')">Save Changes</button></div>
         </div>
         <div id="pc-material" class="ftc hidden">
-          <div class="ban bi mb12"><span>ℹ</span>Add one line per quality grade. Each has its own quantity, spec, HS code and base price. Sample 1 has Q1+Q2 Lead-Tin as separate lines.</div>
-          <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade / Quality</th><th>Qty</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle / Ingot Wt</th><th>Weight Basis</th><th>Origin</th><th></th></tr></thead>
+          <!-- H2: Commodity Line — per the Veridian Charge Items + Material spec -->
+          <div class="ban bi mb12"><span>ℹ</span>Each line below generates a separate ERP accrual entry when the trigger event is confirmed. Vendor and GL account are required per line before ERP posting.</div>
+          <div class="divl">Commodity Line</div>
+          <table class="lt"><thead><tr><th>#</th><th>Commodity</th><th>Grade / Quality</th><th>HS Code</th><th>Origin</th><th>Qty (gross)</th><th>Tol %</th><th>UOM</th><th>Unit Price</th><th>Price Basis</th><th>Prov. Value</th><th></th></tr></thead>
           <tbody id="pc-mat-tbody">
             <tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading material lines…</td></tr>
           </tbody></table>
-          <div class="lar br-row g7"><button class="btn bg bsm" onclick="addPCMatLine()">+ Add Quality / Material Line</button></div>
-          <div class="divl mt12">General Material Terms</div>
+          <div class="lar"><button class="btn bg bsm" onclick="addPCMatLine()">+ Add Line</button></div>
+
+          <!-- VENDOR / TERMS SUMMARY STRIP -->
+          <div class="ban bi mt8" id="pc-mat-vendor-strip">Counterparty (vendor): <span id="pc-mat-vendor">—</span> · Incoterm: <span id="pc-mat-incoterm">—</span> · Currency: <span id="pc-mat-currency">USD</span> · Provisional qty: <span id="pc-mat-prov-qty">—</span> · Prov. value: <span id="pc-mat-prov-value">—</span></div>
+
+          <!-- CHARGE ITEMS — merged into this tab per H2 -->
+          <div class="divl mt14">Charge Items</div>
+          <div class="ban bi mb8"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Penalty or formula-change adjustments appear here too as Actual vs Estimated variance on the relevant line — positive or negative — there is no separate penalty table.</div>
+          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Payable To</th><th>Basis</th><th>Rate</th><th>Qty/Days</th><th>Est. Amount</th><th>Actual Amount</th><th>Variance</th><th>Accrual Trigger</th><th>Accrual Status</th><th>GL Account</th><th></th></tr></thead>
+          <tbody id="pc-charges-tbody">
+            <tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
+          </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="addPCChargeLine()">+ Add Charge Item</button></div>
+
+          <!-- COST SUMMARY -->
+          <div class="divl mt14">Cost Summary <span class="tdim f10">— estimated · actual updates on invoice receipt</span></div>
           <div class="fg">
+            <div class="f"><div class="fl">Total Cost per MT (estimated)</div><div class="fc mono fw7 ta" id="pc-total-cost-per-mt">—</div></div>
+            <div class="f"><div class="fl">Total Contract Value (estimated)</div><div class="fc mono fw7 tg" id="pc-total-contract-value">—</div></div>
             <div class="f"><div class="fl">Total Contract Quantity</div><div class="fc mono fw7" id="pc-total-mat-qty">—</div></div>
+          </div>
+
+          <div class="divl mt14">General Material Terms</div>
+          <div class="fg">
             <div class="f"><div class="fl">Material Free From</div><input type="text" class="fi" value="Harmful impurities not stated, including radioactivity"></div>
             <div class="f"><div class="fl">Container Type</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option><option>BULK VESSEL</option></select></div>
           </div>
@@ -1464,14 +1485,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment schedule…</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addPCPayLine()">+ Add Payment Line</button></div>
-        </div>
-        <div id="pc-charges" class="ftc hidden">
-          <div class="ban bi mb12"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Fixed amount, percentage, or per-MT basis. Each charge type carries its own ERP General Ledger account for accrual posting.</div>
-          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Basis</th><th>Value</th><th>Computed Amount</th><th>Payable To</th><th>GL Account</th><th>Accrual Status</th><th></th></tr></thead>
-          <tbody id="pc-charges-tbody">
-            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
-          </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="addPCChargeLine()">+ Add Charge Item</button></div>
         </div>
         <div id="pc-qc" class="ftc hidden">
           <div class="fg mb12">
@@ -1644,10 +1657,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div class="fts">
           <div class="ft active sct" data-tab="sc-gen">General</div>
-          <div class="ft sct" data-tab="sc-material">Material & Qty</div>
+          <div class="ft sct" data-tab="sc-material">Material & Charges</div>
           <div class="ft sct" data-tab="sc-price">Pricing & QP</div>
           <div class="ft sct" data-tab="sc-pay">Payment Terms</div>
-          <div class="ft sct" data-tab="sc-charges">Charge Items</div>
           <div class="ft sct" data-tab="sc-qc">QC & Assay Terms</div>
           <div class="ft sct" data-tab="sc-ship">Shipment & Logistics</div>
           <div class="ft sct" data-tab="sc-legal">Legal & Other</div>
@@ -1683,14 +1695,33 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="lar"><button class="btn bp bsm" onclick="saveContractGeneral('sc')">Save Changes</button></div>
         </div>
         <div id="sc-material" class="ftc hidden">
-          <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade</th><th>Qty</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle Wt</th><th>Weight Basis</th><th>Destination</th><th></th></tr></thead>
+          <div class="ban bi mb12"><span>ℹ</span>Each line below generates a separate ERP accrual entry when the trigger event is confirmed. Counterparty and GL account are required per line before ERP posting.</div>
+          <div class="divl">Commodity Line</div>
+          <table class="lt"><thead><tr><th>#</th><th>Commodity</th><th>Grade / Quality</th><th>HS Code</th><th>Destination</th><th>Qty (gross)</th><th>Tol %</th><th>UOM</th><th>Unit Price</th><th>Price Basis</th><th>Prov. Value</th><th></th></tr></thead>
           <tbody id="sc-mat-tbody">
-            <tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading material lines…</td></tr>
+            <tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading material lines…</td></tr>
           </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="addSCMatLine()">+ Add Quality / Material Line</button></div>
-          <div class="divl mt12">General Material Terms</div>
+          <div class="lar"><button class="btn bg bsm" onclick="addSCMatLine()">+ Add Line</button></div>
+
+          <div class="ban bi mt8" id="sc-mat-vendor-strip">Counterparty (customer): <span id="sc-mat-vendor">—</span> · Incoterm: <span id="sc-mat-incoterm">—</span> · Currency: <span id="sc-mat-currency">USD</span> · Provisional qty: <span id="sc-mat-prov-qty">—</span> · Prov. value: <span id="sc-mat-prov-value">—</span></div>
+
+          <div class="divl mt14">Charge Items</div>
+          <div class="ban bi mb8"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Penalty or formula-change adjustments appear here too as Actual vs Estimated variance on the relevant line — positive or negative — there is no separate penalty table.</div>
+          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Payable To</th><th>Basis</th><th>Rate</th><th>Qty/Days</th><th>Est. Amount</th><th>Actual Amount</th><th>Variance</th><th>Accrual Trigger</th><th>Accrual Status</th><th>GL Account</th><th></th></tr></thead>
+          <tbody id="sc-charges-tbody">
+            <tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
+          </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="addSCChargeLine()">+ Add Charge Item</button></div>
+
+          <div class="divl mt14">Cost Summary <span class="tdim f10">— estimated · actual updates on invoice receipt</span></div>
           <div class="fg">
+            <div class="f"><div class="fl">Total Cost per MT (estimated)</div><div class="fc mono fw7 ta" id="sc-total-cost-per-mt">—</div></div>
+            <div class="f"><div class="fl">Total Contract Value (estimated)</div><div class="fc mono fw7 tg" id="sc-total-contract-value">—</div></div>
             <div class="f"><div class="fl">Total Contract Quantity</div><div class="fc mono fw7" id="sc-total-mat-qty">—</div></div>
+          </div>
+
+          <div class="divl mt14">General Material Terms</div>
+          <div class="fg">
             <div class="f"><div class="fl">Material Free From</div><input type="text" class="fi" placeholder="e.g. Harmful impurities not stated, including radioactivity"></div>
             <div class="f"><div class="fl">Container Type</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option><option>BULK VESSEL</option></select></div>
           </div>
@@ -1791,14 +1822,6 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment schedule…</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addSCPayLine()">+ Add Payment Line</button></div>
-        </div>
-        <div id="sc-charges" class="ftc hidden">
-          <div class="ban bi mb12"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Fixed amount, percentage, or per-MT basis. Each charge type carries its own ERP General Ledger account for accrual posting.</div>
-          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Basis</th><th>Value</th><th>Computed Amount</th><th>Payable To</th><th>GL Account</th><th>Accrual Status</th><th></th></tr></thead>
-          <tbody id="sc-charges-tbody">
-            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
-          </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="addSCChargeLine()">+ Add Charge Item</button></div>
         </div>
         <div id="sc-qc" class="ftc hidden"><div class="fg mb12">
           <div class="f"><div class="fl">Whose Weights Govern</div><select class="fs"><option>BUYER'S WEIGHTS</option><option>SELLER'S WEIGHTS</option><option>JOINT SURVEY</option></select></div>
@@ -6791,60 +6814,147 @@ function recalcTotalMatQty(prefix) {
   totalEl.textContent = total > 0 ? total.toLocaleString(undefined,{maximumFractionDigits:3}) + ' ' + uom : '—';
 }
 
-async function addPCMatLine() {
+// H2: was building raw inline <tr> rows with no IDs and no save path at all — confirmed
+// this was the source of the long-standing 'Total Contract Quantity always resets to —'
+// issue, since nothing here was ever persisted. Rebuilt as a real modal + backend save,
+// matching the pattern already proven for Payment Lines, Charge Items and Commission Agents.
+window._matLinePrefix = null;
+function addPCMatLine() { window._matLinePrefix = 'pc'; openNewMaterialLineModal(); }
+function addSCMatLine() { window._matLinePrefix = 'sc'; openNewMaterialLineModal(); }
+
+async function openNewMaterialLineModal() {
   const c = window._currentContract;
   if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
-  const tbody = document.getElementById('pc-mat-tbody');
-  if (!tbody) return;
-  const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
-  const row = document.createElement('tr');
-  const n = tbody.querySelectorAll('tr[data-mat-row]').length + 1;
-  row.setAttribute('data-mat-row', '1');
-  row.innerHTML = '<td class="mono f10">'+n+'</td>'
-    + '<td><input type="text" class="fi" placeholder="Material/grade" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="HS Code" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Spec" style="font-size:10px"></td>'
-    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right" oninput="recalcTotalMatQty(&quot;pc&quot;)"></td>'
-    + '<td><input type="text" class="fi" placeholder="±%" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="MOLOO/MOLCO" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" value="'+uom+'" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Packing" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="—" style="font-size:10px"></td>'
-    + '<td><select class="fs" style="font-size:10px"><option>SHIPPED-WEIGHT</option><option>DMT</option><option>FLOW-METER</option></select></td>'
-    + '<td><input type="text" class="fi" placeholder="Origin" style="font-size:10px"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove();recalcTotalMatQty(&quot;pc&quot;)">✕</button></td>';
-  const placeholder = tbody.querySelector('td[colspan]');
-  if (placeholder) placeholder.closest('tr').remove();
-  tbody.appendChild(row);
-  recalcTotalMatQty('pc');
+  const prefix = window._matLinePrefix;
+  ['nml-grade','nml-hscode','nml-origin','nml-qty','nml-tol','nml-unit-price','nml-price-basis'].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('nml-prov-value').textContent = '—';
+  const originLabel = document.getElementById('nml-origin-label');
+  if (originLabel) originLabel.textContent = prefix === 'sc' ? 'Destination' : 'Origin';
+  const cpLabel = document.getElementById('nml-cp-label');
+  if (cpLabel) cpLabel.textContent = prefix === 'sc' ? 'Customer' : 'Vendor';
+
+  try {
+    const res = await fetch(API_BASE + '/api/master/commodities');
+    const data = await res.json();
+    const commodities = data.data || [];
+    const sel = document.getElementById('nml-commodity');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select —</option>' + commodities.map(function(cm){
+        return '<option value="'+cm.code+'" data-uom="'+(cm.uom||'MT')+'">'+cm.name+'</option>';
+      }).join('');
+    }
+  } catch(e) { /* non-fatal */ }
+
+  try {
+    const cpRes = await fetch(API_BASE + '/api/master/counterparties');
+    const cpData = await cpRes.json();
+    const cps = cpData.data || [];
+    const cpSel = document.getElementById('nml-counterparty');
+    if (cpSel) {
+      cpSel.innerHTML = '<option value="">— Select —</option>' + cps.map(function(cp){
+        return '<option value="'+cp.id+'">'+cp.name+'</option>';
+      }).join('');
+    }
+  } catch(e) { /* non-fatal */ }
+
+  openModal('modal-new-material-line');
 }
 
-async function addSCMatLine() {
+function calcMaterialLineValue() {
+  const qty = parseFloat(document.getElementById('nml-qty')?.value) || 0;
+  const price = parseFloat(document.getElementById('nml-unit-price')?.value) || 0;
+  const display = document.getElementById('nml-prov-value');
+  if (display) {
+    const value = qty * price;
+    display.textContent = value > 0 ? 'USD ' + value.toLocaleString(undefined,{maximumFractionDigits:2}) : '—';
+  }
+}
+
+async function submitNewMaterialLine() {
   const c = window._currentContract;
-  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
-  const tbody = document.getElementById('sc-mat-tbody');
+  const prefix = window._matLinePrefix;
+  if (!c) return;
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const qty = g('nml-qty');
+  if (!qty) { toast('Required', 'Please enter the quantity', 'warning'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/material-lines', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        commodity_code: g('nml-commodity'),
+        grade: g('nml-grade'), hs_code: g('nml-hscode'), origin: g('nml-origin'),
+        qty_gross: parseFloat(qty),
+        tolerance_pct: g('nml-tol'), uom: g('nml-uom') || 'MT',
+        unit_price: g('nml-unit-price') ? parseFloat(g('nml-unit-price')) : null,
+        price_basis: g('nml-price-basis'),
+        counterparty_id: g('nml-counterparty') ? parseInt(g('nml-counterparty')) : null,
+        incoterms: g('nml-incoterms')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Line Added', 'Commodity line added', 'success');
+    closeModal('modal-new-material-line');
+    await loadMaterialLines(c.id, prefix);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function loadMaterialLines(contractId, prefix) {
+  const tbody = document.getElementById(prefix + '-mat-tbody');
   if (!tbody) return;
-  const uom = (window._commodityCache && c.commodity_code && window._commodityCache[c.commodity_code]?.uom) || 'MT';
-  const row = document.createElement('tr');
-  const n = tbody.querySelectorAll('tr[data-mat-row]').length + 1;
-  row.setAttribute('data-mat-row', '1');
-  row.innerHTML = '<td class="mono f10">'+n+'</td>'
-    + '<td><input type="text" class="fi" placeholder="Material/grade" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="HS Code" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Spec" style="font-size:10px"></td>'
-    + '<td><input type="number" class="fi" placeholder="Qty" style="font-size:10px;text-align:right" oninput="recalcTotalMatQty(&quot;sc&quot;)"></td>'
-    + '<td><input type="text" class="fi" placeholder="±%" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="MOLOO/MOLCO" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" value="'+uom+'" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Packing" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="—" style="font-size:10px"></td>'
-    + '<td><select class="fs" style="font-size:10px"><option>SHIPPED-WEIGHT</option><option>DMT</option><option>FLOW-METER</option></select></td>'
-    + '<td><input type="text" class="fi" placeholder="Destination" style="font-size:10px"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove();recalcTotalMatQty(&quot;sc&quot;)">✕</button></td>';
-  const placeholder = tbody.querySelector('td[colspan]');
-  if (placeholder) placeholder.closest('tr').remove();
-  tbody.appendChild(row);
-  recalcTotalMatQty('sc');
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/material-lines');
+    const data = await res.json();
+    const lines = data.data || [];
+    if (!lines.length) {
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No commodity lines yet — click + Add Line</td></tr>';
+    } else {
+      tbody.innerHTML = lines.map(function(ml){
+        return '<tr>'
+          + '<td class="mono f10">'+ml.line_no+'</td>'
+          + '<td class="f11 fw6">'+(ml.commodity_name||ml.commodity_code||'—')+'</td>'
+          + '<td class="f10">'+(ml.grade||'—')+'</td>'
+          + '<td class="mono f10">'+(ml.hs_code||'—')+'</td>'
+          + '<td class="f10">'+(ml.origin||'—')+'</td>'
+          + '<td class="mono f10 fw6">'+ml.qty_gross+' '+ml.uom+'</td>'
+          + '<td class="f10">'+(ml.tolerance_pct||'—')+'</td>'
+          + '<td class="f10">'+ml.uom+'</td>'
+          + '<td class="mono f10">'+(ml.unit_price!=null?'$'+parseFloat(ml.unit_price).toLocaleString():'—')+'</td>'
+          + '<td class="f10">'+(ml.price_basis||'—')+'</td>'
+          + '<td class="mono f10 fw6">'+(ml.provisional_value!=null?'$'+parseFloat(ml.provisional_value).toLocaleString():'—')+'</td>'
+          + '<td><button class="btn bxs bd" data-line-id="'+ml.id+'" data-contract-id="'+contractId+'" data-prefix="'+prefix+'" onclick="deleteMaterialLine(this.dataset.lineId, this, this.dataset.contractId, this.dataset.prefix)">✕</button></td>'
+          + '</tr>';
+      }).join('');
+    }
+    // Vendor strip — uses the FIRST line's counterparty/incoterm as the contract's primary
+    const primary = lines[0];
+    const vendorEl = document.getElementById(prefix + '-mat-vendor');
+    if (vendorEl) vendorEl.textContent = primary?.counterparty_name || '—';
+    const incoEl = document.getElementById(prefix + '-mat-incoterm');
+    if (incoEl) incoEl.textContent = primary?.incoterms || '—';
+    const provQtyEl = document.getElementById(prefix + '-mat-prov-qty');
+    const totalQty = lines.reduce(function(s,l){ return s + (parseFloat(l.qty_gross)||0); }, 0);
+    if (provQtyEl) provQtyEl.textContent = totalQty > 0 ? totalQty.toLocaleString() + ' ' + (primary?.uom||'MT') : '—';
+    const provValEl = document.getElementById(prefix + '-mat-prov-value');
+    const totalValue = lines.reduce(function(s,l){ return s + (parseFloat(l.provisional_value)||0); }, 0);
+    if (provValEl) provValEl.textContent = totalValue > 0 ? '$'+totalValue.toLocaleString() : '—';
+
+    const totalQtyDisplay = document.getElementById(prefix + '-total-mat-qty');
+    if (totalQtyDisplay) totalQtyDisplay.textContent = totalQty > 0 ? totalQty.toLocaleString() + ' ' + (primary?.uom||'MT') : '—';
+
+    await recalcCostSummary(contractId, prefix);
+  } catch(e) { console.warn('loadMaterialLines:', e); }
+}
+
+async function deleteMaterialLine(lineId, btn, contractId, prefix) {
+  try {
+    await fetch(API_BASE + '/api/contracts/' + contractId + '/material-lines/' + lineId, { method: 'DELETE' });
+    await loadMaterialLines(contractId, prefix);
+    toast('Removed', 'Commodity line removed', 'info');
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 async function addPCPriceLineV10() { await addContractPriceLine('pc'); }
@@ -7473,14 +7583,10 @@ async function loadContractTabs(contractId, prefix) {
       } catch(e) { console.warn('lots load:', e); }
     }
 
-    // Material tab — show empty state; trader builds lines explicitly via + Add Quality / Material Line.
-    // (Previously auto-injected a fake non-editable row that masked the real empty state and
-    //  couldn't be deleted — this is the B8/B9 fix.)
-    const matTbody = document.getElementById(prefix + '-mat-tbody');
-    if (matTbody) {
-      matTbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No material lines yet — click + Add Quality / Material Line</td></tr>';
-    }
-    recalcTotalMatQty(prefix);
+    // H2: was wiping the material tab to a fake empty state on every load and never
+    // fetching anything real — this is the actual cause of 'Total Contract Quantity
+    // always resets to —', confirmed and fixed now with a genuine load from the database.
+    await loadMaterialLines(contractId, prefix);
   } catch(e) { console.warn('loadContractTabs:', e); }
 }
 
@@ -10355,6 +10461,10 @@ async function submitNewChargeLine() {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
+// H2: rebuilt to match the Veridian Charge Items spec — added Payable To, Qty/Days,
+// Actual Amount, Variance and Accrual Trigger columns. Variance is editable inline (the
+// actual penalty/adjustment mechanism per Prashant's instruction — appears on the
+// relevant line itself, positive or negative, with no separate penalty table).
 async function loadChargeLines(contractId, prefix) {
   const tbody = document.getElementById(prefix + '-charges-tbody');
   if (!tbody) return;
@@ -10363,31 +10473,57 @@ async function loadChargeLines(contractId, prefix) {
     const data = await res.json();
     const lines = data.data || [];
     if (!lines.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No charge items yet — click + Add Charge Item</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No charge items yet — click + Add Charge Item</td></tr>';
       return;
     }
     tbody.innerHTML = lines.map(function(cl){
-      const stCls = cl.accrual_status === 'POSTED' ? 'bd-confirmed' : cl.accrual_status === 'ACCRUED' ? 'bd-act' : 'bd-draft';
-      const basisLabel = cl.calc_basis === 'FIXED' ? 'Fixed' : cl.calc_basis === 'PER_MT' ? 'Per MT' : 'Percentage';
-      return '<tr>'
+      const basisLabel = cl.calc_basis === 'FIXED' ? 'Lump Sum' : cl.calc_basis === 'PER_MT' ? 'Per MT' : 'Percentage';
+      const varianceVal = cl.variance != null ? parseFloat(cl.variance) : null;
+      const varianceCls = varianceVal == null ? '' : varianceVal < 0 ? 'tg' : varianceVal > 0 ? 'ta2' : '';
+      const varianceText = varianceVal == null ? '—' : (varianceVal >= 0 ? '+' : '') + varianceVal.toLocaleString(undefined,{maximumFractionDigits:2});
+      return '<tr data-charge-row-id="'+cl.id+'">'
         + '<td class="f11 fw6">'+(cl.charge_description||cl.charge_code||'Manual')+'</td>'
         + '<td class="f10">'+(cl.description||'—')+'</td>'
+        + '<td class="f10">'+(cl.counterparty_name||'—')+'</td>'
         + '<td class="f10">'+basisLabel+'</td>'
         + '<td class="mono f10">'+cl.calc_value+'</td>'
+        + '<td class="mono f10">'+(cl.qty_or_days!=null?cl.qty_or_days:'—')+'</td>'
         + '<td class="mono f10 fw6">'+(cl.computed_amount!=null?parseFloat(cl.computed_amount).toLocaleString():'—')+'</td>'
-        + '<td class="f10">'+(cl.counterparty_name||'—')+'</td>'
-        + '<td class="mono f10">'+(cl.gl_account||'—')+'</td>'
+        + '<td><input type="number" class="fi" style="font-size:10px;width:80px" step="0.01" value="'+(cl.actual_amount!=null?cl.actual_amount:'')+'" placeholder="—" data-charge-id="'+cl.id+'" data-contract-id="'+contractId+'" onblur="onChargeActualAmountChange(this)"></td>'
+        + '<td class="mono f10 fw6 '+varianceCls+'">'+varianceText+'</td>'
+        + '<td class="f10">'+(cl.accrual_trigger_event||'—')+'</td>'
         + '<td>'
           + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeAccrual(this.dataset.chargeId, this.value, this.dataset.prefix)">'
-            + '<option value="NOT_ACCRUED"'+(cl.accrual_status==='NOT_ACCRUED'?' selected':'')+'>Not Accrued</option>'
+            + '<option value="NOT_ACCRUED"'+(cl.accrual_status==='NOT_ACCRUED'?' selected':'')+'>Pending</option>'
             + '<option value="ACCRUED"'+(cl.accrual_status==='ACCRUED'?' selected':'')+'>Accrued</option>'
             + '<option value="POSTED"'+(cl.accrual_status==='POSTED'?' selected':'')+'>Posted</option>'
           + '</select>'
         + '</td>'
-        + '<td><button class="btn bxs bd" onclick="deleteChargeLine('+cl.id+', this, '+contractId+')">✕</button></td>'
+        + '<td class="mono f10">'+(cl.gl_account||'—')+'</td>'
+        + '<td><button class="btn bxs bd" data-line-id="'+cl.id+'" data-contract-id="'+contractId+'" onclick="deleteChargeLine(this.dataset.lineId, this, this.dataset.contractId)">✕</button></td>'
         + '</tr>';
     }).join('');
   } catch(e) { console.warn('loadChargeLines:', e); }
+}
+
+async function onChargeActualAmountChange(input) {
+  const lineId = input.dataset.chargeId;
+  const contractId = input.dataset.contractId;
+  const value = input.value ? parseFloat(input.value) : null;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines/' + lineId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ actual_amount: value })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const row = input.closest('tr');
+    const prefix = row?.closest('[id$="-charges-tbody"]')?.id.split('-')[0];
+    if (prefix) {
+      await loadChargeLines(contractId, prefix);
+      await recalcCostSummary(contractId, prefix);
+    }
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 async function updateChargeAccrual(lineId, status, prefix) {
@@ -10962,6 +11098,41 @@ async function decideDealFeasibility(decision) {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
+// H2: Cost Summary — Total Cost per MT and Total Contract Value, per the Excel spec's
+// 'Product $X + charges $Y' breakdown. Combines material line provisional value with
+// the sum of charge line estimated amounts.
+async function recalcCostSummary(contractId, prefix) {
+  try {
+    const [matRes, chgRes] = await Promise.all([
+      fetch(API_BASE + '/api/contracts/' + contractId + '/material-lines').then(r=>r.json()),
+      fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines').then(r=>r.json())
+    ]);
+    const matLines = matRes.data || [];
+    const chgLines = chgRes.data || [];
+
+    const totalQty = matLines.reduce(function(s,l){ return s + (parseFloat(l.qty_gross)||0); }, 0);
+    const totalMatValue = matLines.reduce(function(s,l){ return s + (parseFloat(l.provisional_value)||0); }, 0);
+    const totalChargesValue = chgLines.reduce(function(s,l){ return s + (parseFloat(l.computed_amount)||0); }, 0);
+    const totalValue = totalMatValue + totalChargesValue;
+    const costPerMt = totalQty > 0 ? totalValue / totalQty : 0;
+
+    const perMtEl = document.getElementById(prefix + '-total-cost-per-mt');
+    if (perMtEl) {
+      perMtEl.textContent = costPerMt > 0
+        ? 'USD ' + costPerMt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})
+        : '—';
+      perMtEl.title = totalQty > 0
+        ? 'Product USD ' + (totalMatValue/totalQty).toFixed(2) + ' + charges USD ' + (totalChargesValue/totalQty).toFixed(2)
+        : '';
+    }
+    const valueEl = document.getElementById(prefix + '-total-contract-value');
+    if (valueEl) {
+      valueEl.textContent = totalValue > 0 ? 'USD ' + totalValue.toLocaleString(undefined,{maximumFractionDigits:0}) : '—';
+      valueEl.title = totalQty > 0 ? 'Based on ' + totalQty.toLocaleString() + ' MT gross qty' : '';
+    }
+  } catch(e) { console.warn('recalcCostSummary:', e); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -11246,6 +11417,45 @@ async function submitChangeDeal() {
   </div>
 </div>
 <!-- MODAL: New Charge Item -->
+<!-- MODAL: New Material Line (H2) -->
+<div class="mo" id="modal-new-material-line">
+  <div class="md" style="max-width:560px">
+    <div class="mh">
+      <div class="mt">New Commodity Line</div>
+      <button class="mc" onclick="closeModal('modal-new-material-line')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="f"><div class="fl">Commodity</div>
+        <select class="fs" id="nml-commodity"><option value="">— Select —</option></select>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Grade / Quality</div><input type="text" class="fi" id="nml-grade" placeholder="e.g. Grade A"></div>
+        <div class="f"><div class="fl">HS Code</div><input type="text" class="fi" id="nml-hscode" placeholder="e.g. 7403.11"></div>
+      </div>
+      <div class="f"><div class="fl" id="nml-origin-label">Origin</div><input type="text" class="fi" id="nml-origin" placeholder="e.g. Chile"></div>
+      <div class="fg" style="grid-template-columns:repeat(3,1fr)">
+        <div class="f"><div class="fl">Qty (gross)</div><input type="number" class="fi" id="nml-qty" step="0.001" oninput="calcMaterialLineValue()"></div>
+        <div class="f"><div class="fl">Tolerance %</div><input type="text" class="fi" id="nml-tol" placeholder="+/- 5%"></div>
+        <div class="f"><div class="fl">UOM</div><select class="fs" id="nml-uom"><option value="MT">MT</option><option value="KG">KG</option><option value="LB">LB</option><option value="BBL">BBL</option><option value="TOZ">TOZ</option></select></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Unit Price</div><input type="number" class="fi" id="nml-unit-price" step="0.0001" oninput="calcMaterialLineValue()"></div>
+        <div class="f"><div class="fl">Price Basis</div><input type="text" class="fi" id="nml-price-basis" placeholder="e.g. LME Cash +$45"></div>
+      </div>
+      <div class="f"><div class="fl">Provisional Value</div><div class="fc mono ta2" id="nml-prov-value">—</div></div>
+      <div class="divl mt12">Counterparty for this line</div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl" id="nml-cp-label">Vendor</div><select class="fs" id="nml-counterparty"><option value="">— Select —</option></select></div>
+        <div class="f"><div class="fl">Incoterm</div><select class="fs" id="nml-incoterms"><option value="">—</option><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option></select></div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-material-line')">Cancel</button>
+      <button class="btn bp" onclick="submitNewMaterialLine()">Add Line</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: New Charge Line (H2) -->
 <div class="mo" id="modal-new-charge-line">
   <div class="md" style="max-width:560px">
     <div class="mh">

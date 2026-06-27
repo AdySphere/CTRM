@@ -375,18 +375,26 @@ router.post('/:id/charge-lines', async (req, res) => {
   try {
     const { id } = req.params;
     const { charge_code, description, calc_basis, calc_value, computed_amount,
-      currency, counterparty_id, notes } = req.body;
+      qty_or_days, actual_amount, currency, counterparty_id, accrual_trigger_event,
+      accrual_reversal_event, notes } = req.body;
     if (!calc_basis || calc_value == null) {
       return res.status(400).json({ error: 'calc_basis and calc_value are required' });
     }
+    // H1/H2: variance is the actual penalty/adjustment mechanism — computed here whenever
+    // both estimated (computed_amount) and actual_amount are known, not a separate record.
+    const variance = (computed_amount != null && actual_amount != null)
+      ? (parseFloat(actual_amount) - parseFloat(computed_amount)) : null;
     const result = await query(`
       INSERT INTO contract_charge_lines
         (contract_id, charge_code, description, calc_basis, calc_value, computed_amount,
-         currency, counterparty_id, accrual_status, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'NOT_ACCRUED',$9)
+         qty_or_days, actual_amount, variance, currency, counterparty_id, accrual_status,
+         accrual_trigger_event, accrual_reversal_event, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'NOT_ACCRUED',$12,$13,$14)
       RETURNING *
     `, [id, charge_code || null, description || null, calc_basis, calc_value,
-        computed_amount || null, currency || 'USD', counterparty_id || null, notes || null]);
+        computed_amount || null, qty_or_days || null, actual_amount || null, variance,
+        currency || 'USD', counterparty_id || null, accrual_trigger_event || null,
+        accrual_reversal_event || null, notes || null]);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
@@ -394,10 +402,22 @@ router.post('/:id/charge-lines', async (req, res) => {
 router.patch('/:id/charge-lines/:lineId', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const allowed = ['accrual_status', 'computed_amount', 'notes'];
+    const allowed = ['accrual_status', 'computed_amount', 'actual_amount', 'qty_or_days',
+      'accrual_trigger_event', 'accrual_reversal_event', 'notes'];
     const fields = {};
     Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
     if (fields.accrual_status === 'ACCRUED') fields.accrued_at = new Date().toISOString();
+
+    // H1: recompute variance whenever actual_amount changes — this IS the penalty line,
+    // not a separate record. Need the current computed_amount if it isn't part of this update.
+    if ('actual_amount' in fields) {
+      const estAmount = ('computed_amount' in fields)
+        ? fields.computed_amount
+        : (await query('SELECT computed_amount FROM contract_charge_lines WHERE id=$1', [req.params.lineId])).rows[0]?.computed_amount;
+      fields.variance = (estAmount != null && fields.actual_amount != null)
+        ? (parseFloat(fields.actual_amount) - parseFloat(estAmount)) : null;
+    }
+
     if (!Object.keys(fields).length) return res.json({ success: true, data: null });
     const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 3); }).join(',');
     const result = await query(`UPDATE contract_charge_lines SET ${sets} WHERE id=$1 AND contract_id=$2 RETURNING *`,
@@ -671,6 +691,79 @@ router.delete('/:id/payment-tranches/:trancheId', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
     await query('DELETE FROM payment_term_tranches WHERE id=$1 AND contract_id=$2', [req.params.trancheId, req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// ── MATERIAL LINES (H2) — was client-side only, never persisted ──────────────
+router.get('/:id/material-lines', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT ml.*, cm.name as commodity_name, cp.name as counterparty_name
+      FROM contract_material_lines ml
+      LEFT JOIN commodities cm ON cm.code = ml.commodity_code
+      LEFT JOIN counterparties cp ON cp.id = ml.counterparty_id
+      WHERE ml.contract_id=$1 ORDER BY ml.line_no
+    `, [req.params.id]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/:id/material-lines', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { commodity_code, grade, hs_code, origin, qty_gross, tolerance_pct, uom,
+      unit_price, price_basis, counterparty_id, incoterms } = req.body;
+    if (!qty_gross) return res.status(400).json({ error: 'qty_gross is required' });
+
+    const cntRes = await query('SELECT COUNT(*) FROM contract_material_lines WHERE contract_id=$1', [id]);
+    const lineNo = parseInt(cntRes.rows[0].count) + 1;
+    const provValue = (unit_price && qty_gross) ? (parseFloat(unit_price) * parseFloat(qty_gross)) : null;
+
+    const result = await query(`
+      INSERT INTO contract_material_lines
+        (contract_id, line_no, commodity_code, grade, hs_code, origin, qty_gross,
+         tolerance_pct, uom, unit_price, price_basis, provisional_value, counterparty_id, incoterms)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      RETURNING *
+    `, [id, lineNo, commodity_code || null, grade || null, hs_code || null, origin || null,
+        qty_gross, tolerance_pct || null, uom || 'MT', unit_price || null, price_basis || null,
+        provValue, counterparty_id || null, incoterms || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.patch('/:id/material-lines/:lineId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['commodity_code', 'grade', 'hs_code', 'origin', 'qty_gross',
+      'tolerance_pct', 'uom', 'unit_price', 'price_basis', 'counterparty_id', 'incoterms'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+
+    // Recompute provisional value if either price or qty changed
+    if ('unit_price' in fields || 'qty_gross' in fields) {
+      const currentRes = await query('SELECT unit_price, qty_gross FROM contract_material_lines WHERE id=$1', [req.params.lineId]);
+      const current = currentRes.rows[0] || {};
+      const price = 'unit_price' in fields ? fields.unit_price : current.unit_price;
+      const qty = 'qty_gross' in fields ? fields.qty_gross : current.qty_gross;
+      fields.provisional_value = (price && qty) ? (parseFloat(price) * parseFloat(qty)) : null;
+    }
+
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 3); }).join(',');
+    const result = await query(`UPDATE contract_material_lines SET ${sets} WHERE id=$1 AND contract_id=$2 RETURNING *`,
+      [req.params.lineId, req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.delete('/:id/material-lines/:lineId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query('DELETE FROM contract_material_lines WHERE id=$1 AND contract_id=$2', [req.params.lineId, req.params.id]);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });

@@ -177,11 +177,39 @@ async function setupDatabase() {
   // A3 — link Charge Items to the new Event Date Master: each charge type's accrual
   // trigger and reversal event, per the Charge Items Accrual sheet (e.g. Freight accrues
   // on BL Date, reverses on GRN Date; Agent Commission accrues on Contract Date).
-  await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_trigger_event VARCHAR(20)`);
-  await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_reversal_event VARCHAR(20)`);
-  await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_trigger_event VARCHAR(20)`);
-  await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_reversal_event VARCHAR(20)`);
+  // Wrapped in try/catch: contract_charge_lines isn't created until later in this file,
+  // so on a genuinely fresh database this ALTER would throw before the table exists.
+  // This only ran safely in practice because the table already existed from an earlier
+  // session on the live database — fixing properly so a clean install doesn't break.
+  try {
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_trigger_event VARCHAR(20)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_reversal_event VARCHAR(20)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS qty_or_days DECIMAL(14,3)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS actual_amount DECIMAL(15,2)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS variance DECIMAL(15,2)`);
+  } catch(e) { /* table created later in this run — main schema block below covers it */ }
+  try {
+    await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_trigger_event VARCHAR(20)`);
+    await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_reversal_event VARCHAR(20)`);
+  } catch(e) { /* table created later in this run — main schema block below covers it */ }
   console.log('✓ charge items linked to event dates');
+
+  // H2 — material lines table, safe to create here regardless of ordering since it's a
+  // brand new table (CREATE TABLE IF NOT EXISTS has no 'table must already exist' issue
+  // the way the ALTER TABLE statements above did).
+  await query(`
+    CREATE TABLE IF NOT EXISTS contract_material_lines (
+      id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      line_no INT NOT NULL, commodity_code VARCHAR(20) REFERENCES commodities(code),
+      grade VARCHAR(100), hs_code VARCHAR(20), origin VARCHAR(60),
+      qty_gross DECIMAL(14,3) NOT NULL, tolerance_pct DECIMAL(6,3), uom VARCHAR(10) DEFAULT 'MT',
+      unit_price DECIMAL(14,4), price_basis VARCHAR(60), provisional_value DECIMAL(16,2),
+      counterparty_id INT REFERENCES counterparties(id), incoterms VARCHAR(10),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_material_lines_contract ON contract_material_lines(contract_id);
+  `);
+  console.log('✓ contract_material_lines (migration)');
 
   await query(`
     CREATE TABLE IF NOT EXISTS payment_terms (
@@ -635,6 +663,9 @@ async function setupDatabase() {
     await query(`CREATE INDEX IF NOT EXISTS idx_pt_tranches_contract ON payment_term_tranches(contract_id)`);
     await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_trigger_event VARCHAR(20)`);
     await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_reversal_event VARCHAR(20)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS qty_or_days DECIMAL(14,3)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS actual_amount DECIMAL(15,2)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS variance DECIMAL(15,2)`);
     await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_trigger_event VARCHAR(20)`);
     await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_reversal_event VARCHAR(20)`);
     await query(`CREATE TABLE IF NOT EXISTS contract_charge_lines (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, charge_code VARCHAR(30) REFERENCES adjustment_codes(code), description TEXT, calc_basis VARCHAR(20) NOT NULL, calc_value DECIMAL(14,4) NOT NULL, computed_amount DECIMAL(15,2), currency VARCHAR(10) DEFAULT 'USD', counterparty_id INT REFERENCES counterparties(id), accrual_status VARCHAR(20) DEFAULT 'NOT_ACCRUED', accrued_at TIMESTAMPTZ, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
@@ -1065,16 +1096,56 @@ async function setupDatabase() {
       calc_basis      VARCHAR(20) NOT NULL,  -- FIXED, PERCENTAGE, PER_MT
       calc_value      DECIMAL(14,4) NOT NULL,
       computed_amount DECIMAL(15,2),
+      qty_or_days     DECIMAL(14,3),  -- H2: Qty / days column from the spec — used by Per MT
+                                       -- and Per Day calc bases, distinct from calc_value (rate)
       currency        VARCHAR(10) DEFAULT 'USD',
       counterparty_id INT REFERENCES counterparties(id),  -- who the charge is payable to (agent, freight forwarder, insurer)
       accrual_status  VARCHAR(20) DEFAULT 'NOT_ACCRUED', -- NOT_ACCRUED, ACCRUED, POSTED
       accrued_at      TIMESTAMPTZ,
+      -- H1/H2: estimated amount lives in computed_amount above. actual_amount is filled
+      -- in once known (e.g. final invoice received); variance is computed on save and
+      -- IS the penalty/adjustment line per Prashant's instruction — 'penalty calculation
+      -- will also appear under the main vendor, whether positive or negative... there is
+      -- no other place to put the penalty'. A formula change updates the main line itself,
+      -- not a separate record.
+      actual_amount   DECIMAL(15,2),
+      variance        DECIMAL(15,2),
       notes           TEXT,
       created_at      TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_charge_lines_contract ON contract_charge_lines(contract_id);
   `);
   console.log('✓ contract_charge_lines');
+
+  // H2 — Material lines, per the Excel spec's Commodity Line section. Was genuinely
+  // client-side only before — typed lines and the Total Contract Quantity displayed
+  // correctly within a single page load, but nothing ever persisted; reopening the
+  // contract always reset the table to empty.
+  await query(`
+    CREATE TABLE IF NOT EXISTS contract_material_lines (
+      id              SERIAL PRIMARY KEY,
+      contract_id     INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      line_no         INT NOT NULL,
+      commodity_code  VARCHAR(20) REFERENCES commodities(code),
+      grade           VARCHAR(100),
+      hs_code         VARCHAR(20),
+      origin          VARCHAR(60),
+      qty_gross       DECIMAL(14,3) NOT NULL,
+      tolerance_pct   DECIMAL(6,3),
+      uom             VARCHAR(10) DEFAULT 'MT',
+      unit_price      DECIMAL(14,4),
+      price_basis     VARCHAR(60),
+      provisional_value DECIMAL(16,2),
+      counterparty_id INT REFERENCES counterparties(id),  -- H2: the main vendor for THIS
+                                                           -- commodity line — charge items
+                                                           -- payable to other parties are
+                                                           -- separate, on contract_charge_lines
+      incoterms       VARCHAR(10),
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_material_lines_contract ON contract_material_lines(contract_id);
+  `);
+  console.log('✓ contract_material_lines');
 
   // ── INVOICE ADJUSTMENT LINES ──────────────────────────────────
   await query(`
