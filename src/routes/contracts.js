@@ -408,4 +408,114 @@ router.delete('/:id/charge-lines/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// #7: persists rollover configuration to the first pricing line on this contract —
+// previously these fields existed only in the DOM with no save path at all.
+router.patch('/:id/rollover-config', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { rollover_applicable, rollover_rate_basis, rollover_rate_value } = req.body;
+    const result = await query(`
+      UPDATE contract_pricing_lines
+      SET rollover_applicable = $1, rollover_rate_basis = $2, rollover_rate_value = $3
+      WHERE contract_id = $4
+      RETURNING *
+    `, [rollover_applicable === true, rollover_rate_basis || 'PER-MT', rollover_rate_value || null, id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'No pricing line found on this contract — add one first' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// #7 (core): automatic rollover check, per the 23 June call — "in case on so and so date,
+// if my QP end date has reached and the price is not fixed, then automatically a debit
+// note should be generated." No scheduler exists in this app, so this runs on demand —
+// called when the QP & Rollover page loads, and via an explicit button — rather than as a
+// genuine background job, which would need real infrastructure this app does not have.
+// Idempotent: skips any contract that already has a rollover recorded for its current QP
+// end date, so calling this repeatedly does not create duplicate rollovers.
+router.post('/rollover-check', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const dueRes = await query(`
+      SELECT c.id as contract_id, c.contract_no, c.qty_mt, c.provisional_price,
+        pl.index_pct, pl.qp_end_date, pl.qp_start_date,
+        pl.rollover_rate_basis, pl.rollover_rate_value
+      FROM contracts c
+      JOIN contract_pricing_lines pl ON pl.contract_id = c.id
+      WHERE pl.rollover_applicable = TRUE
+        AND pl.qp_end_date IS NOT NULL
+        AND pl.qp_end_date < $1
+        AND c.status NOT IN ('CANCELLED', 'CLOSED')
+    `, [today]);
+
+    const created = [];
+    const skipped = [];
+
+    for (const row of dueRes.rows) {
+      // Idempotency: has a rollover already been recorded for this exact QP end date?
+      const existingRes = await query(
+        'SELECT id FROM rollover_events WHERE contract_id=$1 AND period_to=$2',
+        [row.contract_id, row.qp_end_date]
+      );
+      if (existingRes.rows.length) { skipped.push({ contract_no: row.contract_no, reason: 'already rolled over for this period' }); continue; }
+
+      // Real unfixed quantity, same calculation as /unfixed-qty
+      const qtyMt = parseFloat(row.qty_mt) || 0;
+      const indexPct = parseFloat(row.index_pct) || 100;
+      const payableQty = qtyMt * (indexPct / 100);
+      const fixRes = await query('SELECT COALESCE(SUM(fixed_qty_mt),0) as priced_qty FROM fixation_lots WHERE contract_id=$1', [row.contract_id]);
+      const pricedQty = parseFloat(fixRes.rows[0].priced_qty) || 0;
+      const unfixedQty = Math.max(0, payableQty - pricedQty);
+
+      if (unfixedQty <= 0) { skipped.push({ contract_no: row.contract_no, reason: 'fully priced, no rollover needed' }); continue; }
+      if (!row.rollover_rate_value) { skipped.push({ contract_no: row.contract_no, reason: 'no rollover rate configured — cannot compute amount automatically' }); continue; }
+
+      const rateBasis = row.rollover_rate_basis || 'PER-MT';
+      const rateValue = parseFloat(row.rollover_rate_value);
+      let amount;
+      if (rateBasis === 'FIXED-TOTAL') amount = rateValue;
+      else if (rateBasis === 'PERCENTAGE') amount = (parseFloat(row.provisional_price) || 0) * unfixedQty * (rateValue / 100);
+      else amount = rateValue * unfixedQty; // PER-MT
+
+      // New QP simply continues from the day after the missed window's end date — same
+      // one-month convention as the manual rollover flow, since no explicit new end date
+      // can be known automatically; the trader can adjust afterward if needed.
+      const newStart = new Date(row.qp_end_date);
+      newStart.setDate(newStart.getDate() + 1);
+      const newEnd = new Date(newStart);
+      newEnd.setMonth(newEnd.getMonth() + 1);
+      newEnd.setDate(newEnd.getDate() - 1);
+
+      const cntRes = await query('SELECT COUNT(*) FROM rollover_events WHERE contract_id=$1', [row.contract_id]);
+      const rolloverNo = parseInt(cntRes.rows[0].count) + 1;
+      const yr = new Date().getFullYear();
+      const dnCntRes = await query(`SELECT COUNT(*) FROM rollover_events WHERE debit_note_no LIKE 'DN-%'`);
+      const debitNoteNo = 'DN-' + yr + '-' + String(parseInt(dnCntRes.rows[0].count) + 1).padStart(4, '0');
+
+      const insertRes = await query(`
+        INSERT INTO rollover_events
+          (contract_id, rollover_no, period_from, period_to, unfixed_qty, rate_basis,
+           rate_value, amount_usd, new_qp_start_date, new_qp_end_date, debit_note_no, status)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'PENDING')
+        RETURNING *
+      `, [row.contract_id, rolloverNo, row.qp_start_date, row.qp_end_date, unfixedQty,
+          rateBasis, rateValue, amount, newStart.toISOString().split('T')[0],
+          newEnd.toISOString().split('T')[0], debitNoteNo]);
+
+      await query('UPDATE contract_pricing_lines SET qp_start_date=$1, qp_end_date=$2 WHERE contract_id=$3',
+        [newStart.toISOString().split('T')[0], newEnd.toISOString().split('T')[0], row.contract_id]);
+
+      await logAudit('contract', row.contract_id, row.contract_no, 'AUTO_ROLLOVER', null, null,
+        'Automatic rollover #' + rolloverNo + ' — QP ended ' + row.qp_end_date + ' with ' + unfixedQty +
+        ' MT unfixed — ' + amount.toFixed(2) + ' USD charged, debit note ' + debitNoteNo + ' generated automatically');
+
+      created.push(insertRes.rows[0]);
+    }
+
+    res.json({ success: true, created, skipped, checked_at: today });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports = router;

@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.29</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.30</div>
   </div>
   <nav class="sb-nav">
 
@@ -1503,7 +1503,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div id="pc-rollover" class="ftc hidden">
           <div class="ban bw mb12"><span>⚠</span>Rollover applies when counterparty misses fixing window. Each missed period = one append-only row. Rate basis: PER-MT, FIXED-TOTAL (÷ contract qty), or PERCENTAGE (× provisional price). All resolve to per-MT for accounting.</div>
           <div class="fg mb12">
-            <div class="f"><div class="fl">Rollover Applicable</div><select class="fs"><option>YES</option><option>NO</option></select></div>
+            <div class="f"><div class="fl">Rollover Applicable</div><select class="fs" id="pcd-rollover-applicable"><option value="true">YES</option><option value="false">NO</option></select></div>
             <div class="f"><div class="fl">Fixing Trigger Date (QP End)</div><input type="date" class="fi" id="pcd-rollover-start" readonly></div>
             <div class="f"><div class="fl">Fixing Frequency</div><select class="fs"><option>MONTHLY</option><option>WEEKLY</option><option>CUSTOM</option></select></div>
             <div class="f"><div class="fl">Fixing Rule</div><select class="fs"><option>CALENDAR-MONTH</option><option>BL-MONTH</option><option>CUSTOM-PERIOD</option></select></div>
@@ -1513,6 +1513,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f hidden" id="rollover-pct-field"><div class="fl">Rate (%)</div><input type="number" class="fi" id="rollover-pct-val" placeholder="e.g. 0.5" oninput="calcRolloverDerived()"></div>
             <div class="f"><div class="fl">Derived Per-MT Rate</div><div class="fc ta fw7" id="rollover-derived-rate">USD 2.00 / MT / period</div></div>
           </div>
+          <div class="lar"><button class="btn bp bsm" onclick="saveRolloverConfig()">Save Rollover Configuration</button></div>
           <div class="divl">Rollover Events — Append-Only Log</div>
           <table class="lt"><thead><tr><th>Period From</th><th>Period To</th><th>Unfixed Qty</th><th>Rate (USD/MT)</th><th>Amount (USD)</th><th>Status</th><th></th></tr></thead>
           <tbody id="rollover-tbody">
@@ -1838,6 +1839,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="export-btn" onclick="exportToExcel('qp-daily-table','QP_Daily_Prices')">⬇ Export</button>
           <button class="btn bg" onclick="renderQPWindow()">Refresh</button>
           <button class="btn bg" onclick="openFixationStatusPopup()">Fixation Status</button>
+          <button class="btn bg" onclick="runAutomaticRolloverCheck()">Check for Overdue Rollovers</button>
           <button class="btn bp" onclick="fixToday()">★ Fix Today</button>
         </div></div>
       </div>
@@ -6370,7 +6372,7 @@ function afterNav(pageId) {
     else if (pageId === 'logistics') loadLogisticsList();
     else if (pageId === 'provisional-receipt') loadProvReceiptList();
     else if (pageId === 'shipment') loadQCResultsList();
-    else if (pageId === 'qpwindow') { loadQPDealOptions().then(function(){ renderQPWindow(); }); }
+    else if (pageId === 'qpwindow') { loadQPDealOptions().then(function(){ renderQPWindow(); }); runAutomaticRolloverCheck(true); }
     else if (pageId === 'exposure') { renderExposureTable(); renderPortfolioRollup(); }
     else if (pageId === 'rfq') { loadRFQList(); loadCommodityDropdowns(); }
     else if (pageId === 'allocation') loadAllocationPage();
@@ -7305,6 +7307,7 @@ async function loadContractTabs(contractId, prefix) {
       // before since nothing ever persisted.
       if (prefix === 'pc') {
         await loadRolloverEvents(contractId);
+        await loadRolloverConfig(contractId); // #7: rollover applicable/rate config, same fix
       }
 
       // Group A: load real saved payment lines — Add Payment Line was a pure stub before,
@@ -10620,6 +10623,107 @@ async function saveDealBudgeting() {
     toast('Saved', 'Deal budgeting parameters saved', 'success');
     await loadBudgetActual(deal.id); // refresh the existing Budget vs Actual panel with the new numbers
   } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// #7 (final piece): the Rollover configuration panel had two onclick/oninput handlers
+// referencing functions that never existed anywhere (toggleRolloverRateBasis,
+// calcRolloverDerived), and nothing was ever saved to the database — confirmed while
+// building the automatic rollover/debit-note trigger Prashant asked for on the 23 June
+// call, since that trigger needs a real persisted rate to compute an amount from.
+function toggleRolloverRateBasis() {
+  const basis = document.getElementById('rollover-rate-basis')?.value;
+  const rateField = document.getElementById('rollover-rate-field');
+  const fixedField = document.getElementById('rollover-fixed-field');
+  const pctField = document.getElementById('rollover-pct-field');
+  if (rateField) rateField.classList.toggle('hidden', basis !== 'PER-MT');
+  if (fixedField) fixedField.classList.toggle('hidden', basis !== 'FIXED-TOTAL');
+  if (pctField) pctField.classList.toggle('hidden', basis !== 'PERCENTAGE');
+  calcRolloverDerived();
+}
+
+function calcRolloverDerived() {
+  const c = window._currentContract;
+  const basis = document.getElementById('rollover-rate-basis')?.value || 'PER-MT';
+  const qty = parseFloat(c?.qty_mt) || 0;
+  const provPrice = parseFloat(c?.provisional_price) || 0;
+  let derived = null;
+
+  if (basis === 'PER-MT') {
+    derived = parseFloat(document.getElementById('rollover-rate-val')?.value) || 0;
+  } else if (basis === 'FIXED-TOTAL') {
+    const total = parseFloat(document.getElementById('rollover-fixed-val')?.value) || 0;
+    derived = qty > 0 ? total / qty : 0;
+  } else if (basis === 'PERCENTAGE') {
+    const pct = parseFloat(document.getElementById('rollover-pct-val')?.value) || 0;
+    derived = provPrice * (pct / 100);
+  }
+
+  const display = document.getElementById('rollover-derived-rate');
+  if (display) display.textContent = 'USD ' + (derived || 0).toFixed(2) + ' / MT / period';
+  return derived;
+}
+
+async function saveRolloverConfig() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  const applicable = document.getElementById('pcd-rollover-applicable')?.value === 'true';
+  const basis = document.getElementById('rollover-rate-basis')?.value || 'PER-MT';
+  const derived = calcRolloverDerived();
+
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/rollover-config', {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        rollover_applicable: applicable,
+        rollover_rate_basis: basis,
+        rollover_rate_value: derived
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Saved', 'Rollover configuration saved' + (applicable ? ' — automatic checks now apply to this contract' : ''), 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function loadRolloverConfig(contractId) {
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/pricing-lines');
+    const data = await res.json();
+    const lines = data.data || [];
+    if (!lines.length) return;
+    const pl = lines[0];
+    const applSel = document.getElementById('pcd-rollover-applicable');
+    if (applSel) applSel.value = pl.rollover_applicable ? 'true' : 'false';
+    const basisSel = document.getElementById('rollover-rate-basis');
+    if (basisSel && pl.rollover_rate_basis) basisSel.value = pl.rollover_rate_basis;
+    const rateVal = document.getElementById('rollover-rate-val');
+    if (rateVal && pl.rollover_rate_value != null && (pl.rollover_rate_basis || 'PER-MT') === 'PER-MT') {
+      rateVal.value = pl.rollover_rate_value;
+    }
+    toggleRolloverRateBasis();
+  } catch(e) { console.warn('loadRolloverConfig:', e); }
+}
+
+// #7 (final): manual trigger button + silent on-page-load check, since this app has no
+// real scheduler to run a true background job. Reports what it actually did rather than
+// silently doing nothing — if nothing was due, says so when called from the button; stays
+// quiet when called automatically on page load so it doesn't toast on every navigation.
+async function runAutomaticRolloverCheck(silent) {
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/rollover-check', { method: 'POST' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const created = data.created || [];
+    const skipped = data.skipped || [];
+    if (created.length) {
+      toast('Automatic Rollover', created.length + ' contract(s) rolled over automatically — debit note(s) generated', 'warning');
+      await renderQPWindow();
+    } else if (!silent) {
+      toast('Checked', 'No contracts are overdue for rollover right now' + (skipped.length ? ' (' + skipped.length + ' checked, none needed it)' : ''), 'info');
+    }
+  } catch(e) {
+    if (!silent) toast('Error', e.message, 'error');
+  }
 }
 
 function jumpToLinkedDeal() {

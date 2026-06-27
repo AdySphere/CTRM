@@ -440,6 +440,9 @@ async function setupDatabase() {
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS shipment_month DATE`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS qp_offset_months INT DEFAULT 0`);
+    await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS rollover_applicable BOOLEAN DEFAULT FALSE`);
+    await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS rollover_rate_basis VARCHAR(20) DEFAULT 'PER-MT'`);
+    await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS rollover_rate_value DECIMAL(14,4)`);
     // Group A fix: benchmark_code was wrongly pointed at commodities(code) instead of
     // pricing_benchmarks(code) — every Add Pricing Line save with a real benchmark
     // (e.g. LME-CU-CASH) was silently failing a foreign key violation. Drop and recreate
@@ -508,6 +511,11 @@ async function setupDatabase() {
       qp_end_date         DATE,
       tc_usd_per_mt       DECIMAL(10,4),           -- treatment charge
       rc_pct              DECIMAL(6,3),            -- refining charge
+      -- #7: rollover configuration — was page-level UI only, never saved anywhere, so
+      -- there was nothing for an automatic check to read. Now persisted per pricing line.
+      rollover_applicable BOOLEAN DEFAULT FALSE,
+      rollover_rate_basis VARCHAR(20) DEFAULT 'PER-MT',  -- PER-MT, FIXED-TOTAL, PERCENTAGE
+      rollover_rate_value DECIMAL(14,4),
       created_at          TIMESTAMPTZ DEFAULT NOW()
     );
   `);
