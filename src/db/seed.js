@@ -353,6 +353,18 @@ async function seed() {
   `);
   console.log('✓ adjustment_codes seeded');
 
+  // GL account mapping for existing codes + new insurance code (Group D — Charge Items).
+  await query(`
+    INSERT INTO adjustment_codes (code, description, category, calc_type, default_direction)
+    VALUES ('INS-CARGO', 'Cargo Insurance', 'INSURANCE', 'PCT_OF_VALUE', 'DEDUCTION')
+    ON CONFLICT (code) DO NOTHING;
+  `);
+  await query(`UPDATE adjustment_codes SET gl_account = '6210-COMM-AGENT' WHERE code='COMM-AGENT' AND gl_account IS NULL`);
+  await query(`UPDATE adjustment_codes SET gl_account = '6211-COMM-BROKER' WHERE code='COMM-BROKER' AND gl_account IS NULL`);
+  await query(`UPDATE adjustment_codes SET gl_account = '6220-FREIGHT' WHERE code='FRT-ADJ' AND gl_account IS NULL`);
+  await query(`UPDATE adjustment_codes SET gl_account = '6230-INSURANCE' WHERE code='INS-CARGO' AND gl_account IS NULL`);
+  console.log('✓ charge item GL accounts seeded');
+
   // ── PRICING BENCHMARKS MASTER — starter set, fully editable afterward ──
   await query(`
     INSERT INTO pricing_benchmarks (code, description, commodity_code, exchange_code, reporting_agency, instrument_code, default_index_pct, default_payable_pct)

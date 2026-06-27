@@ -1481,12 +1481,24 @@ adjCodesRouter.get('/', async (req, res) => {
 adjCodesRouter.post('/', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const { code, description, category, calc_type, default_direction } = req.body;
+    const { code, description, category, calc_type, default_direction, gl_account } = req.body;
     if (!code || !description) return res.status(400).json({ error: 'code and description are required' });
     const result = await query(`
-      INSERT INTO adjustment_codes (code, description, category, calc_type, default_direction)
-      VALUES ($1,$2,$3,$4,$5) RETURNING *
-    `, [code, description, category || 'OTHER', calc_type || 'PCT_OF_VALUE', default_direction || 'DEDUCTION']);
+      INSERT INTO adjustment_codes (code, description, category, calc_type, default_direction, gl_account)
+      VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
+    `, [code, description, category || 'OTHER', calc_type || 'PCT_OF_VALUE', default_direction || 'DEDUCTION', gl_account || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+adjCodesRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['description', 'category', 'calc_type', 'default_direction', 'gl_account', 'active'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE adjustment_codes SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
     res.json({ success: true, data: result.rows[0] });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });

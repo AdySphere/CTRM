@@ -432,6 +432,9 @@ async function setupDatabase() {
     await query(`ALTER TABLE payment_schedule_lines DROP CONSTRAINT IF EXISTS payment_schedule_lines_trigger_event_fkey`);
     await query(`ALTER TABLE payment_schedule_lines ALTER COLUMN trigger_event DROP NOT NULL`);
     await query(`ALTER TABLE payment_schedule_lines ADD CONSTRAINT payment_schedule_lines_trigger_event_fkey FOREIGN KEY (trigger_event) REFERENCES date_event_master(code)`);
+    await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS gl_account VARCHAR(20)`);
+    await query(`CREATE TABLE IF NOT EXISTS contract_charge_lines (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, charge_code VARCHAR(30) REFERENCES adjustment_codes(code), description TEXT, calc_basis VARCHAR(20) NOT NULL, calc_value DECIMAL(14,4) NOT NULL, computed_amount DECIMAL(15,2), currency VARCHAR(10) DEFAULT 'USD', counterparty_id INT REFERENCES counterparties(id), accrual_status VARCHAR(20) DEFAULT 'NOT_ACCRUED', accrued_at TIMESTAMPTZ, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_charge_lines_contract ON contract_charge_lines(contract_id)`);
     await query(`CREATE TABLE IF NOT EXISTS rollover_events (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, rollover_no INT NOT NULL, period_from DATE NOT NULL, period_to DATE NOT NULL, unfixed_qty DECIMAL(12,3) NOT NULL, rate_basis VARCHAR(20) NOT NULL, rate_value DECIMAL(14,4) NOT NULL, derived_rate_per_mt DECIMAL(14,4), amount_usd DECIMAL(15,2) NOT NULL, new_qp_start_date DATE, new_qp_end_date DATE, debit_note_no VARCHAR(30), status VARCHAR(20) DEFAULT 'PENDING', created_by VARCHAR(50), created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE INDEX IF NOT EXISTS idx_rollover_contract ON rollover_events(contract_id)`);
     await query(`CREATE TABLE IF NOT EXISTS pricing_benchmarks (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, commodity_code VARCHAR(20) REFERENCES commodities(code), exchange_code VARCHAR(20) NOT NULL, reporting_agency VARCHAR(30), instrument_code VARCHAR(50), default_index_pct DECIMAL(6,3) DEFAULT 100, default_payable_pct DECIMAL(6,3) DEFAULT 100, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
@@ -836,6 +839,33 @@ async function setupDatabase() {
     );
   `);
   console.log('✓ adjustment_codes');
+
+  // GL account field for ERP General Ledger mapping (Group D — Charge Items).
+  await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS gl_account VARCHAR(20)`);
+
+  // ── CONTRACT CHARGE LINES (Group D) ── manual or linked charges per contract:
+  // commission, freight, insurance etc. — fixed amount, percentage, or per-MT, feeding
+  // an accrual module. Distinct from invoice_adjustment_lines, which only ever applied
+  // reactively at invoice time — this is a standing charge attached to the contract itself.
+  await query(`
+    CREATE TABLE IF NOT EXISTS contract_charge_lines (
+      id              SERIAL PRIMARY KEY,
+      contract_id     INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      charge_code     VARCHAR(30) REFERENCES adjustment_codes(code),
+      description     TEXT,
+      calc_basis      VARCHAR(20) NOT NULL,  -- FIXED, PERCENTAGE, PER_MT
+      calc_value      DECIMAL(14,4) NOT NULL,
+      computed_amount DECIMAL(15,2),
+      currency        VARCHAR(10) DEFAULT 'USD',
+      counterparty_id INT REFERENCES counterparties(id),  -- who the charge is payable to (agent, freight forwarder, insurer)
+      accrual_status  VARCHAR(20) DEFAULT 'NOT_ACCRUED', -- NOT_ACCRUED, ACCRUED, POSTED
+      accrued_at      TIMESTAMPTZ,
+      notes           TEXT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_charge_lines_contract ON contract_charge_lines(contract_id);
+  `);
+  console.log('✓ contract_charge_lines');
 
   // ── INVOICE ADJUSTMENT LINES ──────────────────────────────────
   await query(`

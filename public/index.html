@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.24</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.25</div>
   </div>
   <nav class="sb-nav">
 
@@ -1211,6 +1211,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft pct" data-tab="pc-material">Material & Qty</div>
           <div class="ft pct" data-tab="pc-price">Pricing & QP</div>
           <div class="ft pct" data-tab="pc-pay">Payment Terms</div>
+          <div class="ft pct" data-tab="pc-charges">Charge Items</div>
           <div class="ft pct" data-tab="pc-qc">QC & Assay Terms</div>
           <div class="ft pct" data-tab="pc-ship">Shipment & Logistics</div>
           <div class="ft pct" data-tab="pc-legal">Legal & Other</div>
@@ -1390,6 +1391,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addPCPayLine()">+ Add Payment Line</button></div>
         </div>
+        <div id="pc-charges" class="ftc hidden">
+          <div class="ban bi mb12"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Fixed amount, percentage, or per-MT basis. Each charge type carries its own ERP General Ledger account for accrual posting.</div>
+          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Basis</th><th>Value</th><th>Computed Amount</th><th>Payable To</th><th>GL Account</th><th>Accrual Status</th><th></th></tr></thead>
+          <tbody id="pc-charges-tbody">
+            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
+          </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="addPCChargeLine()">+ Add Charge Item</button></div>
+        </div>
         <div id="pc-qc" class="ftc hidden">
           <div class="fg mb12">
             <div class="f"><div class="fl">Whose Weights Govern</div><select class="fs"><option>BUYER'S WEIGHTS</option><option>SELLER'S WEIGHTS</option><option>JOINT SURVEY</option><option>DRAFT SURVEY</option></select></div>
@@ -1563,6 +1572,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft sct" data-tab="sc-material">Material & Qty</div>
           <div class="ft sct" data-tab="sc-price">Pricing & QP</div>
           <div class="ft sct" data-tab="sc-pay">Payment Terms</div>
+          <div class="ft sct" data-tab="sc-charges">Charge Items</div>
           <div class="ft sct" data-tab="sc-qc">QC & Assay Terms</div>
           <div class="ft sct" data-tab="sc-ship">Shipment & Logistics</div>
           <div class="ft sct" data-tab="sc-legal">Legal & Other</div>
@@ -1696,6 +1706,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment schedule…</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addSCPayLine()">+ Add Payment Line</button></div>
+        </div>
+        <div id="sc-charges" class="ftc hidden">
+          <div class="ban bi mb12"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Fixed amount, percentage, or per-MT basis. Each charge type carries its own ERP General Ledger account for accrual posting.</div>
+          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Basis</th><th>Value</th><th>Computed Amount</th><th>Payable To</th><th>GL Account</th><th>Accrual Status</th><th></th></tr></thead>
+          <tbody id="sc-charges-tbody">
+            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
+          </tbody></table>
+          <div class="lar"><button class="btn bg bsm" onclick="addSCChargeLine()">+ Add Charge Item</button></div>
         </div>
         <div id="sc-qc" class="ftc hidden"><div class="fg mb12">
           <div class="f"><div class="fl">Whose Weights Govern</div><select class="fs"><option>BUYER'S WEIGHTS</option><option>SELLER'S WEIGHTS</option><option>JOINT SURVEY</option></select></div>
@@ -7265,6 +7283,9 @@ async function loadContractTabs(contractId, prefix) {
       // Group A: load real saved QC specs — same root cause, was client-side only before.
       await loadQCSpecs(contractId, prefix + '-qc-tbody');
 
+      // Group D: load real saved charge items.
+      await loadChargeLines(contractId, prefix);
+
       // Fix 1: sync the Calculation Method panel with the contract's real saved pricing line —
       // was previously fully disconnected static UI with a dead onchange handler.
       if (lines.length) {
@@ -10089,6 +10110,171 @@ async function saveContractGeneral(prefix) {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
+// Group D: Charge Items — manual or linked to a charge type (commission/freight/insurance),
+// fixed amount / percentage / per-MT basis, feeding accrual with an ERP GL account.
+window._chargePrefix = null;
+function addPCChargeLine() { window._chargePrefix = 'pc'; openNewChargeLineModal(); }
+function addSCChargeLine() { window._chargePrefix = 'sc'; openNewChargeLineModal(); }
+
+async function openNewChargeLineModal() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  ['nch-desc','nch-value','nch-computed','nch-notes'].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('nch-gl').textContent = '—';
+
+  try {
+    const res = await fetch(API_BASE + '/api/adjustment-codes');
+    const data = await res.json();
+    const codes = data.data || [];
+    window._chargeCodes = codes;
+    const sel = document.getElementById('nch-code');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Manual entry (no linked type) —</option>' + codes.map(function(ac){
+        return '<option value="'+ac.code+'">'+ac.description+' ('+ac.category+')</option>';
+      }).join('');
+    }
+  } catch(e) { toast('Error', 'Could not load charge types: ' + e.message, 'error'); }
+
+  try {
+    const cpRes = await fetch(API_BASE + '/api/master/counterparties');
+    const cpData = await cpRes.json();
+    const cps = cpData.data || [];
+    const cpSel = document.getElementById('nch-counterparty');
+    if (cpSel) {
+      cpSel.innerHTML = '<option value="">— Select —</option>' + cps.map(function(cp){
+        return '<option value="'+cp.id+'">'+cp.name+'</option>';
+      }).join('');
+    }
+  } catch(e) { /* non-fatal */ }
+
+  openModal('modal-new-charge-line');
+}
+
+function onNchCodeChange() {
+  const sel = document.getElementById('nch-code');
+  const ac = (window._chargeCodes||[]).find(function(x){ return x.code === sel.value; });
+  const glEl = document.getElementById('nch-gl');
+  if (glEl) glEl.textContent = ac?.gl_account || '— Not mapped —';
+  const descEl = document.getElementById('nch-desc');
+  if (descEl && !descEl.value && ac) descEl.value = ac.description;
+  // Suggest a sensible basis from the charge type's own calc_type, if not already chosen
+  const basisEl = document.getElementById('nch-basis');
+  if (basisEl && ac) {
+    if (ac.calc_type === 'PCT_OF_VALUE') basisEl.value = 'PERCENTAGE';
+    else if (ac.calc_type === 'PER_UNIT') basisEl.value = 'PER_MT';
+    else if (ac.calc_type === 'FLAT') basisEl.value = 'FIXED';
+  }
+  calcChargeAmount();
+}
+
+function calcChargeAmount() {
+  const c = window._currentContract;
+  const basis = document.getElementById('nch-basis')?.value;
+  const value = parseFloat(document.getElementById('nch-value')?.value) || 0;
+  const computedEl = document.getElementById('nch-computed');
+  if (!computedEl || !c) return;
+  let amount = null;
+  if (basis === 'FIXED') {
+    amount = value;
+  } else if (basis === 'PER_MT') {
+    amount = value * (parseFloat(c.qty_mt) || 0);
+  } else if (basis === 'PERCENTAGE') {
+    // Percentage of contract value — uses qty x pricing formula if available, otherwise
+    // leaves blank for the trader to confirm since a live price isn't always known yet.
+    amount = null;
+  }
+  if (amount != null) computedEl.value = amount.toFixed(2);
+}
+
+async function submitNewChargeLine() {
+  const c = window._currentContract;
+  const prefix = window._chargePrefix;
+  if (!c) return;
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const basis = g('nch-basis');
+  const value = g('nch-value');
+  if (!basis) { toast('Required', 'Please select a basis', 'warning'); return; }
+  if (!value) { toast('Required', 'Please enter the value', 'warning'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/charge-lines', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        charge_code: g('nch-code') || null,
+        description: g('nch-desc'),
+        calc_basis: basis, calc_value: parseFloat(value),
+        computed_amount: g('nch-computed') ? parseFloat(g('nch-computed')) : null,
+        counterparty_id: g('nch-counterparty') ? parseInt(g('nch-counterparty')) : null,
+        notes: g('nch-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Charge Item Added', (data.data.description || data.data.charge_code || 'Charge') + ' added', 'success');
+    closeModal('modal-new-charge-line');
+    await loadChargeLines(c.id, prefix);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function loadChargeLines(contractId, prefix) {
+  const tbody = document.getElementById(prefix + '-charges-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines');
+    const data = await res.json();
+    const lines = data.data || [];
+    if (!lines.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No charge items yet — click + Add Charge Item</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lines.map(function(cl){
+      const stCls = cl.accrual_status === 'POSTED' ? 'bd-confirmed' : cl.accrual_status === 'ACCRUED' ? 'bd-act' : 'bd-draft';
+      const basisLabel = cl.calc_basis === 'FIXED' ? 'Fixed' : cl.calc_basis === 'PER_MT' ? 'Per MT' : 'Percentage';
+      return '<tr>'
+        + '<td class="f11 fw6">'+(cl.charge_description||cl.charge_code||'Manual')+'</td>'
+        + '<td class="f10">'+(cl.description||'—')+'</td>'
+        + '<td class="f10">'+basisLabel+'</td>'
+        + '<td class="mono f10">'+cl.calc_value+'</td>'
+        + '<td class="mono f10 fw6">'+(cl.computed_amount!=null?parseFloat(cl.computed_amount).toLocaleString():'—')+'</td>'
+        + '<td class="f10">'+(cl.counterparty_name||'—')+'</td>'
+        + '<td class="mono f10">'+(cl.gl_account||'—')+'</td>'
+        + '<td>'
+          + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeAccrual(this.dataset.chargeId, this.value, this.dataset.prefix)">'
+            + '<option value="NOT_ACCRUED"'+(cl.accrual_status==='NOT_ACCRUED'?' selected':'')+'>Not Accrued</option>'
+            + '<option value="ACCRUED"'+(cl.accrual_status==='ACCRUED'?' selected':'')+'>Accrued</option>'
+            + '<option value="POSTED"'+(cl.accrual_status==='POSTED'?' selected':'')+'>Posted</option>'
+          + '</select>'
+        + '</td>'
+        + '<td><button class="btn bxs bd" onclick="deleteChargeLine('+cl.id+', this, '+contractId+')">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) { console.warn('loadChargeLines:', e); }
+}
+
+async function updateChargeAccrual(lineId, status, prefix) {
+  const c = window._currentContract;
+  if (!c) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/charge-lines/' + lineId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ accrual_status: status })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Updated', 'Accrual status set to ' + status, 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function deleteChargeLine(lineId, btn, contractId) {
+  try {
+    await fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines/' + lineId, { method: 'DELETE' });
+    btn.closest('tr').remove();
+    toast('Removed', 'Charge item removed', 'info');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -10368,6 +10554,43 @@ async function submitChangeDeal() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-payment-line')">Cancel</button>
       <button class="btn bp" onclick="submitNewPaymentLine()">Add Payment Line</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: New Charge Item -->
+<div class="mo" id="modal-new-charge-line">
+  <div class="md" style="max-width:560px">
+    <div class="mh">
+      <div class="mt">New Charge Item</div>
+      <button class="mc" onclick="closeModal('modal-new-charge-line')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="f"><div class="fl">Charge Type</div>
+        <select class="fs" id="nch-code" onchange="onNchCodeChange()"><option value="">— Manual entry (no linked type) —</option></select>
+      </div>
+      <div class="f"><div class="fl">Description</div><input type="text" class="fi" id="nch-desc" placeholder="e.g. Agent commission per sale agreement"></div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Basis <span class="req">*</span></div>
+          <select class="fs" id="nch-basis" onchange="calcChargeAmount()">
+            <option value="FIXED">Fixed Amount</option>
+            <option value="PERCENTAGE">Percentage</option>
+            <option value="PER_MT">Per MT</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Value <span class="req">*</span></div><input type="number" class="fi" id="nch-value" step="0.0001" oninput="calcChargeAmount()"></div>
+      </div>
+      <div class="f"><div class="fl">Computed Amount (USD)</div>
+        <input type="number" class="fi" id="nch-computed" step="0.01" placeholder="auto-calculated, editable">
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Payable To</div><select class="fs" id="nch-counterparty"><option value="">— Select —</option></select></div>
+        <div class="f"><div class="fl">GL Account</div><div class="fc mono ta2" id="nch-gl">—</div></div>
+      </div>
+      <div class="f"><div class="fl">Notes</div><input type="text" class="fi" id="nch-notes"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-charge-line')">Cancel</button>
+      <button class="btn bp" onclick="submitNewChargeLine()">Add Charge Item</button>
     </div>
   </div>
 </div>

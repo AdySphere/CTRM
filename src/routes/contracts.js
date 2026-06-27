@@ -348,4 +348,64 @@ router.get('/:id/unfixed-qty', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// ── CHARGE ITEMS (Group D) — commission, freight, insurance etc. per contract ──
+router.get('/:id/charge-lines', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT cl.*, ac.description as charge_description, ac.category as charge_category,
+        ac.gl_account, cp.name as counterparty_name
+      FROM contract_charge_lines cl
+      LEFT JOIN adjustment_codes ac ON ac.code = cl.charge_code
+      LEFT JOIN counterparties cp ON cp.id = cl.counterparty_id
+      WHERE cl.contract_id=$1 ORDER BY cl.id
+    `, [req.params.id]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/:id/charge-lines', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { charge_code, description, calc_basis, calc_value, computed_amount,
+      currency, counterparty_id, notes } = req.body;
+    if (!calc_basis || calc_value == null) {
+      return res.status(400).json({ error: 'calc_basis and calc_value are required' });
+    }
+    const result = await query(`
+      INSERT INTO contract_charge_lines
+        (contract_id, charge_code, description, calc_basis, calc_value, computed_amount,
+         currency, counterparty_id, accrual_status, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'NOT_ACCRUED',$9)
+      RETURNING *
+    `, [id, charge_code || null, description || null, calc_basis, calc_value,
+        computed_amount || null, currency || 'USD', counterparty_id || null, notes || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.patch('/:id/charge-lines/:lineId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['accrual_status', 'computed_amount', 'notes'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (fields.accrual_status === 'ACCRUED') fields.accrued_at = new Date().toISOString();
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 3); }).join(',');
+    const result = await query(`UPDATE contract_charge_lines SET ${sets} WHERE id=$1 AND contract_id=$2 RETURNING *`,
+      [req.params.lineId, req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.delete('/:id/charge-lines/:lineId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query('DELETE FROM contract_charge_lines WHERE id=$1 AND contract_id=$2', [req.params.lineId, req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports = router;
