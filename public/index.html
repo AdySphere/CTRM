@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.38</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.39</div>
   </div>
   <nav class="sb-nav">
 
@@ -1895,6 +1895,33 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
     <!-- ══ SALES ORDERS ══ -->
     <div class="page" id="page-qpwindow">
+      <!-- H3: Tab bar — Tab 1 (NEW list view) is the entry point now, per the spec.
+           Tab 2 is the existing QP detail screen, completely unchanged. -->
+      <div class="fts" style="margin-bottom:14px">
+        <div class="ft active qpwt" data-tab="qp-tab1" onclick="switchQPTab('qp-tab1')">☰ All Contracts</div>
+        <div class="ft qpwt" data-tab="qp-tab2" id="qp-tab2-label" onclick="switchQPTab('qp-tab2')">★ Fix Today</div>
+      </div>
+
+      <div id="qp-tab1" class="ftc active">
+        <div class="ph">
+          <div class="ph-l"><div class="pt">QP & Rollover — All Contracts</div><div class="ps">Every open contract at a glance · Click a row or its action button to open the existing QP screen pre-loaded</div></div>
+          <div class="ph-r"><button class="btn bg" onclick="loadQPListView()">Refresh</button></div>
+        </div>
+        <div class="fg mb14">
+          <div class="f"><div class="fl">Commodity</div><select class="fs" id="qpl-filter-commodity" onchange="loadQPListView()"><option value="">All</option></select></div>
+          <div class="f"><div class="fl">Direction</div><select class="fs" id="qpl-filter-direction" onchange="loadQPListView()"><option value="">All</option><option value="Buy">Buy</option><option value="Sell">Sell</option></select></div>
+          <div class="f"><div class="fl">State</div><select class="fs" id="qpl-filter-state" onchange="loadQPListView()"><option value="">All</option><option value="Unpriced">Unpriced</option><option value="Partial">Partial</option><option value="Pre-QP">Pre-QP</option></select></div>
+          <div class="f"><div class="fl">Rollover only</div><select class="fs" id="qpl-filter-rollover" onchange="loadQPListView()"><option value="">No</option><option value="1">Yes</option></select></div>
+          <div class="f csf"><div class="fl">Search</div><input type="text" class="fi" id="qpl-filter-search" placeholder="Contract / counterparty" oninput="loadQPListView()"></div>
+        </div>
+        <table class="lt"><thead><tr><th>#</th><th>Contract</th><th>Dir</th><th>Counterparty</th><th>Commodity</th><th>Contract Qty</th><th>Unpriced</th><th>QP Window</th><th>% Fixed</th><th>Days Left</th><th>State</th><th></th></tr></thead>
+          <tbody id="qpl-tbody">
+            <tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="qp-tab2" class="ftc hidden">
       <div class="ph">
         <div class="ph-l"><div class="pt">QP & Rollover Window</div><div class="ps">Live running average · Business day counter · Fix Today captures today's price · State updates instantly</div></div>
         <div class="ph-r"><div class="br-row g7">
@@ -1965,6 +1992,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="btn-prev" onclick="nav('sales-contracts',document.querySelector('[data-page=sales-contracts]'))">← Sales Contracts</button>
           <button class="btn-next" onclick="nav('purchase-orders',document.querySelector('[data-page=purchase-orders]'))">Purchase Orders →</button>
         </div>
+      </div>
       </div>
     </div>
 
@@ -6481,7 +6509,7 @@ function afterNav(pageId) {
     else if (pageId === 'logistics') loadLogisticsList();
     else if (pageId === 'provisional-receipt') loadProvReceiptList();
     else if (pageId === 'shipment') loadQCResultsList();
-    else if (pageId === 'qpwindow') { loadQPDealOptions().then(function(){ renderQPWindow(); }); runAutomaticRolloverCheck(true); }
+    else if (pageId === 'qpwindow') { loadQPListView(); loadQPDealOptions(); runAutomaticRolloverCheck(true); }
     else if (pageId === 'exposure') { renderExposureTable(); renderPortfolioRollup(); }
     else if (pageId === 'rfq') { loadRFQList(); loadCommodityDropdowns(); }
     else if (pageId === 'allocation') loadAllocationPage();
@@ -11131,6 +11159,141 @@ async function recalcCostSummary(contractId, prefix) {
       valueEl.title = totalQty > 0 ? 'Based on ' + totalQty.toLocaleString() + ' MT gross qty' : '';
     }
   } catch(e) { console.warn('recalcCostSummary:', e); }
+}
+
+// H3: QP List View — Tab 1 of the QP & Rollover Window, per the Veridian spec. Lists
+// every open contract grouped by urgency, with a single action button per row that
+// opens the EXISTING QP detail screen (Tab 2) pre-loaded — Tab 2 itself is unchanged.
+function switchQPTab(tab) {
+  document.querySelectorAll('.qpwt').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelector('[data-tab="'+tab+'"]')?.classList.add('active');
+  document.getElementById('qp-tab1').classList.toggle('active', tab === 'qp-tab1');
+  document.getElementById('qp-tab1').classList.toggle('hidden', tab !== 'qp-tab1');
+  document.getElementById('qp-tab2').classList.toggle('active', tab === 'qp-tab2');
+  document.getElementById('qp-tab2').classList.toggle('hidden', tab !== 'qp-tab2');
+  if (tab === 'qp-tab1') loadQPListView();
+}
+
+async function loadQPListView() {
+  const tbody = document.getElementById('qpl-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/qp-list');
+    const data = await res.json();
+    let rows = data.data || [];
+
+    // Populate commodity filter once
+    const commSel = document.getElementById('qpl-filter-commodity');
+    if (commSel && commSel.options.length <= 1) {
+      const commodities = [...new Set(rows.map(function(r){ return r.commodity; }).filter(Boolean))];
+      commSel.innerHTML = '<option value="">All</option>' + commodities.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+    }
+
+    // Apply filters
+    const fComm = document.getElementById('qpl-filter-commodity')?.value;
+    const fDir = document.getElementById('qpl-filter-direction')?.value;
+    const fState = document.getElementById('qpl-filter-state')?.value;
+    const fRollover = document.getElementById('qpl-filter-rollover')?.value;
+    const fSearch = (document.getElementById('qpl-filter-search')?.value || '').toLowerCase();
+
+    if (fComm) rows = rows.filter(function(r){ return r.commodity === fComm; });
+    if (fDir) rows = rows.filter(function(r){ return r.direction === fDir; });
+    if (fState) rows = rows.filter(function(r){ return r.state === fState; });
+    if (fRollover === '1') rows = rows.filter(function(r){ return r.group === 'ROLLOVER_REQUIRED'; });
+    if (fSearch) rows = rows.filter(function(r){
+      return (r.contract_no||'').toLowerCase().includes(fSearch) || (r.counterparty||'').toLowerCase().includes(fSearch);
+    });
+
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No contracts match these filters</td></tr>';
+      return;
+    }
+
+    const groupLabels = {
+      ROLLOVER_REQUIRED: '⚠ ROLLOVER REQUIRED — QP expired, unpriced qty remains',
+      QP_OPEN: '⏰ QP OPEN — window active, fixing in progress',
+      PRE_QP: '📅 PRE-QP — BL date not yet confirmed, QP window not yet open',
+      FULLY_PRICED: '✓ FULLY PRICED — QP closed, awaiting settlement'
+    };
+    const groupRowCls = {
+      ROLLOVER_REQUIRED: 'background:rgba(224,82,82,.08)',
+      QP_OPEN: '', PRE_QP: 'opacity:.6', FULLY_PRICED: ''
+    };
+
+    let html = '';
+    let lastGroup = null;
+    let rowNum = 0;
+    rows.forEach(function(r){
+      if (r.group !== lastGroup) {
+        html += '<tr><td colspan="12" style="padding:8px 12px;font-size:10px;font-weight:700;color:var(--text2);background:var(--surface2)">'+groupLabels[r.group]+'</td></tr>';
+        lastGroup = r.group;
+      }
+      rowNum++;
+      const pctBar = r.pct_fixed != null ? r.pct_fixed + '%' : '—';
+      let actionBtn = '';
+      if (r.group === 'ROLLOVER_REQUIRED') {
+        actionBtn = '<button class="btn bxs bd" data-contract-id="'+r.id+'" onclick="openQPTab2ForContract(this.dataset.contractId, \'manage\')">Manage →</button>';
+      } else if (r.group === 'QP_OPEN') {
+        actionBtn = '<button class="btn bxs bp" data-contract-id="'+r.id+'" onclick="openQPTab2ForContract(this.dataset.contractId, \'fix\')">Fix →</button>';
+      } else if (r.group === 'FULLY_PRICED') {
+        actionBtn = '<button class="btn bxs bg" data-contract-id="'+r.id+'" onclick="openQPTab2ForContract(this.dataset.contractId, \'view\')">View</button>';
+      } else {
+        actionBtn = '<span class="badge bd-draft">BL pending</span>';
+      }
+      html += '<tr style="'+(groupRowCls[r.group]||'')+'">'
+        + '<td class="mono f10">'+rowNum+'</td>'
+        + '<td class="mono f10 fw6">'+r.contract_no+'</td>'
+        + '<td class="f10">'+r.direction+'</td>'
+        + '<td class="f10">'+(r.counterparty||'—')+'</td>'
+        + '<td class="f10">'+(r.commodity||'—')+'</td>'
+        + '<td class="mono f10 fw6 ta">'+r.contract_qty+' MT</td>'
+        + '<td class="mono f10">'+(r.unpriced_qty>0?r.unpriced_qty+' MT':'—')+'</td>'
+        + '<td class="mono f10">'+(r.qp_start&&r.qp_end?new Date(r.qp_start).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})+'–'+new Date(r.qp_end).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—')+'</td>'
+        + '<td class="mono f10">'+pctBar+'</td>'
+        + '<td class="mono f10">'+(r.days_left!=null?r.days_left:'—')+'</td>'
+        + '<td class="f10">'+r.state+'</td>'
+        + '<td>'+actionBtn+'</td>'
+        + '</tr>';
+    });
+    tbody.innerHTML = html;
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:14px;color:var(--danger);font-size:11px">Error: '+e.message+'</td></tr>';
+  }
+}
+
+// Opens the EXISTING QP detail screen (Tab 2), pre-loaded with the clicked contract.
+// Per the spec: 'No changes to the existing screen.' Tab 2's label updates to show the
+// contract number, as shown in the mockup.
+async function openQPTab2ForContract(contractId, mode) {
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId);
+    const data = await res.json();
+    if (!data.success) throw new Error('Contract not found');
+    const contract = data.data;
+    const dealNo = contract.deal_id ? (await (await fetch(API_BASE + '/api/deals/' + contract.deal_id)).json()).data?.deal_no : null;
+
+    const sel = document.getElementById('qp-deal-select');
+    if (sel && dealNo) {
+      let found = false;
+      for (const opt of sel.options) {
+        if (opt.value === dealNo || opt.text.startsWith(dealNo)) { sel.value = opt.value; found = true; break; }
+      }
+      if (!found) {
+        const opt = document.createElement('option');
+        opt.value = dealNo || contract.contract_no;
+        opt.text = (dealNo || contract.contract_no) + ' — ' + (contract.commodity_name||contract.commodity_code) + ' (' + (contract.contract_type==='PC'?'Buy':'Sell') + ')';
+        sel.appendChild(opt);
+        sel.value = opt.value;
+      }
+    }
+
+    const tab2Label = document.getElementById('qp-tab2-label');
+    if (tab2Label) tab2Label.innerHTML = '★ ' + contract.contract_no;
+
+    switchQPTab('qp-tab2');
+    await renderQPWindow(sel ? sel.value : undefined);
+    if (mode === 'fix') setTimeout(function(){ fixToday(); }, 300);
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 function jumpToLinkedDeal() {

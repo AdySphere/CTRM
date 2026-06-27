@@ -62,6 +62,91 @@ router.patch('/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// ── H3: QP LIST VIEW — per Veridian spec, Tab 1 of the QP & Rollover Window. Shows
+// ALL open contracts at once, grouped by urgency (Rollover Required, QP Open, Pre-QP,
+// Fully Priced) instead of requiring a contract to be selected first. Contract qty here
+// is the GROSS contract quantity, not the payable (index-adjusted) qty used elsewhere —
+// per the spec: 'Only CONTRACT QTY shown here. Payable qty calculated by backend.'
+router.get('/qp-list', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    const contractsRes = await query(`
+      SELECT c.id, c.contract_no, c.contract_type, c.commodity_code, c.qty_mt, c.status,
+        cp.name as counterparty_name, cm.name as commodity_name,
+        pl.id as pricing_line_id, pl.index_pct, pl.qp_start_date, pl.qp_end_date,
+        CASE WHEN c.contract_type = 'PC' THEN 'Buy' ELSE 'Sell' END as direction
+      FROM contracts c
+      JOIN counterparties cp ON cp.id = c.counterparty_id
+      LEFT JOIN commodities cm ON cm.code = c.commodity_code
+      LEFT JOIN contract_pricing_lines pl ON pl.contract_id = c.id
+      WHERE c.status NOT IN ('CANCELLED', 'CLOSED')
+      ORDER BY c.contract_date DESC
+    `);
+
+    const rows = [];
+    for (const c of contractsRes.rows) {
+      const qtyMt = parseFloat(c.qty_mt) || 0;
+      const indexPct = parseFloat(c.index_pct) || 100;
+      const payableQty = qtyMt * (indexPct / 100);
+
+      const fixRes = await query(
+        'SELECT COALESCE(SUM(fixed_qty_mt),0) as priced_qty FROM fixation_lots WHERE contract_id=$1',
+        [c.id]
+      );
+      const pricedQty = parseFloat(fixRes.rows[0].priced_qty) || 0;
+      const unpricedQty = Math.max(0, payableQty - pricedQty);
+      const pctFixed = payableQty > 0 ? Math.round((pricedQty / payableQty) * 100) : 0;
+
+      const qpStart = c.qp_start_date ? c.qp_start_date.toISOString().split('T')[0] : null;
+      const qpEnd = c.qp_end_date ? c.qp_end_date.toISOString().split('T')[0] : null;
+
+      // H3 state groups, per the spec — distinct from the simpler exposure-endpoint
+      // states since this view needs to separately flag 'expired with unpriced qty'.
+      let state, daysLeft;
+      if (!c.pricing_line_id || !qpStart) {
+        state = 'Pre-QP'; daysLeft = null;
+      } else if (today < qpStart) {
+        state = 'Pre-QP';
+        daysLeft = Math.ceil((new Date(qpStart) - new Date(today)) / 86400000) + ' (to open)';
+      } else if (qpEnd && today > qpEnd && unpricedQty > 0.001) {
+        state = unpricedQty >= payableQty - 0.001 ? 'Unpriced' : 'Partial';
+        daysLeft = 'EXPIRED';
+      } else if (unpricedQty <= 0.001) {
+        state = 'Priced'; daysLeft = 'Closed';
+      } else {
+        state = unpricedQty >= payableQty - 0.001 ? 'Unpriced' : 'Partial';
+        daysLeft = qpEnd ? Math.max(0, Math.ceil((new Date(qpEnd) - new Date(today)) / 86400000)) + ' days' : '—';
+      }
+
+      const rolloverRequired = qpEnd && today > qpEnd && unpricedQty > 0.001;
+      const group = rolloverRequired ? 'ROLLOVER_REQUIRED'
+        : (!c.pricing_line_id || !qpStart || today < qpStart) ? 'PRE_QP'
+        : (unpricedQty <= 0.001) ? 'FULLY_PRICED'
+        : 'QP_OPEN';
+
+      rows.push({
+        id: c.id, contract_no: c.contract_no, direction: c.direction,
+        counterparty: c.counterparty_name, commodity: c.commodity_name || c.commodity_code,
+        contract_qty: qtyMt, unpriced_qty: Math.round(unpricedQty * 1000) / 1000,
+        qp_start: qpStart, qp_end: qpEnd, pct_fixed: pctFixed,
+        days_left: daysLeft, state, group
+      });
+    }
+
+    // Sort: Rollover Required first, then QP Open (soonest-closing first), then Pre-QP, then Fully Priced.
+    const groupOrder = { ROLLOVER_REQUIRED: 0, QP_OPEN: 1, PRE_QP: 2, FULLY_PRICED: 3 };
+    rows.sort(function(a, b){
+      if (groupOrder[a.group] !== groupOrder[b.group]) return groupOrder[a.group] - groupOrder[b.group];
+      if (a.qp_end && b.qp_end) return new Date(a.qp_end) - new Date(b.qp_end);
+      return 0;
+    });
+
+    res.json({ success: true, data: rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 router.get('/:id', async (req, res) => {
   res.set('Cache-Control', 'no-store'); // was missing — browser could silently serve a stale
   // cached copy of a contract, especially visible when two people are on the same contract
