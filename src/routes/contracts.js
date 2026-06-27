@@ -245,10 +245,12 @@ router.post('/:id/rollover-events', async (req, res) => {
 router.get('/:id/payment-lines', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
-    const result = await query(
-      'SELECT * FROM payment_schedule_lines WHERE contract_id=$1 ORDER BY line_no',
-      [req.params.id]
-    );
+    const result = await query(`
+      SELECT psl.*, dem.name as trigger_event_name, dem.source_system as trigger_event_source
+      FROM payment_schedule_lines psl
+      LEFT JOIN date_event_master dem ON dem.code = psl.trigger_event
+      WHERE psl.contract_id=$1 ORDER BY psl.line_no
+    `, [req.params.id]);
     res.json({ success: true, data: result.rows });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });

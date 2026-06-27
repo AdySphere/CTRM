@@ -424,6 +424,14 @@ async function setupDatabase() {
     await query(`ALTER TABLE contract_qc_specs ALTER COLUMN spec_max TYPE DECIMAL(10,5)`);
     await query(`ALTER TABLE contract_qc_specs ALTER COLUMN spec_ref_avg TYPE DECIMAL(10,5)`);
     await query(`ALTER TABLE contract_qc_specs ADD COLUMN IF NOT EXISTS is_percentage BOOLEAN DEFAULT TRUE`);
+    await query(`CREATE TABLE IF NOT EXISTS date_event_master (id SERIAL PRIMARY KEY, code VARCHAR(20) UNIQUE NOT NULL, name VARCHAR(60) NOT NULL, source_system VARCHAR(40) NOT NULL, offset_applicable BOOLEAN DEFAULT TRUE, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    // Link payment_schedule_lines.trigger_event to the new master now that it exists.
+    // Null out any existing value that isn't a real event code first (e.g. anything typed
+    // in before this master existed) so the new constraint doesn't fail against old data.
+    await query(`UPDATE payment_schedule_lines SET trigger_event = NULL WHERE trigger_event IS NOT NULL AND trigger_event NOT IN (SELECT code FROM date_event_master)`);
+    await query(`ALTER TABLE payment_schedule_lines DROP CONSTRAINT IF EXISTS payment_schedule_lines_trigger_event_fkey`);
+    await query(`ALTER TABLE payment_schedule_lines ALTER COLUMN trigger_event DROP NOT NULL`);
+    await query(`ALTER TABLE payment_schedule_lines ADD CONSTRAINT payment_schedule_lines_trigger_event_fkey FOREIGN KEY (trigger_event) REFERENCES date_event_master(code)`);
     await query(`CREATE TABLE IF NOT EXISTS rollover_events (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, rollover_no INT NOT NULL, period_from DATE NOT NULL, period_to DATE NOT NULL, unfixed_qty DECIMAL(12,3) NOT NULL, rate_basis VARCHAR(20) NOT NULL, rate_value DECIMAL(14,4) NOT NULL, derived_rate_per_mt DECIMAL(14,4), amount_usd DECIMAL(15,2) NOT NULL, new_qp_start_date DATE, new_qp_end_date DATE, debit_note_no VARCHAR(30), status VARCHAR(20) DEFAULT 'PENDING', created_by VARCHAR(50), created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE INDEX IF NOT EXISTS idx_rollover_contract ON rollover_events(contract_id)`);
     await query(`CREATE TABLE IF NOT EXISTS pricing_benchmarks (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, commodity_code VARCHAR(20) REFERENCES commodities(code), exchange_code VARCHAR(20) NOT NULL, reporting_agency VARCHAR(30), instrument_code VARCHAR(50), default_index_pct DECIMAL(6,3) DEFAULT 100, default_payable_pct DECIMAL(6,3) DEFAULT 100, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
@@ -534,6 +542,23 @@ async function setupDatabase() {
     );
   `);
   console.log('✓ pricing_benchmarks');
+
+  // ── DATE EVENT MASTER (Group B) — used for event-based pricing AND event-based
+  // payment terms. Per Prashant's master: every event type comes from a specific source
+  // system (PC/SC, Logistics, Final Receipt/GRN, Provisional Receipt, Assay/QC) and every
+  // event currently allows an offset (days before/after).
+  await query(`
+    CREATE TABLE IF NOT EXISTS date_event_master (
+      id              SERIAL PRIMARY KEY,
+      code            VARCHAR(20) UNIQUE NOT NULL,
+      name            VARCHAR(60) NOT NULL,
+      source_system   VARCHAR(40) NOT NULL,  -- PC/SC, Logistics, Final Receipt (GRN), Provisional Receipt, Assay/QC
+      offset_applicable BOOLEAN DEFAULT TRUE,
+      active          BOOLEAN DEFAULT TRUE,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  console.log('✓ date_event_master');
 
   await query(`
     CREATE TABLE IF NOT EXISTS contract_qc_specs (

@@ -368,6 +368,26 @@ async function seed() {
   `);
   console.log('✓ pricing_benchmarks seeded');
 
+  // ── DATE EVENT MASTER — Group B, from Prashant's master file ──
+  await query(`
+    INSERT INTO date_event_master (code, name, source_system, offset_applicable)
+    VALUES
+      ('TRAN_DOC',   'Order Date / Transaction Date',     'PC/SC', TRUE),
+      ('PROM_RCPT',  'Promised Receipt Date',             'PC/SC', TRUE),
+      ('ETD',        'ETD',                                'Logistics', TRUE),
+      ('ETA_IN',     'ETA',                                'Logistics', TRUE),
+      ('BL_DATE',    'BL Date',                            'Logistics', TRUE),
+      ('OBL_TELEX',  'OBL / Telex Receiving Date',         'Logistics', TRUE),
+      ('SHIP_ACT',   'Actual Date of Shipment',            'Logistics', TRUE),
+      ('POD_ARR',    'Actual Arrival Date at POD',         'Logistics', TRUE),
+      ('WH_RCPT',    'Warehouse Receipt Date',             'Logistics', TRUE),
+      ('GRN_DATE',   'GRN Date',                           'Final Receipt (ERP - GRN date)', TRUE),
+      ('YARD_RCVD',  'Yard Receipt Date / Delivery Date',  'Provisional Receipt date', TRUE),
+      ('ASSAY_RPT',  'Assay Report Date',                  'Assay/QC', TRUE)
+    ON CONFLICT (code) DO NOTHING;
+  `);
+  console.log('✓ date_event_master seeded');
+
   console.log('\n✅ All seed data loaded.');
   console.log('\nDemo scenario ready:');
   console.log('  DEAL123 → PC-2026-001 → LOG-2026-011 → KMTC121/122/123/MAER232 → FIX123 → REQ-001');

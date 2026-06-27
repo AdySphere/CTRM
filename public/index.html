@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.22</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.23</div>
   </div>
   <nav class="sb-nav">
 
@@ -6978,13 +6978,30 @@ window._npayPrefix = null;
 function addPCPayLine() { window._npayPrefix = 'pc'; openNewPaymentLineModal(); }
 function addSCPayLine() { window._npayPrefix = 'sc'; openNewPaymentLineModal(); }
 
-function openNewPaymentLineModal() {
+async function openNewPaymentLineModal() {
   const c = window._currentContract;
   if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
   ['npay-pct','npay-offset-days','npay-docs','npay-due-date'].forEach(function(id){
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('npay-offset-days').value = '5';
+
+  // Group B: trigger events now load from the real Date Event Master instead of a
+  // hardcoded list that didn't match any real backend codes (e.g. ETA vs ETA_IN) — every
+  // save would have failed the new foreign key constraint with the old hardcoded values.
+  const triggerSel = document.getElementById('npay-trigger');
+  if (triggerSel) {
+    try {
+      const res = await fetch(API_BASE + '/api/date-event-master');
+      const data = await res.json();
+      const events = data.data || [];
+      window._dateEventMaster = events;
+      triggerSel.innerHTML = '<option value="">— Select —</option>' + events.map(function(e){
+        return '<option value="'+e.code+'">'+e.name+' ('+e.source_system+')</option>';
+      }).join('');
+    } catch(e) { toast('Error', 'Could not load event master: ' + e.message, 'error'); }
+  }
+
   openModal('modal-new-payment-line');
 }
 
@@ -7031,7 +7048,7 @@ async function loadPaymentLines(contractId, prefix) {
       return '<tr>'
         + '<td class="mono f10 fw6">'+p.line_no+'</td>'
         + '<td class="mono fw6 ta">'+p.pct+'%</td>'
-        + '<td class="f10">'+p.trigger_event+'</td>'
+        + '<td class="f10">'+(p.trigger_event_name||p.trigger_event)+'</td>'
         + '<td class="mono f10">'+p.offset_days+'</td>'
         + '<td class="f10">'+p.offset_type+'</td>'
         + '<td class="f10">'+(p.basis||'—')+'</td>'
@@ -10287,17 +10304,7 @@ async function submitChangeDeal() {
       <div class="fg" style="grid-template-columns:repeat(2,1fr)">
         <div class="f"><div class="fl">Percentage <span class="req">*</span></div><input type="number" class="fi" id="npay-pct" step="0.001" placeholder="e.g. 90"></div>
         <div class="f"><div class="fl">Trigger Event <span class="req">*</span></div>
-          <select class="fs" id="npay-trigger">
-            <option value="BL_DATE">BL_DATE</option>
-            <option value="ETD">ETD</option>
-            <option value="ETA">ETA</option>
-            <option value="DOCS_RECEIPT">DOCS_RECEIPT</option>
-            <option value="ASSAY_RECEIPT_DATE">ASSAY_RECEIPT_DATE</option>
-            <option value="FINAL_ASSAY_CONFIRMED">FINAL_ASSAY_CONFIRMED</option>
-            <option value="QUALITY_VERIFICATION_AT_DESTINATION">QUALITY_VERIFICATION_AT_DESTINATION</option>
-            <option value="QP_WINDOW_CLOSE">QP_WINDOW_CLOSE</option>
-            <option value="DELIVERY_DATE">DELIVERY_DATE</option>
-          </select>
+          <select class="fs" id="npay-trigger"><option value="">— Select —</option></select>
         </div>
       </div>
       <div class="fg" style="grid-template-columns:repeat(2,1fr)">

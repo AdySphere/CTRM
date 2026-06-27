@@ -1577,3 +1577,40 @@ pricingBenchmarksRouter.patch('/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.pricingBenchmarksRouter = pricingBenchmarksRouter;
+
+// ── DATE EVENT MASTER (Group B) ──────────────────────────────────────
+const dateEventMasterRouter = require('express').Router();
+dateEventMasterRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query('SELECT * FROM date_event_master WHERE active=TRUE ORDER BY id');
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+dateEventMasterRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { code, name, source_system, offset_applicable } = req.body;
+    if (!code || !name || !source_system) {
+      return res.status(400).json({ error: 'code, name and source_system are required' });
+    }
+    const result = await query(`
+      INSERT INTO date_event_master (code, name, source_system, offset_applicable)
+      VALUES ($1,$2,$3,$4) RETURNING *
+    `, [code, name, source_system, offset_applicable !== false]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+dateEventMasterRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['name', 'source_system', 'offset_applicable', 'active'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE date_event_master SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.dateEventMasterRouter = dateEventMasterRouter;
