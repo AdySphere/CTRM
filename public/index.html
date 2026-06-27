@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.26</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.27</div>
   </div>
   <nav class="sb-nav">
 
@@ -1810,6 +1810,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="ph-r"><div class="br-row g7">
           <button class="export-btn" onclick="exportToExcel('qp-daily-table','QP_Daily_Prices')">⬇ Export</button>
           <button class="btn bg" onclick="renderQPWindow()">Refresh</button>
+          <button class="btn bg" onclick="openFixationStatusPopup()">Fixation Status</button>
           <button class="btn bp" onclick="fixToday()">★ Fix Today</button>
         </div></div>
       </div>
@@ -10398,6 +10399,95 @@ async function loadCommissionAgents(contractId, prefix) {
   } catch(e) { console.warn('loadCommissionAgents:', e); }
 }
 
+// Group D part 3: Fixation Status popup. Per the spec — 'Fixation due needs to be first
+// not contract based — what is due for fixation' — this is genuinely a different entry
+// point from the existing QP page (which requires picking a contract first). Lists every
+// contract with unfixed quantity remaining, sorted by how soon its QP window closes, and
+// links directly into Fix Today or Rollover for that specific contract — 'link it with
+// rollover' from the same note.
+async function openFixationStatusPopup() {
+  const tbody = document.getElementById('fixation-status-tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>';
+  openModal('modal-fixation-status');
+
+  try {
+    const res = await fetch(API_BASE + '/api/exposure');
+    const data = await res.json();
+    const rows = data.data || data.rows || [];
+    const today = new Date().toISOString().split('T')[0];
+
+    // Only contracts that genuinely still need fixing — UNPRICED or PARTIAL, with real
+    // unfixed quantity (F) remaining and a QP window that has actually started.
+    const due = rows.filter(function(r){
+      return (r.state === 'UNPRICED' || r.state === 'PARTIAL') && r.F > 0 && r.qp_start && today >= r.qp_start;
+    });
+
+    // Soonest-closing QP window first — most urgent fixation need at the top.
+    due.sort(function(a, b){
+      if (!a.qp_end) return 1;
+      if (!b.qp_end) return -1;
+      return new Date(a.qp_end) - new Date(b.qp_end);
+    });
+
+    if (!due.length) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Nothing due for fixation right now</td></tr>';
+      return;
+    }
+
+    if (tbody) {
+      tbody.innerHTML = due.map(function(r){
+        const daysLeft = r.qp_end ? Math.ceil((new Date(r.qp_end) - new Date(today)) / 86400000) : null;
+        const urgentCls = daysLeft != null && daysLeft <= 2 ? 'bd-danger' : daysLeft != null && daysLeft <= 5 ? 'bd-act' : 'bd-draft';
+        const stCls = r.state === 'PARTIAL' ? 'bd-act' : 'bd-danger';
+        return '<tr>'
+          + '<td class="mono f10 fw6">'+r.contract_no+'</td>'
+          + '<td class="f10">'+r.direction+'</td>'
+          + '<td class="f10">'+(r.counterparty||'—')+'</td>'
+          + '<td class="mono f10">'+(r.commodity||'—')+'</td>'
+          + '<td class="mono f10 fw6">'+r.F+'</td>'
+          + '<td class="mono f10">'+(r.qp_end?new Date(r.qp_end).toLocaleDateString('en-GB'):'—')+'</td>'
+          + '<td><span class="badge '+urgentCls+'">'+(daysLeft!=null?daysLeft+' d':'—')+'</span></td>'
+          + '<td><span class="badge '+stCls+'">'+r.state+'</span></td>'
+          + '<td><div class="br-row g7">'
+            + '<button class="btn bxs bp" data-deal-no="'+r.deal_no+'" onclick="jumpToFixFromStatus(this.dataset.dealNo)">Fix</button>'
+            + '<button class="btn bxs bg" data-contract-no="'+r.contract_no+'" onclick="jumpToRolloverFromStatus(this.dataset.contractNo)">Rollover</button>'
+          + '</div></td>'
+          + '</tr>';
+      }).join('');
+    }
+  } catch(e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Could not load fixation status: '+e.message+'</td></tr>';
+  }
+}
+
+function jumpToFixFromStatus(dealNo) {
+  closeModal('modal-fixation-status');
+  const sel = document.getElementById('qp-deal-select');
+  if (sel) {
+    for (const opt of sel.options) {
+      if (opt.text.indexOf(dealNo) === 0) { sel.value = opt.value; break; }
+    }
+  }
+  renderQPWindow(sel ? sel.value : undefined);
+  setTimeout(function(){ fixToday(); }, 300);
+}
+
+async function jumpToRolloverFromStatus(contractNo) {
+  closeModal('modal-fixation-status');
+  try {
+    const res = await fetch(API_BASE + '/api/contracts?type=PC');
+    const data = await res.json();
+    const contract = (data.data || []).find(function(c){ return c.contract_no === contractNo; });
+    if (!contract) { toast('Not Found', 'Could not locate ' + contractNo, 'warning'); return; }
+    nav('purchase-contracts', document.querySelector('[data-page=purchase-contracts]'));
+    afterNav('purchase-contracts');
+    setTimeout(async function(){
+      await openContractDetail(contract.id, 'pc');
+      setTimeout(function(){ wireTabs('pct'); document.querySelector('[data-tab="pc-rollover"]')?.click(); }, 300);
+    }, 350);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -10743,6 +10833,26 @@ async function submitChangeDeal() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-commission-agent')">Cancel</button>
       <button class="btn bp" onclick="submitNewCommissionAgent()">Add Agent</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: Fixation Status (Group D part 3) — fixation-due first, not contract-based -->
+<div class="mo" id="modal-fixation-status">
+  <div class="md" style="max-width:760px">
+    <div class="mh">
+      <div class="mt">Fixation Status</div>
+      <button class="mc" onclick="closeModal('modal-fixation-status')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb12"><span>i</span>What needs fixing today, across every contract — not browsed contract by contract. Sorted by urgency: QP windows closing soonest appear first. A contract with no unfixed quantity left does not appear here.</div>
+      <table class="lt"><thead><tr><th>Contract</th><th>Direction</th><th>Counterparty</th><th>Commodity</th><th>Unfixed Qty</th><th>QP Ends</th><th>Days Left</th><th>Status</th><th></th></tr></thead>
+        <tbody id="fixation-status-tbody">
+          <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-fixation-status')">Close</button>
     </div>
   </div>
 </div>
