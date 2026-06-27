@@ -60,6 +60,129 @@ async function setupDatabase() {
   `);
   console.log('✓ locations');
 
+  // ── CURRENCY / UOM / TAX MASTER (A5 fix) — confirmed genuinely never built. The Setup
+  // page rendered these from hardcoded static rows / a JS constant array with no backend
+  // at all, which is exactly why Currency/UOM data was never showing up for real.
+  await query(`
+    CREATE TABLE IF NOT EXISTS currencies (
+      id          SERIAL PRIMARY KEY,
+      code        VARCHAR(3) UNIQUE NOT NULL,
+      name        VARCHAR(60) NOT NULL,
+      symbol      VARCHAR(10),
+      decimals    INT DEFAULT 2,
+      is_base     BOOLEAN DEFAULT FALSE,
+      active      BOOLEAN DEFAULT TRUE,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  console.log('✓ currencies');
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS uom_master (
+      id          SERIAL PRIMARY KEY,
+      code        VARCHAR(10) UNIQUE NOT NULL,
+      name        VARCHAR(60) NOT NULL,
+      category    VARCHAR(20),  -- Weight, Volume, Energy
+      conversion  VARCHAR(60),
+      active      BOOLEAN DEFAULT TRUE,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  console.log('✓ uom_master');
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS tax_codes (
+      id            SERIAL PRIMARY KEY,
+      code          VARCHAR(30) UNIQUE NOT NULL,
+      description   VARCHAR(100) NOT NULL,
+      rate_pct      DECIMAL(6,3) DEFAULT 0,
+      jurisdiction  VARCHAR(60),
+      applies_to    VARCHAR(100),
+      active        BOOLEAN DEFAULT TRUE,
+      created_at    TIMESTAMPTZ DEFAULT NOW()
+    );
+  `);
+  console.log('✓ tax_codes');
+
+  // ── CONTRACT EVENT DATES (A1) — per Veridian's Event Date Master spec. One record
+  // per contract leg. BL Date is the PRIMARY ANCHOR — once locked, immutable, and
+  // triggers automatic recalculation of QP window, payment due dates, and every accrual.
+  await query(`
+    CREATE TABLE IF NOT EXISTS contract_event_dates (
+      id                  SERIAL PRIMARY KEY,
+      contract_id         INT UNIQUE NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      contract_date       DATE,
+      etd_estimated       DATE,
+      etd_actual          DATE,
+      bl_date             DATE,
+      bl_number           VARCHAR(50),
+      bl_date_locked      BOOLEAN DEFAULT FALSE,
+      bl_date_locked_by   VARCHAR(50),
+      bl_date_locked_at   TIMESTAMPTZ,
+      eta_estimated       DATE,
+      eta_actual          DATE,
+      nor_tendered_at     TIMESTAMPTZ,
+      pr_date             DATE,
+      pr_reference        VARCHAR(50),
+      grn_date            DATE,
+      grn_reference       VARCHAR(50),
+      grn_erp_posted      BOOLEAN DEFAULT FALSE,
+      assay_date          DATE,
+      assay_confirmed     BOOLEAN DEFAULT FALSE,
+      qp_start_date       DATE,
+      qp_end_date         DATE,
+      qp_close_confirmed  BOOLEAN DEFAULT FALSE,
+      payment_due_date    DATE,
+      payment_anchor_event VARCHAR(20),  -- BL_DATE / ETA_DATE / PR_DATE / GRN_DATE / ASSAY_DATE / QP_CLOSE_DATE
+      payment_terms_days  INT,
+      settlement_date     DATE,
+      updated_at          TIMESTAMPTZ DEFAULT NOW(),
+      updated_by          VARCHAR(50)
+    );
+    CREATE INDEX IF NOT EXISTS idx_event_dates_contract ON contract_event_dates(contract_id);
+  `);
+  console.log('✓ contract_event_dates');
+
+  // ── PAYMENT TERM TRANCHES (A2) — per Veridian spec. Multi-tranche per contract,
+  // each with its own anchor event + offset + percentage. Tranches must sum to 100%.
+  await query(`
+    CREATE TABLE IF NOT EXISTS payment_term_tranches (
+      id                  SERIAL PRIMARY KEY,
+      contract_id         INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      tranche_number      INT NOT NULL,
+      tranche_name        VARCHAR(60) NOT NULL,
+      percentage          DECIMAL(5,2) NOT NULL,
+      amount_basis        VARCHAR(20) DEFAULT 'pct_of_contract', -- pct_of_provisional, pct_of_final, pct_of_contract, fixed_amount, balance_remaining
+      anchor_event        VARCHAR(20) NOT NULL,  -- contract_date, etd_date, bl_date, eta_date, pr_date, grn_date, assay_date, qp_close_date, fixed_date
+      offset_days         INT DEFAULT 0,
+      offset_direction    VARCHAR(10) DEFAULT 'after', -- after, before
+      fixed_date          DATE,
+      calculated_due_date DATE,
+      calculated_amount   DECIMAL(15,2),
+      currency            VARCHAR(10) DEFAULT 'USD',
+      invoice_type        VARCHAR(20) DEFAULT 'provisional', -- provisional, final, delta, advance, credit_note
+      invoice_id          VARCHAR(30),
+      status              VARCHAR(20) DEFAULT 'pending_anchor', -- pending_anchor, anchor_confirmed, due_date_calc, invoice_raised, payment_due, paid, overdue, disputed
+      actual_payment_date DATE,
+      actual_amount_paid  DECIMAL(15,2),
+      variance            DECIMAL(15,2),
+      erp_posted          BOOLEAN DEFAULT FALSE,
+      notes               TEXT,
+      created_at          TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_pt_tranches_contract ON payment_term_tranches(contract_id);
+  `);
+  console.log('✓ payment_term_tranches');
+
+  // A3 — link Charge Items to the new Event Date Master: each charge type's accrual
+  // trigger and reversal event, per the Charge Items Accrual sheet (e.g. Freight accrues
+  // on BL Date, reverses on GRN Date; Agent Commission accrues on Contract Date).
+  await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_trigger_event VARCHAR(20)`);
+  await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_reversal_event VARCHAR(20)`);
+  await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_trigger_event VARCHAR(20)`);
+  await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_reversal_event VARCHAR(20)`);
+  console.log('✓ charge items linked to event dates');
+
   await query(`
     CREATE TABLE IF NOT EXISTS payment_terms (
       id              SERIAL PRIMARY KEY,
@@ -468,6 +591,17 @@ async function setupDatabase() {
     await query(`ALTER TABLE payment_schedule_lines ALTER COLUMN trigger_event DROP NOT NULL`);
     await query(`ALTER TABLE payment_schedule_lines ADD CONSTRAINT payment_schedule_lines_trigger_event_fkey FOREIGN KEY (trigger_event) REFERENCES date_event_master(code)`);
     await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS gl_account VARCHAR(20)`);
+    await query(`CREATE TABLE IF NOT EXISTS currencies (id SERIAL PRIMARY KEY, code VARCHAR(3) UNIQUE NOT NULL, name VARCHAR(60) NOT NULL, symbol VARCHAR(10), decimals INT DEFAULT 2, is_base BOOLEAN DEFAULT FALSE, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE TABLE IF NOT EXISTS uom_master (id SERIAL PRIMARY KEY, code VARCHAR(10) UNIQUE NOT NULL, name VARCHAR(60) NOT NULL, category VARCHAR(20), conversion VARCHAR(60), active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE TABLE IF NOT EXISTS tax_codes (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description VARCHAR(100) NOT NULL, rate_pct DECIMAL(6,3) DEFAULT 0, jurisdiction VARCHAR(60), applies_to VARCHAR(100), active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE TABLE IF NOT EXISTS contract_event_dates (id SERIAL PRIMARY KEY, contract_id INT UNIQUE NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, contract_date DATE, etd_estimated DATE, etd_actual DATE, bl_date DATE, bl_number VARCHAR(50), bl_date_locked BOOLEAN DEFAULT FALSE, bl_date_locked_by VARCHAR(50), bl_date_locked_at TIMESTAMPTZ, eta_estimated DATE, eta_actual DATE, nor_tendered_at TIMESTAMPTZ, pr_date DATE, pr_reference VARCHAR(50), grn_date DATE, grn_reference VARCHAR(50), grn_erp_posted BOOLEAN DEFAULT FALSE, assay_date DATE, assay_confirmed BOOLEAN DEFAULT FALSE, qp_start_date DATE, qp_end_date DATE, qp_close_confirmed BOOLEAN DEFAULT FALSE, payment_due_date DATE, payment_anchor_event VARCHAR(20), payment_terms_days INT, settlement_date DATE, updated_at TIMESTAMPTZ DEFAULT NOW(), updated_by VARCHAR(50))`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_event_dates_contract ON contract_event_dates(contract_id)`);
+    await query(`CREATE TABLE IF NOT EXISTS payment_term_tranches (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, tranche_number INT NOT NULL, tranche_name VARCHAR(60) NOT NULL, percentage DECIMAL(5,2) NOT NULL, amount_basis VARCHAR(20) DEFAULT 'pct_of_contract', anchor_event VARCHAR(20) NOT NULL, offset_days INT DEFAULT 0, offset_direction VARCHAR(10) DEFAULT 'after', fixed_date DATE, calculated_due_date DATE, calculated_amount DECIMAL(15,2), currency VARCHAR(10) DEFAULT 'USD', invoice_type VARCHAR(20) DEFAULT 'provisional', invoice_id VARCHAR(30), status VARCHAR(20) DEFAULT 'pending_anchor', actual_payment_date DATE, actual_amount_paid DECIMAL(15,2), variance DECIMAL(15,2), erp_posted BOOLEAN DEFAULT FALSE, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_pt_tranches_contract ON payment_term_tranches(contract_id)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_trigger_event VARCHAR(20)`);
+    await query(`ALTER TABLE contract_charge_lines ADD COLUMN IF NOT EXISTS accrual_reversal_event VARCHAR(20)`);
+    await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_trigger_event VARCHAR(20)`);
+    await query(`ALTER TABLE adjustment_codes ADD COLUMN IF NOT EXISTS default_reversal_event VARCHAR(20)`);
     await query(`CREATE TABLE IF NOT EXISTS contract_charge_lines (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, charge_code VARCHAR(30) REFERENCES adjustment_codes(code), description TEXT, calc_basis VARCHAR(20) NOT NULL, calc_value DECIMAL(14,4) NOT NULL, computed_amount DECIMAL(15,2), currency VARCHAR(10) DEFAULT 'USD', counterparty_id INT REFERENCES counterparties(id), accrual_status VARCHAR(20) DEFAULT 'NOT_ACCRUED', accrued_at TIMESTAMPTZ, notes TEXT, created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE INDEX IF NOT EXISTS idx_charge_lines_contract ON contract_charge_lines(contract_id)`);
     await query(`CREATE TABLE IF NOT EXISTS rollover_events (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, rollover_no INT NOT NULL, period_from DATE NOT NULL, period_to DATE NOT NULL, unfixed_qty DECIMAL(12,3) NOT NULL, rate_basis VARCHAR(20) NOT NULL, rate_value DECIMAL(14,4) NOT NULL, derived_rate_per_mt DECIMAL(14,4), amount_usd DECIMAL(15,2) NOT NULL, new_qp_start_date DATE, new_qp_end_date DATE, debit_note_no VARCHAR(30), status VARCHAR(20) DEFAULT 'PENDING', created_by VARCHAR(50), created_at TIMESTAMPTZ DEFAULT NOW())`);

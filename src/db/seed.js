@@ -353,6 +353,50 @@ async function seed() {
   `);
   console.log('✓ adjustment_codes seeded');
 
+  // ── CURRENCY / UOM / TAX MASTER (A5 fix) ──
+  await query(`
+    INSERT INTO currencies (code, name, symbol, decimals, is_base)
+    VALUES
+      ('USD', 'US Dollar', '$', 2, TRUE),
+      ('EUR', 'Euro', '€', 2, FALSE),
+      ('GBP', 'Pound Sterling', '£', 2, FALSE),
+      ('AED', 'UAE Dirham', 'د.إ', 2, FALSE),
+      ('INR', 'Indian Rupee', '₹', 2, FALSE)
+    ON CONFLICT (code) DO NOTHING;
+  `);
+  console.log('✓ currencies seeded');
+
+  await query(`
+    INSERT INTO uom_master (code, name, category, conversion)
+    VALUES
+      ('MT', 'Metric Tonne', 'Weight', '1.000 MT (base)'),
+      ('DMT', 'Dry Metric Tonne', 'Weight', '~1 MT (moisture-adjusted)'),
+      ('KG', 'Kilogram', 'Weight', '0.001 MT'),
+      ('LB', 'Pound', 'Weight', '0.000454 MT'),
+      ('LT', 'Long Tonne (Imperial)', 'Weight', '1.01605 MT'),
+      ('ST', 'Short Tonne (US)', 'Weight', '0.907185 MT'),
+      ('BBL', 'Barrel (Oil, 42 US gal)', 'Volume', '~0.136 MT (crude)'),
+      ('GAL', 'US Gallon', 'Volume', '0.003785 L'),
+      ('L', 'Litre', 'Volume', '~0.0008 MT'),
+      ('M3', 'Cubic Metre', 'Volume', '—'),
+      ('TOZ', 'Troy Ounce', 'Weight', '0.0000311035 MT'),
+      ('BU', 'Bushel (CBOT)', 'Volume', '~0.02722 MT (wheat)'),
+      ('MMBTU', 'Million British Thermal Units', 'Energy', '—'),
+      ('GJ', 'Gigajoule', 'Energy', '0.947817 MMBTU')
+    ON CONFLICT (code) DO NOTHING;
+  `);
+  console.log('✓ uom_master seeded');
+
+  await query(`
+    INSERT INTO tax_codes (code, description, rate_pct, jurisdiction, applies_to)
+    VALUES
+      ('UAE-VAT-5', 'UAE VAT 5%', 5, 'UAE', 'Local sales'),
+      ('ZERO-RATED', 'Zero Rated Export', 0, 'UAE', 'Export / international trade'),
+      ('EXEMPT', 'Tax Exempt', 0, 'All', 'Inter-company / exempt transactions')
+    ON CONFLICT (code) DO NOTHING;
+  `);
+  console.log('✓ tax_codes seeded');
+
   // GL account mapping for existing codes + new insurance code (Group D — Charge Items).
   await query(`
     INSERT INTO adjustment_codes (code, description, category, calc_type, default_direction)
@@ -364,6 +408,13 @@ async function seed() {
   await query(`UPDATE adjustment_codes SET gl_account = '6220-FREIGHT' WHERE code='FRT-ADJ' AND gl_account IS NULL`);
   await query(`UPDATE adjustment_codes SET gl_account = '6230-INSURANCE' WHERE code='INS-CARGO' AND gl_account IS NULL`);
   console.log('✓ charge item GL accounts seeded');
+
+  // A3 — default accrual trigger/reversal events per the Charge Items Accrual sheet.
+  await query(`UPDATE adjustment_codes SET default_trigger_event = 'bl_date', default_reversal_event = 'grn_date' WHERE code='FRT-ADJ' AND default_trigger_event IS NULL`);
+  await query(`UPDATE adjustment_codes SET default_trigger_event = 'bl_date', default_reversal_event = 'grn_date' WHERE code='INS-CARGO' AND default_trigger_event IS NULL`);
+  await query(`UPDATE adjustment_codes SET default_trigger_event = 'bl_date', default_reversal_event = 'payment_due_date' WHERE code='COMM-BROKER' AND default_trigger_event IS NULL`);
+  await query(`UPDATE adjustment_codes SET default_trigger_event = 'contract_date', default_reversal_event = 'payment_due_date' WHERE code='COMM-AGENT' AND default_trigger_event IS NULL`);
+  console.log('✓ charge item accrual events seeded');
 
   // ── PRICING BENCHMARKS MASTER — starter set, fully editable afterward ──
   await query(`

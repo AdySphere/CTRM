@@ -1673,3 +1673,67 @@ dateEventMasterRouter.patch('/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 module.exports.dateEventMasterRouter = dateEventMasterRouter;
+
+// ── CURRENCY / UOM / TAX MASTER (A5 fix) ──────────────────────────────
+const currencyMasterRouter = require('express').Router();
+currencyMasterRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query('SELECT * FROM currencies ORDER BY is_base DESC, code');
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+currencyMasterRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { code, name, symbol, decimals } = req.body;
+    if (!code || !name) return res.status(400).json({ error: 'code and name are required' });
+    const result = await query(`
+      INSERT INTO currencies (code, name, symbol, decimals) VALUES ($1,$2,$3,$4) RETURNING *
+    `, [code.toUpperCase(), name, symbol || null, decimals != null ? decimals : 2]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.currencyMasterRouter = currencyMasterRouter;
+
+const uomMasterRouter = require('express').Router();
+uomMasterRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query('SELECT * FROM uom_master WHERE active=TRUE ORDER BY category, code');
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+uomMasterRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { code, name, category, conversion } = req.body;
+    if (!code || !name) return res.status(400).json({ error: 'code and name are required' });
+    const result = await query(`
+      INSERT INTO uom_master (code, name, category, conversion) VALUES ($1,$2,$3,$4) RETURNING *
+    `, [code.toUpperCase(), name, category || null, conversion || '—']);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.uomMasterRouter = uomMasterRouter;
+
+const taxCodeRouter = require('express').Router();
+taxCodeRouter.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query('SELECT * FROM tax_codes WHERE active=TRUE ORDER BY code');
+    res.json({ success: true, data: result.rows });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+taxCodeRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { code, description, rate_pct, jurisdiction, applies_to } = req.body;
+    if (!code || !description) return res.status(400).json({ error: 'code and description are required' });
+    const result = await query(`
+      INSERT INTO tax_codes (code, description, rate_pct, jurisdiction, applies_to) VALUES ($1,$2,$3,$4,$5) RETURNING *
+    `, [code.toUpperCase(), description, rate_pct || 0, jurisdiction || null, applies_to || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+module.exports.taxCodeRouter = taxCodeRouter;

@@ -524,4 +524,155 @@ router.post('/rollover-check', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// ── CONTRACT EVENT DATES (A1) — per Veridian Event Date Master spec ──────────
+router.get('/:id/event-dates', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query('SELECT * FROM contract_event_dates WHERE contract_id=$1', [req.params.id]);
+    res.json({ success: true, data: result.rows[0] || null });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/:id/event-dates', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const existing = await query('SELECT id FROM contract_event_dates WHERE contract_id=$1', [id]);
+    if (existing.rows.length) {
+      return res.status(409).json({ error: 'Event dates record already exists for this contract — use PATCH to update' });
+    }
+    const result = await query('INSERT INTO contract_event_dates (contract_id) VALUES ($1) RETURNING *', [id]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.patch('/:id/event-dates', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const allowed = [
+      'contract_date', 'etd_estimated', 'etd_actual', 'bl_date', 'bl_number',
+      'eta_estimated', 'eta_actual', 'nor_tendered_at', 'pr_date', 'pr_reference',
+      'grn_date', 'grn_reference', 'grn_erp_posted', 'assay_date', 'assay_confirmed',
+      'qp_start_date', 'qp_end_date', 'qp_close_confirmed', 'payment_due_date',
+      'payment_anchor_event', 'payment_terms_days', 'settlement_date', 'updated_by'
+    ];
+
+    const currentRes = await query('SELECT * FROM contract_event_dates WHERE contract_id=$1', [id]);
+    if (!currentRes.rows.length) return res.status(404).json({ error: 'No event dates record for this contract — create one first' });
+    const current = currentRes.rows[0];
+
+    // THE single most important rule in the whole spec: once bl_date_locked = TRUE,
+    // bl_date and bl_number become immutable. Any attempt to change them is rejected
+    // server-side, not just hidden client-side, so this can never be bypassed by a
+    // direct API call.
+    if (current.bl_date_locked && (('bl_date' in req.body) || ('bl_number' in req.body))) {
+      return res.status(403).json({ error: 'BL date is locked and cannot be changed once confirmed. Requires an approval workflow to override.' });
+    }
+
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: current });
+    fields.updated_at = new Date().toISOString();
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE contract_event_dates SET ${sets} WHERE contract_id=$1 RETURNING *`, [id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Locking the BL date is a separate, deliberate action — not just another field update —
+// since it triggers automatic recalculation of QP window, payment due date, and accruals.
+router.post('/:id/event-dates/lock-bl-date', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { locked_by } = req.body;
+    const currentRes = await query('SELECT * FROM contract_event_dates WHERE contract_id=$1', [id]);
+    if (!currentRes.rows.length) return res.status(404).json({ error: 'No event dates record for this contract' });
+    const current = currentRes.rows[0];
+    if (current.bl_date_locked) return res.status(409).json({ error: 'BL date is already locked' });
+    if (!current.bl_date) return res.status(400).json({ error: 'Cannot lock — no BL date has been entered yet' });
+
+    const result = await query(`
+      UPDATE contract_event_dates
+      SET bl_date_locked = TRUE, bl_date_locked_by = $2, bl_date_locked_at = NOW()
+      WHERE contract_id = $1 RETURNING *
+    `, [id, locked_by || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// ── PAYMENT TERM TRANCHES (A2) ────────────────────────────────────────────────
+router.get('/:id/payment-tranches', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query('SELECT * FROM payment_term_tranches WHERE contract_id=$1 ORDER BY tranche_number', [req.params.id]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/:id/payment-tranches', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { tranche_name, percentage, amount_basis, anchor_event, offset_days,
+      offset_direction, fixed_date, currency, invoice_type, notes } = req.body;
+    if (!tranche_name || percentage == null || !anchor_event) {
+      return res.status(400).json({ error: 'tranche_name, percentage and anchor_event are required' });
+    }
+
+    // R1: tranches must sum to 100% — check existing + this new one before allowing it.
+    const existingRes = await query('SELECT COALESCE(SUM(percentage),0) as total FROM payment_term_tranches WHERE contract_id=$1', [id]);
+    const existingTotal = parseFloat(existingRes.rows[0].total) || 0;
+    const newTotal = existingTotal + parseFloat(percentage);
+    if (amount_basis !== 'balance_remaining' && newTotal > 100.001) {
+      return res.status(400).json({ error: 'Tranches would total ' + newTotal.toFixed(2) + '% — cannot exceed 100%. Use balance_remaining for the final tranche instead.' });
+    }
+
+    const cntRes = await query('SELECT COUNT(*) FROM payment_term_tranches WHERE contract_id=$1', [id]);
+    const trancheNo = parseInt(cntRes.rows[0].count) + 1;
+
+    // Calculate due date now if the anchor event date is already known.
+    const edRes = await query('SELECT * FROM contract_event_dates WHERE contract_id=$1', [id]);
+    let dueDate = null;
+    const anchorFieldMap = {
+      contract_date: 'contract_date', etd_date: 'etd_actual', bl_date: 'bl_date',
+      eta_date: 'eta_actual', pr_date: 'pr_date', grn_date: 'grn_date',
+      assay_date: 'assay_date', qp_close_date: 'qp_end_date'
+    };
+    if (anchor_event === 'fixed_date' && fixed_date) {
+      dueDate = fixed_date;
+    } else if (edRes.rows.length && anchorFieldMap[anchor_event]) {
+      const anchorDate = edRes.rows[0][anchorFieldMap[anchor_event]];
+      if (anchorDate) {
+        const d = new Date(anchorDate);
+        const sign = (offset_direction || 'after') === 'before' ? -1 : 1;
+        d.setDate(d.getDate() + sign * (offset_days || 0));
+        dueDate = d.toISOString().split('T')[0];
+      }
+    }
+
+    const result = await query(`
+      INSERT INTO payment_term_tranches
+        (contract_id, tranche_number, tranche_name, percentage, amount_basis, anchor_event,
+         offset_days, offset_direction, fixed_date, calculated_due_date, currency, invoice_type,
+         status, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+      RETURNING *
+    `, [id, trancheNo, tranche_name, percentage, amount_basis || 'pct_of_contract', anchor_event,
+        offset_days || 0, offset_direction || 'after', fixed_date || null, dueDate,
+        currency || 'USD', invoice_type || 'provisional',
+        dueDate ? 'due_date_calc' : 'pending_anchor', notes || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.delete('/:id/payment-tranches/:trancheId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query('DELETE FROM payment_term_tranches WHERE id=$1 AND contract_id=$2', [req.params.trancheId, req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports = router;
