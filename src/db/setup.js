@@ -310,6 +310,23 @@ async function setupDatabase() {
       budget_sell_price DECIMAL(14,4),
       budget_margin     DECIMAL(14,2),
       budget_locked_at  TIMESTAMPTZ,
+      -- Group D (final) — Deal Budgeting module, per the flowchart: budgeting parameters
+      -- captured before a counterparty/contract necessarily exists yet.
+      budget_month_of_shipping DATE,
+      budget_shipment_term     VARCHAR(10),  -- Incoterm (CIF, FOB, etc.) — determines which of POL/POD apply
+      budget_loading_port      INT REFERENCES locations(id),
+      budget_destination_port  INT REFERENCES locations(id),
+      budget_shipment_cost     DECIMAL(14,2),
+      budget_clearance_cost    DECIMAL(14,2),
+      budget_process_type      VARCHAR(30),  -- MANUFACTURING, LIGHT_MANUFACTURING, PROCESS, NONE
+      budget_bom_notes         TEXT,
+      budget_packing_type      VARCHAR(30),
+      budget_packing_cost      DECIMAL(14,2),
+      budget_delivery_location INT REFERENCES locations(id),
+      budget_delivery_cost     DECIMAL(14,2),
+      budget_payment_terms     TEXT,
+      budget_finance_cost      DECIMAL(14,2),
+      budget_hedging_cost      DECIMAL(14,2),
       confirmed       BOOLEAN DEFAULT FALSE,
       confirmed_at    TIMESTAMPTZ,
       confirmed_by    VARCHAR(50),
@@ -403,6 +420,21 @@ async function setupDatabase() {
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_qty DECIMAL(12,3)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_sell_price DECIMAL(14,4)`);
     await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_margin DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_month_of_shipping DATE`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_shipment_term VARCHAR(10)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_loading_port INT REFERENCES locations(id)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_destination_port INT REFERENCES locations(id)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_shipment_cost DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_clearance_cost DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_process_type VARCHAR(30)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_bom_notes TEXT`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_packing_type VARCHAR(30)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_packing_cost DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_delivery_location INT REFERENCES locations(id)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_delivery_cost DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_payment_terms TEXT`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_finance_cost DECIMAL(14,2)`);
+    await query(`ALTER TABLE deals ADD COLUMN IF NOT EXISTS budget_hedging_cost DECIMAL(14,2)`);
     await query(`ALTER TABLE quote_responses ADD COLUMN IF NOT EXISTS deal_id INT REFERENCES deals(id)`);
     await query(`ALTER TABLE hedges ADD COLUMN IF NOT EXISTS broker_contract_note VARCHAR(60)`);
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);

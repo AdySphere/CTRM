@@ -24,6 +24,31 @@ dealsRouter.get('/', async (req, res) => {
 });
 
 // POST /api/deals — direct deal creation (Path B: known counterparty, repeat trade, no RFQ/Quote)
+// Single-deal GET — was missing entirely; openDealDetail() relied on fetching the whole
+// list and filtering client-side, which works for display fields but excludes budget_*
+// since the list endpoint uses an explicit column list, not SELECT *.
+dealsRouter.get('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT d.*, s.name as supplier_name, c.name as customer_name,
+        cm.name as commodity_name, cm.uom as commodity_uom,
+        lp.name as budget_loading_port_name, dp.name as budget_destination_port_name,
+        dl.name as budget_delivery_location_name
+      FROM deals d
+      LEFT JOIN counterparties s ON s.id = d.supplier_id
+      LEFT JOIN counterparties c ON c.id = d.customer_id
+      LEFT JOIN commodities cm ON cm.code = d.commodity_code
+      LEFT JOIN locations lp ON lp.id = d.budget_loading_port
+      LEFT JOIN locations dp ON dp.id = d.budget_destination_port
+      LEFT JOIN locations dl ON dl.id = d.budget_delivery_location
+      WHERE d.id=$1 OR d.deal_no=$1
+    `, [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Deal not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 dealsRouter.post('/', async (req, res) => {
   try {
     const { commodity_code, qty_mt, supplier_id, customer_id, incoterms, origin, destination, notes } = req.body;
@@ -52,6 +77,28 @@ dealsRouter.post('/', async (req, res) => {
     await logAudit('deal', deal.id, deal.deal_no, 'CREATE', null, null, 'Created directly — known counterparty, no RFQ/Quote (Path B)');
 
     res.json({ success: true, data: deal });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Group D (final) — Deal Budgeting: generic PATCH for budgeting parameters, plus the
+// pre-existing simple budget_buy/sell fields that previously had no UI writing to them.
+dealsRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = [
+      'budget_buy_qty', 'budget_buy_price', 'budget_sell_qty', 'budget_sell_price', 'budget_margin', 'budget_locked_at',
+      'budget_month_of_shipping', 'budget_shipment_term', 'budget_loading_port', 'budget_destination_port',
+      'budget_shipment_cost', 'budget_clearance_cost', 'budget_process_type', 'budget_bom_notes',
+      'budget_packing_type', 'budget_packing_cost', 'budget_delivery_location', 'budget_delivery_cost',
+      'budget_payment_terms', 'budget_finance_cost', 'budget_hedging_cost',
+      'commodity_code', 'qty_mt', 'supplier_id', 'customer_id', 'incoterms', 'origin', 'destination', 'notes'
+    ];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE deals SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 

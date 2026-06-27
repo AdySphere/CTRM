@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.27</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.28</div>
   </div>
   <nav class="sb-nav">
 
@@ -1030,6 +1030,45 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <button class="btn bg bsm" onclick="openNewPCContract()">Create Purchase Contract</button>
               <button class="btn bg bsm" onclick="openNewSCContract()">Create Sales Contract</button>
             </div>
+          </div>
+        </div>
+        <!-- DEAL BUDGETING (Group D final) — per the flowchart: captured before a
+             counterparty/contract necessarily exists, flows into Budget vs Actual below -->
+        <div id="dd-deal-budgeting-panel" style="padding:14px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
+          <div class="br-row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">Deal Budgeting</div>
+            <button class="btn bg bxs" onclick="toggleDealBudgetingPanel()" id="dd-budgeting-toggle">Show</button>
+          </div>
+          <div id="dd-budgeting-fields" style="display:none">
+            <div class="fg">
+              <div class="f"><div class="fl">Offered Buying Price</div><input type="number" class="fi" id="dbud-buy-price" step="0.0001"></div>
+              <div class="f"><div class="fl">Expected Selling Price</div><input type="number" class="fi" id="dbud-sell-price" step="0.0001"></div>
+              <div class="f"><div class="fl">Month of Shipping</div><input type="month" class="fi" id="dbud-ship-month"></div>
+              <div class="f"><div class="fl">Shipment Term (Incoterm)</div>
+                <select class="fs" id="dbud-shipment-term" onchange="onDbudShipmentTermChange()"><option value="">— Select —</option><option>CIF</option><option>CFR</option><option>FOB</option><option>DDP</option><option>EXW</option><option>FCA</option></select>
+              </div>
+              <div class="f" id="dbud-pol-field"><div class="fl">Loading Port</div><select class="fs" id="dbud-loading-port"><option value="">— Select —</option></select></div>
+              <div class="f" id="dbud-pod-field"><div class="fl">Destination Port</div><select class="fs" id="dbud-destination-port"><option value="">— Select —</option></select></div>
+              <div class="f"><div class="fl">Shipment Cost (USD)</div><input type="number" class="fi" id="dbud-shipment-cost" step="0.01" oninput="recalcDealBudgetTotals()"></div>
+              <div class="f"><div class="fl">Clearance Cost (USD)</div><input type="number" class="fi" id="dbud-clearance-cost" step="0.01" oninput="recalcDealBudgetTotals()"></div>
+              <div class="f"><div class="fl">Manufacturing / Process</div>
+                <select class="fs" id="dbud-process-type"><option value="NONE">None</option><option value="MANUFACTURING">Manufacturing</option><option value="LIGHT_MANUFACTURING">Light Manufacturing</option><option value="PROCESS">Process</option></select>
+              </div>
+              <div class="f"><div class="fl">BoM Notes</div><input type="text" class="fi" id="dbud-bom-notes" placeholder="Bill of materials reference / notes"></div>
+              <div class="f"><div class="fl">Packing Type</div><input type="text" class="fi" id="dbud-packing-type" placeholder="e.g. Bulk, Bags, Drums"></div>
+              <div class="f"><div class="fl">Packing Cost (USD)</div><input type="number" class="fi" id="dbud-packing-cost" step="0.01" oninput="recalcDealBudgetTotals()"></div>
+              <div class="f"><div class="fl">Delivery Location</div><select class="fs" id="dbud-delivery-location"><option value="">— Select —</option></select></div>
+              <div class="f"><div class="fl">Delivery Cost (USD)</div><input type="number" class="fi" id="dbud-delivery-cost" step="0.01" oninput="recalcDealBudgetTotals()"></div>
+              <div class="f csf"><div class="fl">Payment Terms</div><input type="text" class="fi" id="dbud-payment-terms" placeholder="e.g. 90% on BL date, 10% on final assay"></div>
+            </div>
+            <div class="divl mt12">Costs</div>
+            <div class="fg">
+              <div class="f"><div class="fl">Delivery Cost (USD)</div><div class="fc mono ta2" id="dbud-cost-delivery">—</div></div>
+              <div class="f"><div class="fl">Finance Cost (USD)</div><input type="number" class="fi" id="dbud-finance-cost" step="0.01" oninput="recalcDealBudgetTotals()"></div>
+              <div class="f"><div class="fl">Hedging Cost (USD)</div><input type="number" class="fi" id="dbud-hedging-cost" step="0.01" oninput="recalcDealBudgetTotals()"></div>
+              <div class="f"><div class="fl">Total Budgeted Cost (USD)</div><div class="fc mono fw7 ta" id="dbud-total-cost">—</div></div>
+            </div>
+            <div class="lar"><button class="btn bp bsm" onclick="saveDealBudgeting()">Save Budgeting Parameters</button></div>
           </div>
         </div>
         <!-- BUDGET vs ACTUAL P&L -->
@@ -6512,6 +6551,7 @@ async function openDealDetail(dealNo) {
     window._activeDeal = deal;
     await loadDealLinkedEnquiries(deal.id);
     await loadBudgetActual(deal.id);
+    await loadDealBudgeting(deal.id);
 
     toast('Deal Opened', deal.deal_no + ' — ' + (deal.commodity_name || deal.commodity_code || ''), 'info');
   } catch (err) {
@@ -10485,6 +10525,132 @@ async function jumpToRolloverFromStatus(contractNo) {
       await openContractDetail(contract.id, 'pc');
       setTimeout(function(){ wireTabs('pct'); document.querySelector('[data-tab="pc-rollover"]')?.click(); }, 300);
     }, 350);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// Group D (final): Deal Budgeting module, per the flowchart — Offered Buying Price,
+// Expected Selling Price, Month of Shipping, Shipment Term (splitting into Loading/
+// Destination Port), Shipment Cost -> Clearance Cost, Manufacturing/Process -> BoM,
+// Packing Type -> Packing Cost, Delivery Location -> Delivery Cost, Payment Terms, and
+// Costs splitting into Delivery/Finance/Hedging. Captured before a counterparty/contract
+// necessarily exists — flows into the existing Budget vs Actual panel via the same
+// budget_* columns on deals (buy/sell price already had columns with no UI; this is that
+// missing UI, extended with the full cost breakdown from the flowchart).
+function toggleDealBudgetingPanel() {
+  const fields = document.getElementById('dd-budgeting-fields');
+  const btn = document.getElementById('dd-budgeting-toggle');
+  if (!fields || !btn) return;
+  const showing = fields.style.display !== 'none';
+  fields.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? 'Show' : 'Hide';
+}
+
+function onDbudShipmentTermChange() {
+  const term = document.getElementById('dbud-shipment-term')?.value;
+  // POL is relevant for any term where the seller arranges main carriage; POD relevant
+  // for CIF/CFR/DDP where the seller's responsibility extends to destination. Rather than
+  // hide fields outright (terms vary by trade), keep both visible but this hook is here
+  // for any future term-specific logic Prashant wants layered in.
+}
+
+function recalcDealBudgetTotals() {
+  const g = function(id){ return parseFloat(document.getElementById(id)?.value) || 0; };
+  const shipment = g('dbud-shipment-cost');
+  const clearance = g('dbud-clearance-cost');
+  const packing = g('dbud-packing-cost');
+  const delivery = g('dbud-delivery-cost');
+  const finance = g('dbud-finance-cost');
+  const hedging = g('dbud-hedging-cost');
+
+  const deliveryDisplay = document.getElementById('dbud-cost-delivery');
+  if (deliveryDisplay) deliveryDisplay.textContent = delivery.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const total = shipment + clearance + packing + delivery + finance + hedging;
+  const totalDisplay = document.getElementById('dbud-total-cost');
+  if (totalDisplay) totalDisplay.textContent = total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+async function loadDealBudgeting(dealId) {
+  try {
+    const locRes = await fetch(API_BASE + '/api/master/locations');
+    const locData = await locRes.json();
+    const locs = locData.data || [];
+    const locOpts = '<option value="">— Select —</option>' + locs.map(function(l){
+      return '<option value="'+l.id+'">'+l.name+(l.country?', '+l.country:'')+'</option>';
+    }).join('');
+    ['dbud-loading-port','dbud-destination-port','dbud-delivery-location'].forEach(function(id){
+      const el = document.getElementById(id); if (el) el.innerHTML = locOpts;
+    });
+  } catch(e) { /* non-fatal */ }
+
+  try {
+    const res = await fetch(API_BASE + '/api/deals/' + dealId);
+    const data = await res.json();
+    if (!data.success) return;
+    const d = data.data;
+    const sv = function(id, v){ const el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
+    sv('dbud-buy-price', d.budget_buy_price);
+    sv('dbud-sell-price', d.budget_sell_price);
+    sv('dbud-ship-month', d.budget_month_of_shipping ? d.budget_month_of_shipping.split('T')[0].slice(0,7) : '');
+    sv('dbud-shipment-term', d.budget_shipment_term);
+    sv('dbud-loading-port', d.budget_loading_port);
+    sv('dbud-destination-port', d.budget_destination_port);
+    sv('dbud-shipment-cost', d.budget_shipment_cost);
+    sv('dbud-clearance-cost', d.budget_clearance_cost);
+    sv('dbud-process-type', d.budget_process_type || 'NONE');
+    sv('dbud-bom-notes', d.budget_bom_notes);
+    sv('dbud-packing-type', d.budget_packing_type);
+    sv('dbud-packing-cost', d.budget_packing_cost);
+    sv('dbud-delivery-location', d.budget_delivery_location);
+    sv('dbud-delivery-cost', d.budget_delivery_cost);
+    sv('dbud-payment-terms', d.budget_payment_terms);
+    sv('dbud-finance-cost', d.budget_finance_cost);
+    sv('dbud-hedging-cost', d.budget_hedging_cost);
+    recalcDealBudgetTotals();
+  } catch(e) { console.warn('loadDealBudgeting:', e); }
+}
+
+async function saveDealBudgeting() {
+  const deal = window._activeDeal;
+  if (!deal) { toast('No Deal', 'Open a deal first', 'warning'); return; }
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const gf = function(id){ const v = g(id); return v ? parseFloat(v) : null; };
+
+  // Margin derives from the budgeted buy/sell prices against the deal's quantity, keeping
+  // the existing Budget vs Actual panel's margin calculation meaningful once locked.
+  const buyPrice = gf('dbud-buy-price');
+  const sellPrice = gf('dbud-sell-price');
+  const qty = parseFloat(deal.qty_mt) || 0;
+  const margin = (buyPrice != null && sellPrice != null) ? (sellPrice - buyPrice) * qty : null;
+
+  try {
+    const res = await fetch(API_BASE + '/api/deals/' + deal.id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        budget_buy_price: buyPrice, budget_buy_qty: qty,
+        budget_sell_price: sellPrice, budget_sell_qty: qty,
+        budget_margin: margin,
+        budget_month_of_shipping: g('dbud-ship-month') ? g('dbud-ship-month') + '-01' : null,
+        budget_shipment_term: g('dbud-shipment-term'),
+        budget_loading_port: g('dbud-loading-port') ? parseInt(g('dbud-loading-port')) : null,
+        budget_destination_port: g('dbud-destination-port') ? parseInt(g('dbud-destination-port')) : null,
+        budget_shipment_cost: gf('dbud-shipment-cost'),
+        budget_clearance_cost: gf('dbud-clearance-cost'),
+        budget_process_type: g('dbud-process-type'),
+        budget_bom_notes: g('dbud-bom-notes'),
+        budget_packing_type: g('dbud-packing-type'),
+        budget_packing_cost: gf('dbud-packing-cost'),
+        budget_delivery_location: g('dbud-delivery-location') ? parseInt(g('dbud-delivery-location')) : null,
+        budget_delivery_cost: gf('dbud-delivery-cost'),
+        budget_payment_terms: g('dbud-payment-terms'),
+        budget_finance_cost: gf('dbud-finance-cost'),
+        budget_hedging_cost: gf('dbud-hedging-cost')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Saved', 'Deal budgeting parameters saved', 'success');
+    await loadBudgetActual(deal.id); // refresh the existing Budget vs Actual panel with the new numbers
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
