@@ -132,8 +132,6 @@ router.post('/:id/pricing-lines', async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // PATCH /api/contracts/:id/confirm — mark as CONTRACTED + auto-generate PO/SO
 router.patch("/:id/confirm", async (req, res) => {
   res.set("Cache-Control", "no-store");
@@ -242,3 +240,86 @@ router.post('/:id/rollover-events', async (req, res) => {
     res.json({ success: true, data: rollover });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
+
+// ── PAYMENT SCHEDULE LINES ──────────────────────────────────────────
+router.get('/:id/payment-lines', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(
+      'SELECT * FROM payment_schedule_lines WHERE contract_id=$1 ORDER BY line_no',
+      [req.params.id]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/:id/payment-lines', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { pct, trigger_event, offset_days, offset_type, basis, required_documents, due_date } = req.body;
+    if (!pct || !trigger_event) {
+      return res.status(400).json({ error: 'pct and trigger_event are required' });
+    }
+    const cntRes = await query('SELECT COUNT(*) FROM payment_schedule_lines WHERE contract_id=$1', [id]);
+    const lineNo = parseInt(cntRes.rows[0].count) + 1;
+    const result = await query(`
+      INSERT INTO payment_schedule_lines
+        (contract_id, line_no, pct, trigger_event, offset_days, offset_type, basis, required_documents, due_date, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'PENDING')
+      RETURNING *
+    `, [id, lineNo, pct, trigger_event, offset_days || 0, offset_type || 'WORKING DAYS',
+        basis || null, required_documents || null, due_date || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.delete('/:id/payment-lines/:lineId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query('DELETE FROM payment_schedule_lines WHERE id=$1 AND contract_id=$2', [req.params.lineId, req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// ── QC SPECIFICATIONS — shared by PC and SC, contract_id-keyed already ──
+router.get('/:id/qc-specs', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query('SELECT * FROM contract_qc_specs WHERE contract_id=$1 ORDER BY id', [req.params.id]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/:id/qc-specs', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { element, spec_min, spec_max, spec_ref_avg, is_percentage,
+      penalty_type, penalty_rate, penalty_unit } = req.body;
+    if (!element) return res.status(400).json({ error: 'element is required' });
+    // Per the QC spec: a fixed Standard Value and a Min/Max range are mutually exclusive
+    // for a given element — if a target is filled, min/max should not also be filled.
+    if (spec_ref_avg != null && (spec_min != null || spec_max != null)) {
+      return res.status(400).json({ error: 'Define either a Min/Max range or a Standard Value, not both' });
+    }
+    const result = await query(`
+      INSERT INTO contract_qc_specs
+        (contract_id, element, spec_min, spec_max, spec_ref_avg, is_percentage, penalty_type, penalty_rate, penalty_unit)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      RETURNING *
+    `, [id, element, spec_min || null, spec_max || null, spec_ref_avg || null,
+        is_percentage !== false, penalty_type || null, penalty_rate || null, penalty_unit || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.delete('/:id/qc-specs/:specId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query('DELETE FROM contract_qc_specs WHERE id=$1 AND contract_id=$2', [req.params.specId, req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+module.exports = router;

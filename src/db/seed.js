@@ -253,11 +253,11 @@ async function seed() {
        pricing_option, qp_period_code, qp_start_date, qp_end_date)
     VALUES
       ((SELECT id FROM contracts WHERE contract_no='PC-2026-001'),
-       1, 'CU-MILLBERRY', 'LME-CU-BENCH', 'LME', 'LME',
+       1, 'CU-MILLBERRY', 'LME-CU-CASH', 'LME', 'LME',
        91, 91, 'event', 'lowest4', 'SUPPLIER', 'LME-M1',
        '2026-06-01', '2026-06-30'),
       ((SELECT id FROM contracts WHERE contract_no='SC-2026-001'),
-       1, 'CU-MILLBERRY', 'LME-CU-BENCH', 'LME', 'LME',
+       1, 'CU-MILLBERRY', 'LME-CU-CASH', 'LME', 'LME',
        95, 95, 'event', 'highest4', 'LONGER', 'LME-M1',
        '2026-07-01', '2026-08-01')
     ON CONFLICT DO NOTHING;

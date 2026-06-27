@@ -408,6 +408,22 @@ async function setupDatabase() {
     await query(`ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS uom_override VARCHAR(10)`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS shipment_month DATE`);
     await query(`ALTER TABLE contract_pricing_lines ADD COLUMN IF NOT EXISTS qp_offset_months INT DEFAULT 0`);
+    // Group A fix: benchmark_code was wrongly pointed at commodities(code) instead of
+    // pricing_benchmarks(code) — every Add Pricing Line save with a real benchmark
+    // (e.g. LME-CU-CASH) was silently failing a foreign key violation. Drop and recreate
+    // the constraint against the correct table for any database that already has the old one.
+    await query(`ALTER TABLE contract_pricing_lines DROP CONSTRAINT IF EXISTS contract_pricing_lines_benchmark_code_fkey`);
+    // Null out any existing benchmark_code that doesn't exist in pricing_benchmarks (e.g. the
+    // old seeded 'LME-CU-BENCH', which was actually a commodity code) so the new constraint
+    // below doesn't fail against pre-existing bad data.
+    await query(`UPDATE contract_pricing_lines SET benchmark_code = NULL WHERE benchmark_code IS NOT NULL AND benchmark_code NOT IN (SELECT code FROM pricing_benchmarks)`);
+    await query(`ALTER TABLE contract_pricing_lines ADD CONSTRAINT contract_pricing_lines_benchmark_code_fkey FOREIGN KEY (benchmark_code) REFERENCES pricing_benchmarks(code)`);
+    await query(`CREATE TABLE IF NOT EXISTS payment_schedule_lines (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, line_no INT NOT NULL, pct DECIMAL(6,3) NOT NULL, trigger_event VARCHAR(40) NOT NULL, offset_days INT DEFAULT 0, offset_type VARCHAR(20) DEFAULT 'WORKING DAYS', basis VARCHAR(40), required_documents TEXT, due_date DATE, status VARCHAR(20) DEFAULT 'PENDING', created_at TIMESTAMPTZ DEFAULT NOW())`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_payment_sched_contract ON payment_schedule_lines(contract_id)`);
+    await query(`ALTER TABLE contract_qc_specs ALTER COLUMN spec_min TYPE DECIMAL(10,5)`);
+    await query(`ALTER TABLE contract_qc_specs ALTER COLUMN spec_max TYPE DECIMAL(10,5)`);
+    await query(`ALTER TABLE contract_qc_specs ALTER COLUMN spec_ref_avg TYPE DECIMAL(10,5)`);
+    await query(`ALTER TABLE contract_qc_specs ADD COLUMN IF NOT EXISTS is_percentage BOOLEAN DEFAULT TRUE`);
     await query(`CREATE TABLE IF NOT EXISTS rollover_events (id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE, rollover_no INT NOT NULL, period_from DATE NOT NULL, period_to DATE NOT NULL, unfixed_qty DECIMAL(12,3) NOT NULL, rate_basis VARCHAR(20) NOT NULL, rate_value DECIMAL(14,4) NOT NULL, derived_rate_per_mt DECIMAL(14,4), amount_usd DECIMAL(15,2) NOT NULL, new_qp_start_date DATE, new_qp_end_date DATE, debit_note_no VARCHAR(30), status VARCHAR(20) DEFAULT 'PENDING', created_by VARCHAR(50), created_at TIMESTAMPTZ DEFAULT NOW())`);
     await query(`CREATE INDEX IF NOT EXISTS idx_rollover_contract ON rollover_events(contract_id)`);
     await query(`CREATE TABLE IF NOT EXISTS pricing_benchmarks (id SERIAL PRIMARY KEY, code VARCHAR(30) UNIQUE NOT NULL, description TEXT NOT NULL, commodity_code VARCHAR(20) REFERENCES commodities(code), exchange_code VARCHAR(20) NOT NULL, reporting_agency VARCHAR(30), instrument_code VARCHAR(50), default_index_pct DECIMAL(6,3) DEFAULT 100, default_payable_pct DECIMAL(6,3) DEFAULT 100, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMPTZ DEFAULT NOW())`);
@@ -431,7 +447,7 @@ async function setupDatabase() {
       contract_id         INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
       line_no             INT DEFAULT 1,
       source_item_code    VARCHAR(20) REFERENCES commodities(code),
-      benchmark_code      VARCHAR(20) REFERENCES commodities(code),
+      benchmark_code      VARCHAR(20) REFERENCES pricing_benchmarks(code), -- Group A fix: was wrongly pointed at commodities(code) — benchmark codes (e.g. LME-CU-CASH) live in pricing_benchmarks, not commodities. Every Add Pricing Line save with a real benchmark was silently failing the FK constraint and returning a 500.
       exchange_code       VARCHAR(20),
       reporting_agency    VARCHAR(30),
       instrument_code     VARCHAR(50),
@@ -481,6 +497,26 @@ async function setupDatabase() {
   `);
   console.log('✓ rollover_events');
 
+  // ── PAYMENT SCHEDULE LINES (per contract — Group A) ──
+  await query(`
+    CREATE TABLE IF NOT EXISTS payment_schedule_lines (
+      id                SERIAL PRIMARY KEY,
+      contract_id       INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      line_no           INT NOT NULL,
+      pct               DECIMAL(6,3) NOT NULL,
+      trigger_event     VARCHAR(40) NOT NULL,
+      offset_days       INT DEFAULT 0,
+      offset_type       VARCHAR(20) DEFAULT 'WORKING DAYS',
+      basis             VARCHAR(40),
+      required_documents TEXT,
+      due_date          DATE,
+      status            VARCHAR(20) DEFAULT 'PENDING',
+      created_at        TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_payment_sched_contract ON payment_schedule_lines(contract_id);
+  `);
+  console.log('✓ payment_schedule_lines');
+
   // ── PRICING BENCHMARKS MASTER (B11 fix — master-driven, never hardcoded) ──
   await query(`
     CREATE TABLE IF NOT EXISTS pricing_benchmarks (
@@ -504,9 +540,10 @@ async function setupDatabase() {
       id              SERIAL PRIMARY KEY,
       contract_id     INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
       element         VARCHAR(10) NOT NULL,  -- CU, PB, SN, MOISTURE, AS, SB
-      spec_min        DECIMAL(8,4),
-      spec_max        DECIMAL(8,4),
-      spec_ref_avg    DECIMAL(8,4),
+      spec_min        DECIMAL(10,5),         -- Group A QC fix: was DECIMAL(8,4), needs 5 decimal places
+      spec_max        DECIMAL(10,5),
+      spec_ref_avg    DECIMAL(10,5),         -- the Standard Value (fixed-value mode), renamed from spec_ref_avg
+      is_percentage   BOOLEAN DEFAULT TRUE,  -- Group A QC fix: percentage vs absolute unit
       penalty_type    VARCHAR(10),           -- TYPE-A, TYPE-B, REJECTION
       penalty_rate    DECIMAL(10,4),
       penalty_unit    VARCHAR(20)            -- USD/MT/%, USD/%/MT
