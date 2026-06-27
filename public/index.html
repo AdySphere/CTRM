@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.17</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.22</div>
   </div>
   <nav class="sb-nav">
 
@@ -1231,14 +1231,21 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Our Company (Buyer)</div><div class="fc">Trading Company DMCC</div></div>
           <div class="f"><div class="fl">Vendor (Seller)</div><div class="fc fw6" id="pcd-vendor">—</div></div>
           <div class="f"><div class="fl">Commodity</div><div class="fc fw6" id="pcd-commodity">—</div></div>
-          <div class="f"><div class="fl">Quantity</div><div class="fc mono fw7" id="pcd-qty">—</div></div>
-          <div class="f"><div class="fl">Incoterms</div><div class="fc" id="pcd-incoterms">—</div></div>
-          <div class="f"><div class="fl">Pricing Formula</div><div class="fc mono" id="pcd-pricing">—</div></div>
+          <div class="f"><div class="fl">Quantity</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" class="fi" id="pcd-qty" step="0.001" style="flex:1">
+              <span class="fc mono" id="pcd-qty-uom">MT</span>
+            </div>
+          </div>
+          <div class="f"><div class="fl">Incoterms</div><input type="text" class="fi" id="pcd-incoterms" placeholder="e.g. CIF, FOB, CFR"></div>
+          <div class="f"><div class="fl">Pricing Formula</div><input type="text" class="fi" id="pcd-pricing" placeholder="e.g. 91% LME Lowest of 4"></div>
           <div class="f"><div class="fl">Vendor Contact / Attn.</div><input type="text" class="fi" id="pcd-contact" placeholder="e.g. Mr. John Smith, Metals Desk"></div>
           <div class="f"><div class="fl">Broker / Agent</div><input type="text" class="fi" id="pcd-broker" placeholder="If via broker"></div>
           <div class="f"><div class="fl">Broker Commission</div><input type="text" class="fi" id="pcd-brokerage" placeholder="e.g. 1.5% of invoice"></div>
           <div class="f csf"><div class="fl">Contract Header Remarks</div><textarea class="fta" id="pcd-remarks" style="min-height:50px"></textarea></div>
-        </div></div>
+        </div>
+        <div class="lar"><button class="btn bp bsm" onclick="saveContractGeneral('pc')">Save Changes</button></div>
+        </div>
         <div id="pc-material" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Add one line per quality grade. Each has its own quantity, spec, HS code and base price. Sample 1 has Q1+Q2 Lead-Tin as separate lines.</div>
           <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade / Quality</th><th>Qty</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle / Ingot Wt</th><th>Weight Basis</th><th>Origin</th><th></th></tr></thead>
@@ -1379,24 +1386,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="divl">Payment Schedule — Per Contract Terms</div>
           <table class="lt"><thead><tr><th>Line</th><th>%</th><th>Trigger Event</th><th>Offset Days</th><th>Offset Type</th><th>Basis</th><th>Required Documents</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
           <tbody id="pc-pay-tbody">
-            <tr><td class="mono f10 fw6">1</td><td class="mono fw6 ta">90%</td>
-              <td><select class="fs" style="font-size:10px"><option>BL_DATE</option><option>ETD</option><option>ETA</option><option>DOCS_RECEIPT</option><option>ASSAY_RECEIPT_DATE</option><option>FINAL_ASSAY_CONFIRMED</option><option>DELIVERY_DATE</option></select></td>
-              <td><input type="number" class="fi" style="width:48px;font-size:10px" value="5"></td>
-              <td><select class="fs" style="font-size:9px"><option>WORKING DAYS</option><option>CALENDAR DAYS</option></select></td>
-              <td><select class="fs" style="font-size:10px"><option>Provisional Invoice Amount</option><option>Final Invoice Amount</option></select></td>
-              <td class="f10">Full set BL (3/3) · Provisional Invoice · Packing List · COO · Insurance Policy</td>
-              <td><input type="date" class="fi" style="width:115px;font-size:10px"></td>
-              <td><span class="badge bd-draft">PENDING</span></td>
-              <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
-            <tr><td class="mono f10 fw6">2</td><td class="mono fw6 ta">10%</td>
-              <td><select class="fs" style="font-size:10px"><option>FINAL_ASSAY_CONFIRMED</option><option>QUALITY_VERIFICATION_AT_DESTINATION</option><option>QP_WINDOW_CLOSE</option></select></td>
-              <td><input type="number" class="fi" style="width:48px;font-size:10px" value="5"></td>
-              <td><select class="fs" style="font-size:9px"><option>WORKING DAYS</option><option>CALENDAR DAYS</option></select></td>
-              <td><select class="fs" style="font-size:10px"><option>Final Invoice Amount</option><option>Delta vs Provisional</option></select></td>
-              <td class="f10">Final Assay Certificate · Final Invoice</td>
-              <td><input type="date" class="fi" style="width:115px;font-size:10px"></td>
-              <td><span class="badge bd-draft">PENDING</span></td>
-              <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment schedule…</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addPCPayLine()">+ Add Payment Line</button></div>
         </div>
@@ -1412,9 +1402,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Test Sample Disposition</div><input type="text" class="fi" placeholder="e.g. Provisional assay samples sent to Seller. End-user sample kept at Buyer."></div>
           </div>
           <div class="divl">Quality Specification — Per Material / Quality Line</div>
-          <table class="lt"><thead><tr><th>Element</th><th>Min %</th><th>Max %</th><th>Target / Typical</th><th>Penalty / Bonus Basis</th><th></th></tr></thead>
+          <div class="ban bi mb12"><span>i</span>Define either a Min/Max range OR a single Standard Value per element, not both. If a Standard Value is set, Min/Max are disabled for that line.</div>
+          <table class="lt"><thead><tr><th>Element</th><th>Min Range</th><th>Max Range</th><th>Standard Value</th><th>Unit</th><th>Actual From Contract</th><th>Deviation from Contract Standard</th><th>Penalty / Bonus Basis</th><th></th></tr></thead>
           <tbody id="pc-qc-tbody">
-            <tr><td colspan="6" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No QC specifications yet — click + Add QC Line</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No QC specifications yet — click + Add QC Line</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addPCQCLine()">+ Add QC Line</button></div>
         </div>
@@ -1591,14 +1582,21 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Our Company (Seller)</div><div class="fc">Trading Company DMCC</div></div>
           <div class="f"><div class="fl">Customer (Buyer)</div><div class="fc fw6" id="scd-customer">—</div></div>
           <div class="f"><div class="fl">Commodity</div><div class="fc fw6" id="scd-commodity">—</div></div>
-          <div class="f"><div class="fl">Quantity</div><div class="fc mono fw6" id="scd-qty">—</div></div>
-          <div class="f"><div class="fl">Incoterms</div><div class="fc" id="scd-incoterms">—</div></div>
-          <div class="f"><div class="fl">Pricing Formula</div><div class="fc" id="scd-pricing">—</div></div>
+          <div class="f"><div class="fl">Quantity</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" class="fi" id="scd-qty" step="0.001" style="flex:1">
+              <span class="fc mono" id="scd-qty-uom">MT</span>
+            </div>
+          </div>
+          <div class="f"><div class="fl">Incoterms</div><input type="text" class="fi" id="scd-incoterms" placeholder="e.g. CIF, FOB, CFR"></div>
+          <div class="f"><div class="fl">Pricing Formula</div><input type="text" class="fi" id="scd-pricing" placeholder="e.g. 95% LME Highest of 4"></div>
           <div class="f"><div class="fl">Customer Contact / Attn.</div><input type="text" class="fi" placeholder="e.g. Mr. Prithvi Raj, Metals Procurement"></div>
           <div class="f"><div class="fl">Broker / Agent</div><input type="text" class="fi" placeholder="If via broker"></div>
           <div class="f"><div class="fl">Broker Commission</div><input type="text" class="fi" placeholder="e.g. 1.5% — deducted from final payment"></div>
           <div class="f csf"><div class="fl">Contract Header Remarks</div><textarea class="fta" id="scd-remarks" style="min-height:50px"></textarea></div>
-        </div></div>
+        </div>
+        <div class="lar"><button class="btn bp bsm" onclick="saveContractGeneral('sc')">Save Changes</button></div>
+        </div>
         <div id="sc-material" class="ftc hidden">
           <table class="lt"><thead><tr><th>Line</th><th>Commodity</th><th>HS Code</th><th>Grade</th><th>Qty</th><th>Tolerance</th><th>Tol. Type</th><th>UOM</th><th>Packing</th><th>Bundle Wt</th><th>Weight Basis</th><th>Destination</th><th></th></tr></thead>
           <tbody id="sc-mat-tbody">
@@ -1695,24 +1693,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </div>
           <table class="lt"><thead><tr><th>Line</th><th>%</th><th>Trigger Event</th><th>Offset Days</th><th>Offset Type</th><th>Basis</th><th>Docs Required by Buyer</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
           <tbody id="sc-pay-tbody">
-            <tr><td class="mono f10 fw6">1</td><td class="mono fw6 tg">90%</td>
-              <td><select class="fs" style="font-size:10px"><option>BL_DATE</option><option>ETD</option><option>DOCS_RECEIPT</option><option>ETA</option></select></td>
-              <td><input type="number" class="fi" style="width:48px;font-size:10px" value="5"></td>
-              <td><select class="fs" style="font-size:9px"><option>WORKING DAYS</option><option>CALENDAR DAYS</option></select></td>
-              <td><select class="fs" style="font-size:10px"><option>Provisional Invoice Amount</option><option>Final Invoice Amount</option></select></td>
-              <td class="f10">BL (3/3) + Provisional Invoice + Packing List + COO + Insurance</td>
-              <td><input type="date" class="fi" style="width:115px;font-size:10px"></td>
-              <td><span class="badge bd-draft">PENDING</span></td>
-              <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
-            <tr><td class="mono f10 fw6">2</td><td class="mono fw6 tg">10%</td>
-              <td><select class="fs" style="font-size:10px"><option>QUALITY_VERIFICATION_AT_DESTINATION</option><option>FINAL_ASSAY_CONFIRMED</option><option>QP_WINDOW_CLOSE</option></select></td>
-              <td><input type="number" class="fi" style="width:48px;font-size:10px" value="5"></td>
-              <td><select class="fs" style="font-size:9px"><option>WORKING DAYS</option><option>CALENDAR DAYS</option></select></td>
-              <td><select class="fs" style="font-size:10px"><option>Final Invoice Amount</option><option>Delta vs Provisional</option></select></td>
-              <td class="f10">Final Invoice + Final Assay Certificate</td>
-              <td><input type="date" class="fi" style="width:115px;font-size:10px"></td>
-              <td><span class="badge bd-draft">PENDING</span></td>
-              <td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment schedule…</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addSCPayLine()">+ Add Payment Line</button></div>
         </div>
@@ -1724,9 +1705,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Assay Report Due</div><input type="text" class="fi" value="Within 30 days of delivery at POD"></div>
           <div class="f"><div class="fl">End-User Result Final</div><select class="fs"><option>YES</option><option>NO</option></select></div>
           </div>
-          <table class="lt"><thead><tr><th>Element</th><th>Min %</th><th>Max %</th><th>Target / Typical</th><th>Penalty / Bonus Basis</th><th></th></tr></thead>
+          <div class="ban bi mb12"><span>i</span>Define either a Min/Max range OR a single Standard Value per element, not both. If a Standard Value is set, Min/Max are disabled for that line.</div>
+          <table class="lt"><thead><tr><th>Element</th><th>Min Range</th><th>Max Range</th><th>Standard Value</th><th>Unit</th><th>Actual From Contract</th><th>Deviation from Contract Standard</th><th>Penalty / Bonus Basis</th><th></th></tr></thead>
           <tbody id="sc-qc-tbody">
-            <tr><td colspan="6" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No QC specifications yet — click + Add QC Line</td></tr>
+            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No QC specifications yet — click + Add QC Line</td></tr>
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="addSCQCLine()">+ Add QC Line</button></div>
         </div>
@@ -6200,9 +6182,10 @@ async function openContractDetail(contractId, type) {
       s('pcd-vendor', c.counterparty_name||'—');
       s('pcd-commodity', (c.commodity_name||c.commodity_code)||'—');
       const pcdUom = (window._commodityCache[c.commodity_code]?.uom) || 'MT';
-      s('pcd-qty', c.qty_mt ? c.qty_mt + ' ' + pcdUom : '—');
-      s('pcd-incoterms', c.incoterms||'—');
-      s('pcd-pricing', c.pricing_formula||'—');
+      sv('pcd-qty', c.qty_mt || '');
+      s('pcd-qty-uom', pcdUom);
+      sv('pcd-incoterms', c.incoterms || '');
+      sv('pcd-pricing', c.pricing_formula || '');
       sv('pcd-remarks', 'Further to our discussions, ' + (c.counterparty_name||'Vendor') + ' confirms sale of ' + (c.commodity_name||c.commodity_code||'commodity') + ' to Trading Company DMCC at the following terms and conditions.');
       // Show card
       const card = document.getElementById('pc-detail-card');
@@ -6234,9 +6217,10 @@ async function openContractDetail(contractId, type) {
       s('scd-status', c.status||'DRAFT');
       s('scd-customer', c.counterparty_name||'—');
       s('scd-commodity', (c.commodity_name||c.commodity_code)||'—');
-      s('scd-qty', c.qty_mt ? c.qty_mt + ' ' + scUom : '—');
-      s('scd-incoterms', c.incoterms||'—');
-      s('scd-pricing', c.pricing_formula||'—');
+      sv('scd-qty', c.qty_mt || '');
+      s('scd-qty-uom', scUom);
+      sv('scd-incoterms', c.incoterms || '');
+      sv('scd-pricing', c.pricing_formula || '');
       sv('scd-remarks', 'Trading Company DMCC is pleased to confirm sale of ' + (c.commodity_name||c.commodity_code||'commodity') + ' to ' + (c.counterparty_name||'Customer') + ' at the following terms and conditions.');
       const card = document.getElementById('sc-detail-card');
       if (card) { card.style.display='block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
@@ -6761,6 +6745,13 @@ async function addContractPriceLine(prefix) {
   ['npl-exchange','npl-agency','npl-instrument'].forEach(function(id){ const el=document.getElementById(id); if(el) el.textContent='—'; });
   ['npl-index-pct','npl-payable-pct','npl-prem-disc','npl-tc','npl-rc','npl-qp-start','npl-qp-end','npl-calc-metal4'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
 
+  // Add Pricing Line fix: the benchmark dropdown's first real option is pre-selected by
+  // the browser automatically, but its onchange handler (which fills Index%/Payable% from
+  // the benchmark's defaults) only fires if the trader actively changes the selection. On a
+  // brand-new contract with no prior line to reference, this meant Save silently failed
+  // with a generic 'Required' message and no clue why. Firing it once on open fixes that.
+  onNplBenchmarkChange();
+
   openModal('modal-new-pricing-line');
 }
 
@@ -6860,26 +6851,196 @@ async function submitNewPricingLine() {
 
 async function addPCQCLine() { addQCLine('pc-qc-tbody'); }
 async function addSCQCLine() { addQCLine('sc-qc-tbody'); }
+// QC fix: was pure client-side rows with plain text inputs, no decimal precision, no
+// percentage toggle, no enforcement that a Standard Value and a Min/Max range are mutually
+// exclusive, and nothing ever saved. Min/Max now allow up to 5 decimal places per the spec,
+// percentage vs absolute unit is a real toggle, and filling Standard Value disables Min/Max
+// (and vice versa) instead of letting both be filled in contradiction.
 function addQCLine(tbodyId) {
   const tbody = document.getElementById(tbodyId);
   if (!tbody) { toast('QC Specs', 'QC table not found on this tab', 'warning'); return; }
   const row = document.createElement('tr');
-  row.innerHTML = '<td><input type="text" class="fi" placeholder="Element (e.g. Cu, Moisture)" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Min %" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Max %" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Target / Typical" style="font-size:10px"></td>'
-    + '<td><input type="text" class="fi" placeholder="Penalty / Bonus basis" style="font-size:10px"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  row.innerHTML = '<td><input type="text" class="fi" placeholder="Element (e.g. Cu, Moisture)" style="font-size:10px" data-field="element"></td>'
+    + '<td><input type="number" class="fi" placeholder="Min" step="0.00001" style="font-size:10px" data-field="min" oninput="onQCFieldInput(this)"></td>'
+    + '<td><input type="number" class="fi" placeholder="Max" step="0.00001" style="font-size:10px" data-field="max" oninput="onQCFieldInput(this)"></td>'
+    + '<td><input type="number" class="fi" placeholder="Standard Value" step="0.00001" style="font-size:10px" data-field="target" oninput="onQCFieldInput(this)"></td>'
+    + '<td><select class="fs" style="font-size:10px" data-field="unit"><option value="true">%</option><option value="false">Absolute</option></select></td>'
+    + '<td class="f10 tdim">—</td>'
+    + '<td class="f10 tdim">—</td>'
+    + '<td><input type="text" class="fi" placeholder="Penalty / Bonus basis" style="font-size:10px" data-field="penalty"></td>'
+    + '<td><button class="btn bxs bg" onclick="saveQCLine(this)">Save</button> <button class="btn bxs bd" onclick="this.closest(\'tr\').remove()">✕</button></td>';
   const placeholder = tbody.querySelector('td[colspan]');
   if (placeholder) placeholder.closest('tr').remove();
   tbody.appendChild(row);
 }
 
-async function addPCPayLine() {
-  toast('Payment Terms', 'Use the Payment Currency / Method fields above — additional milestone lines coming soon', 'info');
+// If Standard Value is filled, Min/Max are disabled, and vice versa — they are mutually
+// exclusive ways of specifying the same thing, never both at once.
+function onQCFieldInput(input) {
+  const row = input.closest('tr');
+  const minEl = row.querySelector('[data-field="min"]');
+  const maxEl = row.querySelector('[data-field="max"]');
+  const targetEl = row.querySelector('[data-field="target"]');
+  if (input.dataset.field === 'target') {
+    const hasTarget = !!input.value;
+    minEl.disabled = hasTarget; maxEl.disabled = hasTarget;
+    if (hasTarget) { minEl.value = ''; maxEl.value = ''; }
+  } else {
+    const hasRange = !!(minEl.value || maxEl.value);
+    targetEl.disabled = hasRange;
+    if (hasRange) targetEl.value = '';
+  }
 }
-async function addSCPayLine() {
-  toast('Payment Terms', 'Use the Payment Currency / Method fields above — additional milestone lines coming soon', 'info');
+
+async function saveQCLine(btn) {
+  const row = btn.closest('tr');
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  const g = function(field){ return row.querySelector('[data-field="'+field+'"]')?.value || null; };
+  const element = g('element');
+  if (!element) { toast('Required', 'Please enter the element name', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/qc-specs', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        element: element,
+        spec_min: g('min') ? parseFloat(g('min')) : null,
+        spec_max: g('max') ? parseFloat(g('max')) : null,
+        spec_ref_avg: g('target') ? parseFloat(g('target')) : null,
+        is_percentage: row.querySelector('[data-field="unit"]')?.value !== 'false',
+        penalty_type: null, penalty_rate: null,
+        penalty_unit: g('penalty')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('QC Line Saved', element + ' specification saved', 'success');
+    const tbodyId = row.closest('tbody').id;
+    await loadQCSpecs(c.id, tbodyId);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// Per the spec: deviation = how far outside Min/Max the actual falls (range mode), or
+// actual minus standard value (fixed-value mode). Shown once an actual reading exists —
+// the actual measurement itself comes from QC results entered elsewhere, not this spec line.
+function calcQCDeviation(spec, actual) {
+  if (actual == null) return null;
+  if (spec.spec_min != null || spec.spec_max != null) {
+    if (spec.spec_min != null && actual < spec.spec_min) return actual - spec.spec_min;
+    if (spec.spec_max != null && actual > spec.spec_max) return actual - spec.spec_max;
+    return 0;
+  }
+  if (spec.spec_ref_avg != null) return actual - spec.spec_ref_avg;
+  return null;
+}
+
+async function loadQCSpecs(contractId, tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/qc-specs');
+    const data = await res.json();
+    const specs = data.data || [];
+    if (!specs.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No QC specifications yet — click + Add QC Line</td></tr>';
+      return;
+    }
+    tbody.innerHTML = specs.map(function(s){
+      const unit = s.is_percentage ? '%' : '';
+      return '<tr>'
+        + '<td class="f11 fw6">'+s.element+'</td>'
+        + '<td class="mono f10">'+(s.spec_min!=null?s.spec_min:'—')+'</td>'
+        + '<td class="mono f10">'+(s.spec_max!=null?s.spec_max:'—')+'</td>'
+        + '<td class="mono f10">'+(s.spec_ref_avg!=null?s.spec_ref_avg:'—')+'</td>'
+        + '<td class="f10">'+(s.is_percentage?'%':'Absolute')+'</td>'
+        + '<td class="mono f10 tdim">— (from QC results)</td>'
+        + '<td class="mono f10 tdim">—</td>'
+        + '<td class="f10">'+(s.penalty_unit||'—')+'</td>'
+        + '<td><button class="btn bxs bd" onclick="deleteQCLine('+s.id+', this)">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) { console.warn('loadQCSpecs:', e); }
+}
+
+async function deleteQCLine(specId, btn) {
+  const c = window._currentContract;
+  if (!c) return;
+  try {
+    await fetch(API_BASE + '/api/contracts/' + c.id + '/qc-specs/' + specId, { method: 'DELETE' });
+    btn.closest('tr').remove();
+    toast('Removed', 'QC specification removed', 'info');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// Add Payment Line was a pure stub on both PC and SC — fired an info toast, never
+// opened any form, never saved anything.
+window._npayPrefix = null;
+function addPCPayLine() { window._npayPrefix = 'pc'; openNewPaymentLineModal(); }
+function addSCPayLine() { window._npayPrefix = 'sc'; openNewPaymentLineModal(); }
+
+function openNewPaymentLineModal() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  ['npay-pct','npay-offset-days','npay-docs','npay-due-date'].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('npay-offset-days').value = '5';
+  openModal('modal-new-payment-line');
+}
+
+async function submitNewPaymentLine() {
+  const c = window._currentContract;
+  const prefix = window._npayPrefix;
+  if (!c) return;
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const pct = g('npay-pct');
+  const trigger = g('npay-trigger');
+  if (!pct) { toast('Required', 'Please enter the percentage', 'warning'); return; }
+  if (!trigger) { toast('Required', 'Please select a trigger event', 'warning'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/payment-lines', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        pct: parseFloat(pct), trigger_event: trigger,
+        offset_days: parseInt(g('npay-offset-days')) || 0,
+        offset_type: g('npay-offset-type'), basis: g('npay-basis'),
+        required_documents: g('npay-docs'), due_date: g('npay-due-date')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Payment Line Added', data.data.pct + '% on ' + data.data.trigger_event, 'success');
+    closeModal('modal-new-payment-line');
+    await loadPaymentLines(c.id, prefix);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function loadPaymentLines(contractId, prefix) {
+  const tbody = document.getElementById(prefix + '-pay-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/payment-lines');
+    const data = await res.json();
+    const lines = data.data || [];
+    if (!lines.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No payment lines yet — click + Add Payment Line</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lines.map(function(p){
+      return '<tr>'
+        + '<td class="mono f10 fw6">'+p.line_no+'</td>'
+        + '<td class="mono fw6 ta">'+p.pct+'%</td>'
+        + '<td class="f10">'+p.trigger_event+'</td>'
+        + '<td class="mono f10">'+p.offset_days+'</td>'
+        + '<td class="f10">'+p.offset_type+'</td>'
+        + '<td class="f10">'+(p.basis||'—')+'</td>'
+        + '<td class="f10">'+(p.required_documents||'—')+'</td>'
+        + '<td class="mono f10">'+(p.due_date?new Date(p.due_date).toLocaleDateString('en-GB'):'—')+'</td>'
+        + '<td><span class="badge bd-draft">'+p.status+'</span></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) { console.warn('loadPaymentLines:', e); }
 }
 
 // Fix 3: was fully client-side — created a DOM row with a delete button, labeled
@@ -7038,6 +7199,13 @@ async function loadContractTabs(contractId, prefix) {
       if (prefix === 'pc') {
         await loadRolloverEvents(contractId);
       }
+
+      // Group A: load real saved payment lines — Add Payment Line was a pure stub before,
+      // so this table was always either empty or showing fake hardcoded rows.
+      await loadPaymentLines(contractId, prefix);
+
+      // Group A: load real saved QC specs — same root cause, was client-side only before.
+      await loadQCSpecs(contractId, prefix + '-qc-tbody');
 
       // Fix 1: sync the Calculation Method panel with the contract's real saved pricing line —
       // was previously fully disconnected static UI with a dead onchange handler.
@@ -9841,6 +10009,28 @@ function jumpToLifecycleStage(stage) {
   }
 }
 
+// General tab fields (qty, incoterms, pricing formula) were read-only display text on
+// both PC and SC even after the contract was created, with no way to ever correct them.
+async function saveContractGeneral(prefix) {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        qty_mt: parseFloat(g(prefix + 'd-qty')) || null,
+        incoterms: g(prefix + 'd-incoterms'),
+        pricing_formula: g(prefix + 'd-pricing')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    window._currentContract = data.data;
+    toast('Saved', c.contract_no + ' updated', 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -10083,6 +10273,54 @@ async function submitChangeDeal() {
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-new-rollover')">Cancel</button>
       <button class="btn bp" onclick="submitNewRollover()">Save Rollover →</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: New Payment Line -->
+<div class="mo" id="modal-new-payment-line">
+  <div class="md" style="max-width:560px">
+    <div class="mh">
+      <div class="mt">New Payment Line</div>
+      <button class="mc" onclick="closeModal('modal-new-payment-line')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Percentage <span class="req">*</span></div><input type="number" class="fi" id="npay-pct" step="0.001" placeholder="e.g. 90"></div>
+        <div class="f"><div class="fl">Trigger Event <span class="req">*</span></div>
+          <select class="fs" id="npay-trigger">
+            <option value="BL_DATE">BL_DATE</option>
+            <option value="ETD">ETD</option>
+            <option value="ETA">ETA</option>
+            <option value="DOCS_RECEIPT">DOCS_RECEIPT</option>
+            <option value="ASSAY_RECEIPT_DATE">ASSAY_RECEIPT_DATE</option>
+            <option value="FINAL_ASSAY_CONFIRMED">FINAL_ASSAY_CONFIRMED</option>
+            <option value="QUALITY_VERIFICATION_AT_DESTINATION">QUALITY_VERIFICATION_AT_DESTINATION</option>
+            <option value="QP_WINDOW_CLOSE">QP_WINDOW_CLOSE</option>
+            <option value="DELIVERY_DATE">DELIVERY_DATE</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Offset Days</div><input type="number" class="fi" id="npay-offset-days" value="5"></div>
+        <div class="f"><div class="fl">Offset Type</div>
+          <select class="fs" id="npay-offset-type"><option value="WORKING DAYS">WORKING DAYS</option><option value="CALENDAR DAYS">CALENDAR DAYS</option></select>
+        </div>
+      </div>
+      <div class="f"><div class="fl">Basis</div>
+        <select class="fs" id="npay-basis">
+          <option value="Provisional Invoice Amount">Provisional Invoice Amount</option>
+          <option value="Final Invoice Amount">Final Invoice Amount</option>
+          <option value="Delta vs Provisional">Delta vs Provisional</option>
+        </select>
+      </div>
+      <div class="f"><div class="fl">Required Documents</div>
+        <input type="text" class="fi" id="npay-docs" placeholder="e.g. Full set BL (3/3), Provisional Invoice, Packing List, COO">
+      </div>
+      <div class="f"><div class="fl">Due Date</div><input type="date" class="fi" id="npay-due-date"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-payment-line')">Cancel</button>
+      <button class="btn bp" onclick="submitNewPaymentLine()">Add Payment Line</button>
     </div>
   </div>
 </div>
