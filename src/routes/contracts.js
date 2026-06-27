@@ -3,6 +3,9 @@ const { query, logAudit } = require('../db');
 
 // GET /api/contracts
 router.get('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store'); // was missing on the main contract LIST endpoint —
+  // the single most likely cause of two simultaneous users seeing inconsistent/stale data,
+  // since this populates the entire PC/SC list table.
   try {
     const { type, status, deal_id } = req.query;
     let sql = `
@@ -60,6 +63,9 @@ router.patch('/:id', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store'); // was missing — browser could silently serve a stale
+  // cached copy of a contract, especially visible when two people are on the same contract
+  // and one just saved a change the other's browser hadn't fetched fresh yet.
   try {
     const { id } = req.params;
     const [contract, pricingLines, qcSpecs] = await Promise.all([

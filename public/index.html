@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.31</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.32</div>
   </div>
   <nav class="sb-nav">
 
@@ -3389,6 +3389,11 @@ function wireTabs(cls){
         document.querySelectorAll('.ft.'+cls).forEach(t=>t.classList.remove('active'));
         this.classList.add('active');
       }
+      // PC/SC now have more tabs than fit on a typical screen width, and the tab strip
+      // scrolls horizontally — clicking one that's partially off-screen could look like
+      // it 'disappeared' since nothing brought it into view. Bring the clicked tab itself
+      // into view within its own scroll container, without affecting the page scroll.
+      this.scrollIntoView({behavior:'smooth', block:'nearest', inline:'nearest'});
     };
   });
 }
@@ -6269,10 +6274,13 @@ async function openContractDetail(contractId, type) {
       sv('pcd-remarks', 'Further to our discussions, ' + (c.counterparty_name||'Vendor') + ' confirms sale of ' + (c.commodity_name||c.commodity_code||'commodity') + ' to Trading Company DMCC at the following terms and conditions.');
       // Show card
       const card = document.getElementById('pc-detail-card');
-      if (card) { card.style.display='block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
+      if (card) card.style.display='block';
       wireTabs('pct');
-      // Load material and pricing tabs from DB
-      if (c.id) loadContractTabs(c.id, 'pc');
+      // Flicker fix: was scrolling immediately while 9 separate fetches were still
+      // landing and rewriting tables underneath — visibly repainting mid-scroll. Now
+      // loads first, then scrolls once the panel has actually settled.
+      if (c.id) await loadContractTabs(c.id, 'pc');
+      if (card) card.scrollIntoView({behavior:'smooth',block:'start'});
     } else {
       // SC
       const title = document.getElementById('scd-title');
@@ -6303,9 +6311,10 @@ async function openContractDetail(contractId, type) {
       sv('scd-pricing', c.pricing_formula || '');
       sv('scd-remarks', 'Trading Company DMCC is pleased to confirm sale of ' + (c.commodity_name||c.commodity_code||'commodity') + ' to ' + (c.counterparty_name||'Customer') + ' at the following terms and conditions.');
       const card = document.getElementById('sc-detail-card');
-      if (card) { card.style.display='block'; card.scrollIntoView({behavior:'smooth',block:'start'}); }
+      if (card) card.style.display='block';
       wireTabs('sct');
-      if (c.id) loadContractTabs(c.id, 'sc');
+      if (c.id) await loadContractTabs(c.id, 'sc');
+      if (card) card.scrollIntoView({behavior:'smooth',block:'start'});
     }
     toast('Opened', c.contract_no + ' · ' + (c.counterparty_name||''), 'info');
   } catch(err) { toast('Error', err.message, 'error'); }
@@ -7342,19 +7351,17 @@ async function loadContractTabs(contractId, prefix) {
         await loadRolloverConfig(contractId); // #7: rollover applicable/rate config, same fix
       }
 
-      // Group A: load real saved payment lines — Add Payment Line was a pure stub before,
-      // so this table was always either empty or showing fake hardcoded rows.
-      await loadPaymentLines(contractId, prefix);
-
-      // Group A: load real saved QC specs — same root cause, was client-side only before.
-      await loadQCSpecs(contractId, prefix + '-qc-tbody');
-
-      // Group D: load real saved charge items.
-      await loadChargeLines(contractId, prefix);
-
-      // Group D: load commission agents — filtered view of the same charge data, shown
-      // on Pricing & QP per the spec rather than only in the general Charge Items tab.
-      await loadCommissionAgents(contractId, prefix);
+      // Flicker fix: these four were loading one after another, each waiting for the
+      // previous to fully resolve before starting — on PC/SC, which now have far more
+      // tabs than any other screen, that meant the panel kept visibly repainting in
+      // stages for longer than necessary. None of these four depend on each other, so
+      // they now load together instead of in sequence.
+      await Promise.all([
+        loadPaymentLines(contractId, prefix),
+        loadQCSpecs(contractId, prefix + '-qc-tbody'),
+        loadChargeLines(contractId, prefix),
+        loadCommissionAgents(contractId, prefix)
+      ]);
 
       // Fix 1: sync the Calculation Method panel with the contract's real saved pricing
       // line. Reverted the v17.29 merge — Lowest/Highest/Average of 4 is genuinely
