@@ -227,6 +227,13 @@ router.post('/:id/pricing-lines', async (req, res) => {
 router.patch("/:id/confirm", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
+    // Item 2 — R2 from the Payment Term Tranches spec: 'Every contract must have at least
+    // one payment term tranche before it can be confirmed.' Was genuinely never enforced.
+    const trancheCheck = await query('SELECT COUNT(*) FROM payment_term_tranches WHERE contract_id=$1', [req.params.id]);
+    if (parseInt(trancheCheck.rows[0].count) === 0) {
+      return res.status(400).json({ error: 'Cannot confirm — at least one payment term tranche is required first' });
+    }
+
     const before = await query('SELECT status, contract_no FROM contracts WHERE id=$1', [req.params.id]);
     const result = await query(
       "UPDATE contracts SET status='CONTRACTED', updated_at=NOW() WHERE id=$1 RETURNING *",
@@ -737,6 +744,19 @@ router.post('/:id/payment-tranches', async (req, res) => {
     const cntRes = await query('SELECT COUNT(*) FROM payment_term_tranches WHERE contract_id=$1', [id]);
     const trancheNo = parseInt(cntRes.rows[0].count) + 1;
 
+    // Item 2 fix: calculated_amount was never computed at all — per the spec's worked
+    // examples (e.g. 90% of $920,000 = $828,000), this should derive from the contract's
+    // provisional value the same way calculated_due_date derives from the anchor event.
+    let calcAmount = null;
+    const contractRes = await query('SELECT provisional_value FROM contracts WHERE id=$1', [id]);
+    const contractValue = contractRes.rows.length ? parseFloat(contractRes.rows[0].provisional_value) : null;
+    if (contractValue != null && amount_basis !== 'balance_remaining' && amount_basis !== 'fixed_amount') {
+      calcAmount = contractValue * (parseFloat(percentage) / 100);
+    } else if (amount_basis === 'balance_remaining' && contractValue != null) {
+      const remainingPct = Math.max(0, 100 - existingTotal);
+      calcAmount = contractValue * (remainingPct / 100);
+    }
+
     // Calculate due date now if the anchor event date is already known.
     const edRes = await query('SELECT * FROM contract_event_dates WHERE contract_id=$1', [id]);
     let dueDate = null;
@@ -760,12 +780,12 @@ router.post('/:id/payment-tranches', async (req, res) => {
     const result = await query(`
       INSERT INTO payment_term_tranches
         (contract_id, tranche_number, tranche_name, percentage, amount_basis, anchor_event,
-         offset_days, offset_direction, fixed_date, calculated_due_date, currency, invoice_type,
-         status, notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         offset_days, offset_direction, fixed_date, calculated_due_date, calculated_amount,
+         currency, invoice_type, status, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
       RETURNING *
     `, [id, trancheNo, tranche_name, percentage, amount_basis || 'pct_of_contract', anchor_event,
-        offset_days || 0, offset_direction || 'after', fixed_date || null, dueDate,
+        offset_days || 0, offset_direction || 'after', fixed_date || null, dueDate, calcAmount,
         currency || 'USD', invoice_type || 'provisional',
         dueDate ? 'due_date_calc' : 'pending_anchor', notes || null]);
     res.json({ success: true, data: result.rows[0] });

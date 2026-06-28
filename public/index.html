@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.42</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.43</div>
   </div>
   <nav class="sb-nav">
 
@@ -1479,12 +1479,17 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Title of Property Passes</div><select class="fs"><option>On Provisional Payment</option><option>On BL Date</option><option>On Final Payment</option><option>On Delivery</option></select></div>
             <div class="f"><div class="fl">Seller's Bank Account</div><input type="text" class="fi" placeholder="IBAN / SWIFT / Bank details"></div>
           </div>
-          <div class="divl">Payment Schedule — Per Contract Terms</div>
-          <table class="lt"><thead><tr><th>Line</th><th>%</th><th>Trigger Event</th><th>Offset Days</th><th>Offset Type</th><th>Basis</th><th>Required Documents</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+          <div class="divl">Payment Term Tranches <span class="tdim f10">— multi-tranche, must sum to 100%</span></div>
+          <div class="ban bi mb8"><span>i</span>Each contract can have 1 to N tranches, each with its own anchor event, offset and percentage. Due date and amount calculate automatically once the linked event date is known on the Event Date Master.</div>
+          <table class="lt"><thead><tr><th>#</th><th>Tranche Name</th><th>%</th><th>Basis</th><th>Anchor Event</th><th>Offset</th><th>Due Date</th><th>Amount</th><th>Invoice Type</th><th>Status</th><th></th></tr></thead>
           <tbody id="pc-pay-tbody">
-            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment schedule…</td></tr>
+            <tr><td colspan="11" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment tranches…</td></tr>
           </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="addPCPayLine()">+ Add Payment Line</button></div>
+          <div class="f mt8"><div class="fl">Total</div><div class="fc mono fw7" id="pc-pay-total">0% — needs to reach 100%</div></div>
+          <div class="lar br-row g7">
+            <button class="btn bg bsm" onclick="openPTTemplatePicker('pc')">Use Template</button>
+            <button class="btn bg bsm" onclick="addPCPayLine()">+ Add Tranche</button>
+          </div>
         </div>
         <div id="pc-qc" class="ftc hidden">
           <div class="fg mb12">
@@ -1817,11 +1822,17 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Payment Method</div><select class="fs"><option>T/T (Telegraphic Transfer)</option><option>LC at Sight</option><option>CAD</option></select></div>
             <div class="f"><div class="fl">Title of Property Passes</div><select class="fs"><option>On Provisional Payment</option><option>On BL Date</option><option>On Full Payment</option></select></div>
           </div>
-          <table class="lt"><thead><tr><th>Line</th><th>%</th><th>Trigger Event</th><th>Offset Days</th><th>Offset Type</th><th>Basis</th><th>Docs Required by Buyer</th><th>Due Date</th><th>Status</th><th></th></tr></thead>
+          <div class="divl">Payment Term Tranches <span class="tdim f10">— multi-tranche, must sum to 100%</span></div>
+          <div class="ban bi mb8"><span>i</span>Each contract can have 1 to N tranches, each with its own anchor event, offset and percentage. Due date and amount calculate automatically once the linked event date is known on the Event Date Master.</div>
+          <table class="lt"><thead><tr><th>#</th><th>Tranche Name</th><th>%</th><th>Basis</th><th>Anchor Event</th><th>Offset</th><th>Due Date</th><th>Amount</th><th>Invoice Type</th><th>Status</th><th></th></tr></thead>
           <tbody id="sc-pay-tbody">
-            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment schedule…</td></tr>
+            <tr><td colspan="11" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading payment tranches…</td></tr>
           </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="addSCPayLine()">+ Add Payment Line</button></div>
+          <div class="f mt8"><div class="fl">Total</div><div class="fc mono fw7" id="sc-pay-total">0% — needs to reach 100%</div></div>
+          <div class="lar br-row g7">
+            <button class="btn bg bsm" onclick="openPTTemplatePicker('sc')">Use Template</button>
+            <button class="btn bg bsm" onclick="addSCPayLine()">+ Add Tranche</button>
+          </div>
         </div>
         <div id="sc-qc" class="ftc hidden"><div class="fg mb12">
           <div class="f"><div class="fl">Whose Weights Govern</div><select class="fs"><option>BUYER'S WEIGHTS</option><option>SELLER'S WEIGHTS</option><option>JOINT SURVEY</option></select></div>
@@ -7281,8 +7292,67 @@ async function deleteQCLine(specId, btn) {
 // Add Payment Line was a pure stub on both PC and SC — fired an info toast, never
 // opened any form, never saved anything.
 window._npayPrefix = null;
-function addPCPayLine() { window._npayPrefix = 'pc'; openNewPaymentLineModal(); }
-function addSCPayLine() { window._npayPrefix = 'sc'; openNewPaymentLineModal(); }
+// Item 2: rebuilt to open the real New Tranche modal instead of the older single-trigger
+// payment line modal.
+function addPCPayLine() { window._nptPrefix = 'pc'; openNewTrancheModal(); }
+function addSCPayLine() { window._nptPrefix = 'sc'; openNewTrancheModal(); }
+
+function openNewTrancheModal() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  ['npt-name','npt-pct','npt-notes'].forEach(function(id){ const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('npt-offset').value = '0';
+  document.getElementById('npt-currency').value = 'USD';
+  document.getElementById('npt-warning').style.display = 'none';
+  onNptAnchorChange();
+  openModal('modal-new-tranche');
+}
+
+function onNptAnchorChange() {
+  const isFixed = document.getElementById('npt-anchor').value === 'fixed_date';
+  document.getElementById('npt-fixed-date-field').style.display = isFixed ? 'block' : 'none';
+}
+
+async function submitNewTranche() {
+  const c = window._currentContract;
+  const prefix = window._nptPrefix;
+  if (!c) return;
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const name = g('npt-name');
+  const pct = g('npt-pct');
+  if (!name) { toast('Required', 'Please enter a tranche name', 'warning'); return; }
+  if (!pct) { toast('Required', 'Please enter the percentage', 'warning'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/payment-tranches', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        tranche_name: name, percentage: parseFloat(pct),
+        amount_basis: g('npt-basis'), anchor_event: g('npt-anchor'),
+        offset_days: parseInt(g('npt-offset')) || 0, offset_direction: g('npt-direction'),
+        fixed_date: g('npt-fixed-date'), currency: g('npt-currency') || 'USD',
+        invoice_type: g('npt-invoice-type'), notes: g('npt-notes')
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Tranche Added', name + ' — ' + pct + '%', 'success');
+    closeModal('modal-new-tranche');
+    await loadPaymentLines(c.id, prefix);
+  } catch(e) {
+    const warnEl = document.getElementById('npt-warning');
+    if (warnEl) { warnEl.style.display = 'block'; warnEl.innerHTML = '<span>⚠</span>' + e.message; }
+    else toast('Error', e.message, 'error');
+  }
+}
+
+async function deleteTranche(trancheId, btn, contractId, prefix) {
+  try {
+    await fetch(API_BASE + '/api/contracts/' + contractId + '/payment-tranches/' + trancheId, { method: 'DELETE' });
+    await loadPaymentLines(contractId, prefix);
+    toast('Removed', 'Tranche removed', 'info');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
 
 async function openNewPaymentLineModal() {
   const c = window._currentContract;
@@ -7339,30 +7409,59 @@ async function submitNewPaymentLine() {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
+// Item 2: rebuilt entirely to use the real payment_term_tranches table per the spec —
+// was reading from the older, simpler payment_schedule_lines (single trigger, no real
+// Worked-Examples-style table: Tranche Name / Basis / Anchor Event / Calculated Due Date
+// / Calculated Amount / Invoice Type / Status all matching the spec exactly).
 async function loadPaymentLines(contractId, prefix) {
   const tbody = document.getElementById(prefix + '-pay-tbody');
   if (!tbody) return;
   try {
-    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/payment-lines');
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/payment-tranches');
     const data = await res.json();
-    const lines = data.data || [];
-    if (!lines.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No payment lines yet — click + Add Payment Line</td></tr>';
-      return;
+    const tranches = data.data || [];
+    if (!tranches.length) {
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No payment tranches yet — use a template or click + Add Tranche</td></tr>';
+    } else {
+      const anchorLabels = {
+        contract_date: 'Contract Date', etd_date: 'ETD Date', bl_date: 'BL Date',
+        eta_date: 'ETA Date', pr_date: 'PR Date', grn_date: 'GRN Date',
+        assay_date: 'Assay Date', qp_close_date: 'QP Close Date', fixed_date: 'Fixed Date'
+      };
+      const basisLabels = {
+        pct_of_contract: '% of Contract', pct_of_provisional: '% of Provisional',
+        pct_of_final: '% of Final', fixed_amount: 'Fixed Amount', balance_remaining: 'Balance Remaining'
+      };
+      const statusLabels = {
+        pending_anchor: '⏳ Pending Anchor', anchor_confirmed: 'Anchor Confirmed',
+        due_date_calc: '⏳ Due Date Calc', invoice_raised: '⏳ Invoice Raised',
+        payment_due: 'Payment Due', paid: '✓ Paid', overdue: 'Overdue', disputed: 'Disputed'
+      };
+      tbody.innerHTML = tranches.map(function(t){
+        const stCls = t.status === 'paid' ? 'bd-confirmed' : t.status === 'overdue' || t.status === 'disputed' ? 'bd-danger' : 'bd-draft';
+        const offsetText = t.anchor_event === 'fixed_date' ? '—' : (t.offset_days||0) + ' ' + (t.offset_direction||'after');
+        return '<tr data-tranche-id="'+t.id+'">'
+          + '<td class="mono f10">'+t.tranche_number+'</td>'
+          + '<td class="f11 fw6">'+t.tranche_name+'</td>'
+          + '<td class="mono fw6 ta">'+t.percentage+'%</td>'
+          + '<td class="f10">'+(basisLabels[t.amount_basis]||t.amount_basis)+'</td>'
+          + '<td class="f10">'+(anchorLabels[t.anchor_event]||t.anchor_event)+'</td>'
+          + '<td class="mono f10">'+offsetText+'</td>'
+          + '<td class="mono f10">'+(t.calculated_due_date?new Date(t.calculated_due_date).toLocaleDateString('en-GB'):'Pending anchor')+'</td>'
+          + '<td class="mono f10 fw6">'+(t.calculated_amount!=null?'$'+parseFloat(t.calculated_amount).toLocaleString(undefined,{maximumFractionDigits:0}):'—')+'</td>'
+          + '<td class="f10">'+t.invoice_type+'</td>'
+          + '<td><span class="badge '+stCls+'">'+(statusLabels[t.status]||t.status)+'</span></td>'
+          + '<td><button class="btn bxs bd" data-tranche-id="'+t.id+'" data-contract-id="'+contractId+'" data-prefix="'+prefix+'" onclick="deleteTranche(this.dataset.trancheId, this, this.dataset.contractId, this.dataset.prefix)">✕</button></td>'
+          + '</tr>';
+      }).join('');
     }
-    tbody.innerHTML = lines.map(function(p){
-      return '<tr>'
-        + '<td class="mono f10 fw6">'+p.line_no+'</td>'
-        + '<td class="mono fw6 ta">'+p.pct+'%</td>'
-        + '<td class="f10">'+(p.trigger_event_name||p.trigger_event)+'</td>'
-        + '<td class="mono f10">'+p.offset_days+'</td>'
-        + '<td class="f10">'+p.offset_type+'</td>'
-        + '<td class="f10">'+(p.basis||'—')+'</td>'
-        + '<td class="f10">'+(p.required_documents||'—')+'</td>'
-        + '<td class="mono f10">'+(p.due_date?new Date(p.due_date).toLocaleDateString('en-GB'):'—')+'</td>'
-        + '<td><span class="badge bd-draft">'+p.status+'</span></td>'
-        + '</tr>';
-    }).join('');
+
+    const totalPct = tranches.reduce(function(s,t){ return s + (parseFloat(t.percentage)||0); }, 0);
+    const totalEl = document.getElementById(prefix + '-pay-total');
+    if (totalEl) {
+      totalEl.textContent = totalPct.toFixed(2) + '%' + (Math.abs(totalPct - 100) < 0.01 ? ' ✓' : ' — needs to reach 100%');
+      totalEl.className = 'fc mono fw7 ' + (Math.abs(totalPct - 100) < 0.01 ? 'tg' : 'td');
+    }
   } catch(e) { console.warn('loadPaymentLines:', e); }
 }
 
@@ -11532,6 +11631,91 @@ async function submitFixToday() {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
+// Item 2: Payment Term Template Library — the 8 templates from the spec's Section 4,
+// applied directly to the open contract's tranches. This is reference data (not a
+// database table) since templates themselves don't change per contract — applying one
+// just creates real tranches via the same endpoint as adding them manually.
+const PT_TEMPLATES = [
+  { name: 'Concentrate 90/10', commodity: 'Metals (Cu/Zn/Pb concentrate)', summary: '90% provisional on BL · 10% final on assay',
+    tranches: [
+      { tranche_name: 'Provisional payment', percentage: 90, amount_basis: 'pct_of_contract', anchor_event: 'bl_date', offset_days: 0, offset_direction: 'after', invoice_type: 'provisional' },
+      { tranche_name: 'Final settlement (delta on assay)', percentage: 10, amount_basis: 'balance_remaining', anchor_event: 'assay_date', offset_days: 5, offset_direction: 'after', invoice_type: 'delta' }
+    ]},
+  { name: 'Metals standard 100% BL', commodity: 'Metals (cathode/ingot/rod)', summary: '100% on BL date or shortly after',
+    tranches: [
+      { tranche_name: '100% on BL documents', percentage: 100, amount_basis: 'pct_of_contract', anchor_event: 'bl_date', offset_days: 0, offset_direction: 'after', invoice_type: 'final' }
+    ]},
+  { name: 'Metals 3-tranche', commodity: 'Metals (scrap/secondary)', summary: '30% contract · 50% GRN · 20% assay',
+    tranches: [
+      { tranche_name: 'Contract advance', percentage: 30, amount_basis: 'pct_of_contract', anchor_event: 'contract_date', offset_days: 0, offset_direction: 'after', invoice_type: 'advance' },
+      { tranche_name: 'On goods received', percentage: 50, amount_basis: 'pct_of_contract', anchor_event: 'grn_date', offset_days: 0, offset_direction: 'after', invoice_type: 'provisional' },
+      { tranche_name: 'Balance on assay', percentage: 20, amount_basis: 'balance_remaining', anchor_event: 'assay_date', offset_days: 5, offset_direction: 'after', invoice_type: 'final' }
+    ]},
+  { name: '20/50/30 (ETA/GRN/Assay)', commodity: 'Metals', summary: '20% ETA · 50% GRN+7 · 30% assay+5',
+    tranches: [
+      { tranche_name: 'On arrival payment', percentage: 20, amount_basis: 'pct_of_contract', anchor_event: 'eta_date', offset_days: 0, offset_direction: 'after', invoice_type: 'provisional' },
+      { tranche_name: 'On goods received', percentage: 50, amount_basis: 'pct_of_contract', anchor_event: 'grn_date', offset_days: 7, offset_direction: 'after', invoice_type: 'provisional' },
+      { tranche_name: 'Balance on assay', percentage: 30, amount_basis: 'balance_remaining', anchor_event: 'assay_date', offset_days: 5, offset_direction: 'after', invoice_type: 'final' }
+    ]},
+  { name: 'Oil LC at sight', commodity: 'Oil & Gas (crude/products)', summary: '100% via LC on BL document presentation',
+    tranches: [
+      { tranche_name: 'LC at sight on BL documents', percentage: 100, amount_basis: 'pct_of_final', anchor_event: 'bl_date', offset_days: 0, offset_direction: 'after', invoice_type: 'final' }
+    ]},
+  { name: 'Oil usance 60 days', commodity: 'Oil & Gas', summary: '100% BL date + 60 days (deferred LC)',
+    tranches: [
+      { tranche_name: 'Deferred LC payment', percentage: 100, amount_basis: 'pct_of_contract', anchor_event: 'bl_date', offset_days: 60, offset_direction: 'after', invoice_type: 'final' }
+    ]},
+  { name: 'Agri advance/BL/GRN', commodity: 'Agricultural', summary: '10% advance · 80% BL+14 · 10% GRN',
+    tranches: [
+      { tranche_name: 'Advance payment', percentage: 10, amount_basis: 'pct_of_contract', anchor_event: 'contract_date', offset_days: 0, offset_direction: 'after', invoice_type: 'advance' },
+      { tranche_name: 'Main payment', percentage: 80, amount_basis: 'pct_of_contract', anchor_event: 'bl_date', offset_days: 14, offset_direction: 'after', invoice_type: 'provisional' },
+      { tranche_name: 'Final on receipt', percentage: 10, amount_basis: 'balance_remaining', anchor_event: 'grn_date', offset_days: 0, offset_direction: 'after', invoice_type: 'final' }
+    ]},
+  { name: 'Agri simple BL+30', commodity: 'Agricultural', summary: '100% BL date + 30 days',
+    tranches: [
+      { tranche_name: 'Full payment', percentage: 100, amount_basis: 'pct_of_contract', anchor_event: 'bl_date', offset_days: 30, offset_direction: 'after', invoice_type: 'final' }
+    ]},
+];
+
+function openPTTemplatePicker(prefix) {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  window._nptPrefix = prefix;
+  const tbody = document.getElementById('pt-template-tbody');
+  if (tbody) {
+    tbody.innerHTML = PT_TEMPLATES.map(function(t, idx){
+      return '<tr>'
+        + '<td class="f11 fw6">'+t.name+'</td>'
+        + '<td class="f10">'+t.commodity+'</td>'
+        + '<td class="f10">'+t.summary+'</td>'
+        + '<td><button class="btn bxs bp" data-template-idx="'+idx+'" onclick="applyPTTemplate(this.dataset.templateIdx)">Use</button></td>'
+        + '</tr>';
+    }).join('');
+  }
+  openModal('modal-pt-template');
+}
+
+async function applyPTTemplate(idx) {
+  const c = window._currentContract;
+  const prefix = window._nptPrefix;
+  if (!c) return;
+  const template = PT_TEMPLATES[parseInt(idx)];
+  if (!template) return;
+  try {
+    for (const tranche of template.tranches) {
+      const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/payment-tranches', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(Object.assign({ currency: 'USD' }, tranche))
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+    }
+    toast('Template Applied', template.name + ' — ' + template.tranches.length + ' tranche(s) added', 'success');
+    closeModal('modal-pt-template');
+    await loadPaymentLines(c.id, prefix);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -11742,6 +11926,78 @@ async function submitChangeDeal() {
 </div>
 <!-- MODAL: New Rollover Event (Fix 3 — append-only, multi-instance per contract) -->
 <!-- MODAL: Fix Today — Record Price Fixation (H4) -->
+<!-- MODAL: New Payment Term Tranche (Item 2) -->
+<div class="mo" id="modal-new-tranche">
+  <div class="md" style="max-width:560px">
+    <div class="mh">
+      <div class="mt">New Payment Term Tranche</div>
+      <button class="mc" onclick="closeModal('modal-new-tranche')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="f"><div class="fl">Tranche Name <span class="req">*</span></div><input type="text" class="fi" id="npt-name" placeholder="e.g. Provisional payment"></div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Percentage <span class="req">*</span></div><input type="number" class="fi" id="npt-pct" step="0.01" placeholder="e.g. 90"></div>
+        <div class="f"><div class="fl">Basis</div>
+          <select class="fs" id="npt-basis">
+            <option value="pct_of_contract">% of Contract</option>
+            <option value="pct_of_provisional">% of Provisional</option>
+            <option value="pct_of_final">% of Final</option>
+            <option value="fixed_amount">Fixed Amount</option>
+            <option value="balance_remaining">Balance Remaining</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(3,1fr)">
+        <div class="f"><div class="fl">Anchor Event <span class="req">*</span></div>
+          <select class="fs" id="npt-anchor" onchange="onNptAnchorChange()">
+            <option value="contract_date">Contract Date</option>
+            <option value="etd_date">ETD Date</option>
+            <option value="bl_date">BL Date</option>
+            <option value="eta_date">ETA Date</option>
+            <option value="pr_date">PR Date</option>
+            <option value="grn_date">GRN Date</option>
+            <option value="assay_date">Assay Date</option>
+            <option value="qp_close_date">QP Close Date</option>
+            <option value="fixed_date">Fixed Date</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Offset Days</div><input type="number" class="fi" id="npt-offset" value="0"></div>
+        <div class="f"><div class="fl">Direction</div><select class="fs" id="npt-direction"><option value="after">After</option><option value="before">Before</option></select></div>
+      </div>
+      <div class="f" id="npt-fixed-date-field" style="display:none"><div class="fl">Fixed Date</div><input type="date" class="fi" id="npt-fixed-date"></div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Invoice Type</div>
+          <select class="fs" id="npt-invoice-type"><option value="provisional">Provisional</option><option value="final">Final</option><option value="delta">Delta</option><option value="advance">Advance</option><option value="credit_note">Credit Note</option></select>
+        </div>
+        <div class="f"><div class="fl">Currency</div><input type="text" class="fi" id="npt-currency" value="USD"></div>
+      </div>
+      <div class="f"><div class="fl">Notes</div><input type="text" class="fi" id="npt-notes"></div>
+      <div class="ban bw mt8" id="npt-warning" style="display:none"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-tranche')">Cancel</button>
+      <button class="btn bp" onclick="submitNewTranche()">Add Tranche</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: Payment Term Template Picker -->
+<div class="mo" id="modal-pt-template">
+  <div class="md" style="max-width:680px">
+    <div class="mh">
+      <div class="mt">Use a Payment Term Template</div>
+      <button class="mc" onclick="closeModal('modal-pt-template')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="ban bi mb8"><span>i</span>Picking a template adds its tranches to this contract — existing tranches are not removed. You can still edit or add more afterward.</div>
+      <table class="lt"><thead><tr><th>Template</th><th>Commodity</th><th>Structure</th><th></th></tr></thead>
+        <tbody id="pt-template-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-pt-template')">Close</button>
+    </div>
+  </div>
+</div>
 <div class="mo" id="modal-fix-today">
   <div class="md" style="max-width:680px">
     <div class="mh">
