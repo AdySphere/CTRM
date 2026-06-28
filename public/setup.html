@@ -386,7 +386,7 @@ html,body{height:100%;margin:0;padding:0}
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.36</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.42</div>
   </div>
   <nav class="sb-nav">
 
@@ -396,6 +396,7 @@ html,body{height:100%;margin:0;padding:0}
     <div class="ni" data-page="md-location" onclick="nav('md-location',this)">Locations &amp; Ports</div>
     <div class="ni" data-page="md-market-prices" onclick="nav('md-market-prices',this)">Market Prices</div>
     <div class="ni" data-page="md-pricing" onclick="nav('md-pricing',this)">Price Source Master</div>
+    <div class="ni" data-page="event-date-master" onclick="nav('event-date-master',this)">Event Date Master</div>
     <div class="ni" data-page="md-qp" onclick="nav('md-qp',this)">QP Period Master</div>
     <div class="ni" data-page="md-payment" onclick="nav('md-payment',this)">Payment Terms</div>
     <div class="ni" data-page="md-qc" onclick="nav('md-qc',this)">QC Parameters</div>
@@ -860,6 +861,41 @@ html,body{height:100%;margin:0;padding:0}
     </div>
 
     <!-- QP PERIOD MASTER -->
+<div class="page" id="page-event-date-master">
+  <div class="ph"><div class="ph-l"><div class="pt">Event Date Master</div><div class="ps">One record per contract leg · BL date is the primary anchor · Locked dates trigger automatic recalculation of QP window, payment due date, and all accruals</div></div></div>
+  <div class="ban bi mb12"><span>i</span>Select a contract to view or enter its event date timeline. ★ = BL Date, the single most important event — once locked, immutable without an approval workflow.</div>
+
+  <div class="card mb16"><div class="cb"><div class="fg">
+    <div class="f csf"><div class="fl">Contract</div>
+      <select class="fs" id="edm-contract-sel" onchange="loadEventDateMaster()"><option value="">— Select a contract —</option></select>
+    </div>
+  </div></div></div>
+
+  <div id="edm-content" style="display:none">
+    <div class="card mb16"><div class="ch"><div class="ct">Event Timeline</div><div class="cs" id="edm-contract-summary"></div></div>
+      <div class="cbf"><table class="dt"><thead><tr>
+        <th>#</th><th>Event</th><th>Estimated</th><th>Actual</th><th>Status</th><th>Locked?</th><th>QP Trigger</th><th>Payment Trigger</th><th></th>
+      </tr></thead>
+        <tbody id="edm-events-tbody"></tbody>
+      </table></div>
+    </div>
+
+    <div class="card"><div class="ch"><div class="ct">BL Date — Lock Action</div><div class="cs">Once locked, BL date and BL number cannot be changed without an approval workflow</div></div>
+      <div class="cb">
+        <div class="fg">
+          <div class="f"><div class="fl">BL Date</div><input type="date" class="fi" id="edm-bl-date"></div>
+          <div class="f"><div class="fl">BL Number</div><input type="text" class="fi" id="edm-bl-number" placeholder="e.g. MSCU1234567"></div>
+          <div class="f"><div class="fl">Lock Status</div><div class="fc" id="edm-bl-lock-status"><span class="badge bd-draft">Not locked</span></div></div>
+        </div>
+        <div class="br-row right mt12">
+          <button class="btn bg" onclick="saveEventDateField('bl_date')">Save BL Date</button>
+          <button class="btn bd" onclick="lockBLDate()" id="edm-lock-btn">🔒 Lock BL Date</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
     <div class="page" id="page-md-qp">
       <div class="ph"><div class="ph-l"><div class="pt">QP Period Master</div><div class="ps">Setup · All QP window rules stored as data · No code changes needed to add new windows · Anchor events link to logistics dates</div></div>
         <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-qp')">＋ Add QP Period</button></div></div>
@@ -1429,6 +1465,147 @@ async function loadMDCommodities() {
   }
 }
 
+// Event Date Master (Setup) — per the Veridian spec: a genuinely separate screen from
+// Contract Entry, Logistics, GRN etc. The data was already real (contract_event_dates,
+// BL-lock server-enforced) but had no screen anywhere to view or edit it.
+const EDM_EVENTS = [
+  { num: 1, name: 'Contract Date', field: 'contract_date', actualField: null, status: 'contract_date', qpTrigger: '—', payTrigger: 'OPTIONAL (rare — commission terms)' },
+  { num: 2, name: 'ETD — Time of Departure', field: 'etd_estimated', actualField: 'etd_actual', qpTrigger: 'OPTIONAL (rare)', payTrigger: 'OPTIONAL (some oil terms)' },
+  { num: 3, name: 'BL Date — Bill of Lading ★', field: 'bl_date', actualField: null, locked: true, qpTrigger: 'PRIMARY', payTrigger: 'PRIMARY (most common)' },
+  { num: 4, name: 'ETA — Time of Arrival', field: 'eta_estimated', actualField: 'eta_actual', qpTrigger: 'OPTIONAL (some oil)', payTrigger: 'YES (common in metals)' },
+  { num: 5, name: 'PR Date — Provisional Receipt', field: 'pr_date', actualField: null, qpTrigger: '—', payTrigger: 'OPTIONAL' },
+  { num: 6, name: 'GRN Date — Goods Receipt Note', field: 'grn_date', actualField: null, immutableOnPost: 'grn_erp_posted', qpTrigger: '—', payTrigger: 'OPTIONAL (some agri)' },
+  { num: 7, name: 'Assay Date', field: 'assay_date', actualField: null, qpTrigger: '—', payTrigger: 'OPTIONAL (metals — after assay)' },
+  { num: 8, name: 'QP Close Date', field: 'qp_end_date', actualField: null, qpTrigger: 'PRIMARY (calc from BL + formula)', payTrigger: 'OPTIONAL' },
+  { num: 9, name: 'Payment Due Date', field: 'payment_due_date', actualField: null, qpTrigger: '—', payTrigger: 'CALC (anchor + terms)' },
+  { num: 10, name: 'Settlement Date', field: 'settlement_date', actualField: null, qpTrigger: '—', payTrigger: '—' },
+];
+
+async function loadEDMContractDropdown() {
+  const sel = document.getElementById('edm-contract-sel');
+  if (!sel) return;
+  try {
+    const res = await fetch(API + '/api/contracts');
+    const json = await res.json();
+    const contracts = json.data || [];
+    sel.innerHTML = '<option value="">— Select a contract —</option>' + contracts.map(function(c){
+      return '<option value="'+c.id+'">'+c.contract_no+' — '+(c.counterparty_name||'—')+' ('+(c.commodity_name||c.commodity_code||'—')+')</option>';
+    }).join('');
+  } catch(e) { showSetupToast('Error', 'Could not load contracts: ' + e.message, 'error'); }
+}
+
+async function loadEventDateMaster() {
+  const contractId = document.getElementById('edm-contract-sel')?.value;
+  const content = document.getElementById('edm-content');
+  if (!contractId) { if (content) content.style.display = 'none'; return; }
+  if (content) content.style.display = 'block';
+
+  let edRecord;
+  try {
+    const res = await fetch(API + '/api/contracts/' + contractId + '/event-dates');
+    const json = await res.json();
+    edRecord = json.data;
+    if (!edRecord) {
+      const createRes = await fetch(API + '/api/contracts/' + contractId + '/event-dates', { method: 'POST' });
+      const createJson = await createRes.json();
+      edRecord = createJson.data;
+    }
+  } catch(e) { showSetupToast('Error', e.message, 'error'); return; }
+
+  window._edmCurrent = { contractId: contractId, record: edRecord };
+
+  const contractRes = await fetch(API + '/api/contracts/' + contractId);
+  const contractJson = await contractRes.json();
+  const c = contractJson.data;
+  const summaryEl = document.getElementById('edm-contract-summary');
+  if (summaryEl) summaryEl.textContent = c.contract_no + ' · ' + (c.counterparty_name||'—') + ' · ' + (c.commodity_name||c.commodity_code||'—');
+
+  const tbody = document.getElementById('edm-events-tbody');
+  if (tbody) {
+    tbody.innerHTML = EDM_EVENTS.map(function(evt){
+      const estDate = edRecord[evt.field];
+      const actDate = evt.actualField ? edRecord[evt.actualField] : null;
+      const hasDate = estDate || actDate;
+      const statusBadge = hasDate ? '<span class="badge bd-confirmed">Confirmed</span>' : '<span class="badge bd-draft">⏳ Pending</span>';
+      const lockedBadge = evt.locked
+        ? (edRecord.bl_date_locked ? '<span class="badge bd-act">🔒 Locked</span>' : '<span class="badge bd-draft">No</span>')
+        : (evt.immutableOnPost && edRecord[evt.immutableOnPost] ? '<span class="badge bd-act">🔒 Immutable</span>' : '—');
+      return '<tr>'
+        + '<td class="mono f10">'+evt.num+'</td>'
+        + '<td class="f11 fw6">'+evt.name+'</td>'
+        + '<td class="mono f10">'+(estDate ? new Date(estDate).toLocaleDateString('en-GB') : '—')+'</td>'
+        + '<td class="mono f10">'+(actDate ? new Date(actDate).toLocaleDateString('en-GB') : '—')+'</td>'
+        + '<td>'+statusBadge+'</td>'
+        + '<td>'+lockedBadge+'</td>'
+        + '<td class="f10">'+evt.qpTrigger+'</td>'
+        + '<td class="f10">'+evt.payTrigger+'</td>'
+        + '<td><input type="date" class="fi" style="font-size:10px;width:120px" id="edm-date-'+evt.field+'" data-field="'+evt.field+'" value="'+(estDate?estDate.split('T')[0]:'')+'" '+(evt.locked && edRecord.bl_date_locked?'disabled':'')+' onchange="saveEventDateField(this.dataset.field)"></td>'
+        + '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('edm-bl-date').value = edRecord.bl_date ? edRecord.bl_date.split('T')[0] : '';
+  document.getElementById('edm-bl-number').value = edRecord.bl_number || '';
+  document.getElementById('edm-bl-date').disabled = edRecord.bl_date_locked;
+  document.getElementById('edm-bl-number').disabled = edRecord.bl_date_locked;
+  const lockStatusEl = document.getElementById('edm-bl-lock-status');
+  const lockBtn = document.getElementById('edm-lock-btn');
+  if (edRecord.bl_date_locked) {
+    lockStatusEl.innerHTML = '<span class="badge bd-act">🔒 Locked by ' + (edRecord.bl_date_locked_by||'—') + ' on ' + new Date(edRecord.bl_date_locked_at).toLocaleDateString('en-GB') + '</span>';
+    lockBtn.disabled = true;
+    lockBtn.textContent = 'Already Locked';
+  } else {
+    lockStatusEl.innerHTML = '<span class="badge bd-draft">Not locked</span>';
+    lockBtn.disabled = false;
+    lockBtn.textContent = '🔒 Lock BL Date';
+  }
+}
+
+async function saveEventDateField(fieldName) {
+  const ctx = window._edmCurrent;
+  if (!ctx) return;
+  const input = document.getElementById('edm-date-' + fieldName);
+  const value = input ? input.value : null;
+  try {
+    const res = await fetch(API + '/api/contracts/' + ctx.contractId + '/event-dates', {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ [fieldName]: value || null, updated_by: 'Setup' })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    showSetupToast('Saved', fieldName + ' updated', 'success');
+    await loadEventDateMaster();
+  } catch(e) { showSetupToast('Error', e.message, 'error'); }
+}
+
+async function lockBLDate() {
+  const ctx = window._edmCurrent;
+  if (!ctx) return;
+  const blDate = document.getElementById('edm-bl-date').value;
+  const blNumber = document.getElementById('edm-bl-number').value;
+  if (!blDate) { showSetupToast('Required', 'Enter the BL date before locking', 'warning'); return; }
+  if (!confirm('Lock the BL date for this contract? This cannot be undone without an approval workflow, and will be used to calculate the QP window, payment due date, and all accruals.')) return;
+
+  try {
+    // Save BL date/number first, then lock.
+    const saveRes = await fetch(API + '/api/contracts/' + ctx.contractId + '/event-dates', {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ bl_date: blDate, bl_number: blNumber, updated_by: 'Setup' })
+    });
+    const saveData = await saveRes.json();
+    if (!saveData.success) throw new Error(saveData.error);
+
+    const lockRes = await fetch(API + '/api/contracts/' + ctx.contractId + '/event-dates/lock-bl-date', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ locked_by: 'Setup' })
+    });
+    const lockData = await lockRes.json();
+    if (!lockData.success) throw new Error(lockData.error);
+    showSetupToast('BL Date Locked', 'Contract BL date is now locked and immutable', 'success');
+    await loadEventDateMaster();
+  } catch(e) { showSetupToast('Error', e.message, 'error'); }
+}
+
 // ── LOAD LOCATIONS — was 5 hardcoded mock rows, never real, since this file was built ──
 async function loadMDLocations() {
   const tbody = document.getElementById('md-location-tbody');
@@ -1600,6 +1777,7 @@ window.nav = function(pageId, navEl) {
   else if (pageId === 'md-counterparty') loadMDCounterparties();
   else if (pageId === 'md-location') loadMDLocations();
   else if (pageId === 'md-other') { loadMDCurrencies(); loadMDUOM(); loadMDTaxCodes(); }
+  else if (pageId === 'event-date-master') loadEDMContractDropdown();
 };
 </script>
 </body>
