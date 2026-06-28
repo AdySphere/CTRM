@@ -902,4 +902,90 @@ router.get('/:id/containers', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// ── DOCUMENTS CHECKLIST — was 9 hardcoded rows, every Upload button showed 'Requires
+// backend', no save path anywhere on the contract. Real per-contract list now.
+const DEFAULT_DOCUMENT_SET = [
+  { document_name: 'Full Set Original B/L (clean on board)', copies_required: '3/3', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: "Seller's Provisional Invoice", copies_required: '3 originals', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Packing List / Weight Certificate', copies_required: '3 originals', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Certificate of Origin', copies_required: '1 original', payment_milestone: 'Provisional / Customs', mandatory: true },
+  { document_name: 'Insurance Policy / Certificate', copies_required: '1 original', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Provisional Assay Certificate', copies_required: '1 copy', payment_milestone: 'Provisional Pricing', mandatory: true },
+  { document_name: 'Final Assay Certificate', copies_required: '1 original', payment_milestone: 'Final Payment / QP trigger', mandatory: true },
+  { document_name: "Seller's Final Invoice", copies_required: '1 original', payment_milestone: 'Final Payment', mandatory: true },
+  { document_name: 'IJCEPA / FTA Certificate', copies_required: '1 original', payment_milestone: 'Customs (if applicable)', mandatory: false },
+];
+
+const DEFAULT_DOCUMENT_SET_SC = [
+  { document_name: 'Original B/L (full set 3/3)', copies_required: '3/3', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Our Provisional Invoice', copies_required: '3 originals', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Packing List / Weight Certificate', copies_required: '3 originals', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Certificate of Origin', copies_required: '1 original', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Insurance Policy', copies_required: '1 original', payment_milestone: 'Provisional Payment', mandatory: true },
+  { document_name: 'Our Final Invoice', copies_required: '1 original', payment_milestone: 'Final Payment', mandatory: true },
+];
+
+router.get('/:id/documents', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    let result = await query('SELECT * FROM contract_documents WHERE contract_id=$1 ORDER BY line_no', [id]);
+    if (!result.rows.length) {
+      // Seed the default checklist on first open, same pattern as the deal feasibility
+      // checklist — not pre-seeding for contracts that don't exist yet. PC and SC genuinely
+      // need different default sets (seller-side vs buyer-side document language).
+      const contractRes = await query('SELECT contract_type FROM contracts WHERE id=$1', [id]);
+      const contractType = contractRes.rows[0]?.contract_type;
+      const defaultSet = contractType === 'SC' ? DEFAULT_DOCUMENT_SET_SC : DEFAULT_DOCUMENT_SET;
+      for (let i = 0; i < defaultSet.length; i++) {
+        const d = defaultSet[i];
+        await query(`
+          INSERT INTO contract_documents (contract_id, document_name, copies_required, payment_milestone, mandatory, line_no)
+          VALUES ($1,$2,$3,$4,$5,$6)
+        `, [id, d.document_name, d.copies_required, d.payment_milestone, d.mandatory, i + 1]);
+      }
+      result = await query('SELECT * FROM contract_documents WHERE contract_id=$1 ORDER BY line_no', [id]);
+    }
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.post('/:id/documents', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { id } = req.params;
+    const { document_name, copies_required, payment_milestone, mandatory } = req.body;
+    if (!document_name) return res.status(400).json({ error: 'document_name is required' });
+    const cntRes = await query('SELECT COUNT(*) FROM contract_documents WHERE contract_id=$1', [id]);
+    const lineNo = parseInt(cntRes.rows[0].count) + 1;
+    const result = await query(`
+      INSERT INTO contract_documents (contract_id, document_name, copies_required, payment_milestone, mandatory, line_no)
+      VALUES ($1,$2,$3,$4,$5,$6) RETURNING *
+    `, [id, document_name, copies_required || null, payment_milestone || null, mandatory !== false, lineNo]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.patch('/:id/documents/:docId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['document_name', 'copies_required', 'payment_milestone', 'mandatory', 'received', 'date_received', 'buyer_confirmed', 'ref_no'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 3); }).join(',');
+    const result = await query(`UPDATE contract_documents SET ${sets} WHERE id=$1 AND contract_id=$2 RETURNING *`,
+      [req.params.docId, req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+router.delete('/:id/documents/:docId', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    await query('DELETE FROM contract_documents WHERE id=$1 AND contract_id=$2', [req.params.docId, req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports = router;

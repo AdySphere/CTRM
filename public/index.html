@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.51</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.52</div>
   </div>
   <nav class="sb-nav">
 
@@ -1573,25 +1573,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="lar br-row g7"><button class="btn bg bsm" onclick="openNewRolloverModal()">+ Add Rollover Event</button><span class="tdim f10">Immutable once created — saved permanently, cannot be edited or deleted</span></div>
         </div>
         <div id="pc-docs" class="ftc hidden">
-          <div class="ban bi mb12"><span>ℹ</span>Document checklist per payment milestone. Auto-generated from Incoterms + payment terms + LC flag. Upload scans when received.</div>
-          <table class="lt"><thead><tr><th>Document</th><th>Copies</th><th>Payment Milestone</th><th>Received</th><th>Date Received</th><th>Ref No.</th><th>Upload</th></tr></thead>
-          <tbody>
-            <tr><td class="f11 fw6">Full Set Original B/L (clean on board)</td><td class="mono f10">3/3</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','Requires backend','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Seller's Provisional Invoice</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Packing List / Weight Certificate</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Certificate of Origin</td><td class="mono f10">1 original</td><td class="f10">Provisional / Customs</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Insurance Policy / Certificate</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Provisional Assay Certificate</td><td class="mono f10">1 copy</td><td class="f10">Provisional Pricing</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Final Assay Certificate</td><td class="mono f10">1 original</td><td class="f10">Final Payment / QP trigger</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Seller's Final Invoice</td><td class="mono f10">1 original</td><td class="f10">Final Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">IJCEPA / FTA Certificate</td><td class="mono f10">1 original</td><td class="f10">Customs (if applicable)</td><td><select class="fs" style="width:55px;font-size:10px"><option>N/A</option><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><input type="text" class="fi" style="font-size:10px"></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+          <div class="ban bi mb12"><span>ℹ</span>Document checklist per payment milestone — genuinely editable per contract. Standard set pre-fills on first open; add or remove as needed.</div>
+          <table class="lt"><thead><tr><th>Document</th><th>Copies</th><th>Payment Milestone</th><th>Mandatory</th><th>Received</th><th>Date Received</th><th>Ref No.</th><th></th></tr></thead>
+          <tbody id="pc-docs-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>
           </tbody></table>
-          <div class="lar"><button class="btn bg bsm" onclick="fileUploadStub()">+ Add Document</button></div>
-          <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;margin-top:12px" onclick="toast('Upload','Requires backend','info')">
-            
-            <div style="font-size:12px;font-weight:600;color:var(--text)">Upload signed contract PDF</div>
-            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);margin-top:3px">Signed copy, amendments, addenda</div>
-          </div>
+          <div class="lar"><button class="btn bg bsm" onclick="openNewDocumentModal('pc')">+ Add Document</button></div>
         </div>
         <div class="cb br-row btw">
           <button class="btn bg" onclick="document.getElementById('pc-detail-card').style.display='none'">Close</button>
@@ -1884,20 +1871,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f cs2"><div class="fl">Special Remarks</div><textarea class="fta" style="min-height:48px">We are glad to have concluded this contract. Please return one signed copy for our records.</textarea></div>
         </div></div>
         <div id="sc-docs" class="ftc hidden">
-          <div class="ban bi mb12"><span>ℹ</span>Documents we (Seller) must provide. Tracks sending and buyer confirmation.</div>
-          <table class="lt"><thead><tr><th>Document</th><th>Copies</th><th>Payment Milestone</th><th>Sent</th><th>Date Sent</th><th>Buyer Confirmed</th><th>Upload</th></tr></thead>
-          <tbody>
-            <tr><td class="f11 fw6">Original B/L (full set 3/3)</td><td class="mono f10">3/3</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Our Provisional Invoice</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Packing List / Weight Certificate</td><td class="mono f10">3 originals</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Certificate of Origin</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Insurance Policy</td><td class="mono f10">1 original</td><td class="f10">Provisional Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
-            <tr><td class="f11 fw6">Our Final Invoice</td><td class="mono f10">1 original</td><td class="f10">Final Payment</td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><input type="date" class="fi" style="width:115px;font-size:10px"></td><td><select class="fs" style="width:55px;font-size:10px"><option>NO</option><option>YES</option></select></td><td><button class="btn bxs bg" onclick="toast('Upload','','info')">Upload</button></td></tr>
+          <div class="ban bi mb12"><span>ℹ</span>Documents we (Seller) must provide — genuinely editable per contract. Standard set pre-fills on first open.</div>
+          <table class="lt"><thead><tr><th>Document</th><th>Copies</th><th>Payment Milestone</th><th>Mandatory</th><th>Sent</th><th>Date Sent</th><th>Buyer Confirmed</th><th>Ref No.</th><th></th></tr></thead>
+          <tbody id="sc-docs-tbody">
+            <tr><td colspan="9" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>
           </tbody></table>
-          <div style="border:2px dashed var(--border2);border-radius:var(--r);padding:22px;text-align:center;cursor:pointer;margin-top:12px" onclick="toast('Upload','Requires backend','info')">
-            
-            <div style="font-size:12px;font-weight:600;color:var(--text)">Upload signed contract PDF</div>
-          </div>
+          <div class="lar"><button class="btn bg bsm" onclick="openNewDocumentModal('sc')">+ Add Document</button></div>
         </div>
         <div class="cb br-row btw">
           <button class="btn bg" onclick="document.getElementById('sc-detail-card').style.display='none'">Close</button>
@@ -7679,7 +7658,8 @@ async function loadContractTabs(contractId, prefix) {
         loadQCSpecs(contractId, prefix + '-qc-tbody'),
         loadChargeLines(contractId, prefix),
         loadCommissionAgents(contractId, prefix),
-        loadMaterialLines(contractId, prefix)
+        loadMaterialLines(contractId, prefix),
+        loadDocuments(contractId, prefix)
       ]);
 
       // Fix 1: sync the Calculation Method panel with the contract's real saved pricing
@@ -11974,6 +11954,97 @@ async function postGRNToERP() {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
+// Documents tab — was 9 hardcoded rows on PC, 6 on SC, every Upload button showed
+// 'Requires backend', no save path anywhere. Real per-contract checklist now.
+async function loadDocuments(contractId, prefix) {
+  const tbody = document.getElementById(prefix + '-docs-tbody');
+  if (!tbody) return;
+  const isSC = prefix === 'sc';
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/documents');
+    const data = await res.json();
+    const docs = data.data || [];
+    if (!docs.length) {
+      tbody.innerHTML = '<tr><td colspan="' + (isSC?9:8) + '" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No documents yet — click + Add Document</td></tr>';
+      return;
+    }
+    tbody.innerHTML = docs.map(function(d){
+      const sentOrReceivedCol = '<select class="fs" style="width:55px;font-size:10px" data-doc-id="'+d.id+'" data-contract-id="'+contractId+'" data-field="received" onchange="onDocFieldChange(this,this.dataset.field)"><option value="false"'+(!d.received?' selected':'')+'>NO</option><option value="true"'+(d.received?' selected':'')+'>YES</option></select>';
+      const dateCol = '<input type="date" class="fi" style="width:115px;font-size:10px" value="'+(d.date_received?d.date_received.split('T')[0]:'')+'" data-doc-id="'+d.id+'" data-contract-id="'+contractId+'" data-field="date_received" onchange="onDocFieldChange(this,this.dataset.field)">';
+      const refCol = '<input type="text" class="fi" style="font-size:10px" value="'+(d.ref_no||'')+'" data-doc-id="'+d.id+'" data-contract-id="'+contractId+'" data-field="ref_no" onblur="onDocFieldChange(this,this.dataset.field)">';
+      const buyerConfirmedCol = isSC
+        ? '<td><select class="fs" style="width:55px;font-size:10px" data-doc-id="'+d.id+'" data-contract-id="'+contractId+'" data-field="buyer_confirmed" onchange="onDocFieldChange(this,this.dataset.field)"><option value="false"'+(!d.buyer_confirmed?' selected':'')+'>NO</option><option value="true"'+(d.buyer_confirmed?' selected':'')+'>YES</option></select></td>'
+        : '';
+      return '<tr>'
+        + '<td class="f11 fw6">'+d.document_name+'</td>'
+        + '<td class="mono f10">'+(d.copies_required||'—')+'</td>'
+        + '<td class="f10">'+(d.payment_milestone||'—')+'</td>'
+        + '<td><span class="badge '+(d.mandatory?'bd-act':'bd-draft')+'">'+(d.mandatory?'YES':'NO')+'</span></td>'
+        + '<td>'+sentOrReceivedCol+'</td>'
+        + '<td>'+dateCol+'</td>'
+        + (isSC ? buyerConfirmedCol : '')
+        + '<td>'+refCol+'</td>'
+        + '<td><button class="btn bxs bd" data-doc-id="'+d.id+'" data-contract-id="'+contractId+'" onclick="deleteDocument(this.dataset.docId, this.dataset.contractId, this)">✕</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) { console.warn('loadDocuments:', e); }
+}
+
+async function onDocFieldChange(el, field) {
+  const docId = el.dataset.docId;
+  const contractId = el.dataset.contractId;
+  let value = el.value;
+  if (field === 'received' || field === 'buyer_confirmed') value = (value === 'true');
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/documents/' + docId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ [field]: value })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function deleteDocument(docId, contractId, btn) {
+  try {
+    await fetch(API_BASE + '/api/contracts/' + contractId + '/documents/' + docId, { method: 'DELETE' });
+    btn.closest('tr').remove();
+    toast('Removed', 'Document requirement removed', 'info');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+function openNewDocumentModal(prefix) {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  window._ndocPrefix = prefix;
+  ['ndoc-name','ndoc-copies','ndoc-milestone'].forEach(function(id){ const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('ndoc-mandatory').value = 'true';
+  openModal('modal-new-document');
+}
+
+async function submitNewDocument() {
+  const c = window._currentContract;
+  const prefix = window._ndocPrefix;
+  if (!c) return;
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const name = g('ndoc-name');
+  if (!name) { toast('Required', 'Please enter the document name', 'warning'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/documents', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        document_name: name, copies_required: g('ndoc-copies'),
+        payment_milestone: g('ndoc-milestone'), mandatory: g('ndoc-mandatory') === 'true'
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Document Added', name, 'success');
+    closeModal('modal-new-document');
+    await loadDocuments(c.id, prefix);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -12257,6 +12328,27 @@ async function submitChangeDeal() {
   </div>
 </div>
 <!-- MODAL: New GRN (Receiving) -->
+<!-- MODAL: New Document Requirement -->
+<div class="mo" id="modal-new-document">
+  <div class="md" style="max-width:480px">
+    <div class="mh">
+      <div class="mt">Add Document Requirement</div>
+      <button class="mc" onclick="closeModal('modal-new-document')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="f"><div class="fl">Document Name <span class="req">*</span></div><input type="text" class="fi" id="ndoc-name" placeholder="e.g. Fumigation Certificate"></div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Copies Required</div><input type="text" class="fi" id="ndoc-copies" placeholder="e.g. 1 original"></div>
+        <div class="f"><div class="fl">Payment Milestone</div><input type="text" class="fi" id="ndoc-milestone" placeholder="e.g. Provisional Payment"></div>
+      </div>
+      <div class="f"><div class="fl">Mandatory</div><select class="fs" id="ndoc-mandatory"><option value="true">YES</option><option value="false">NO</option></select></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-document')">Cancel</button>
+      <button class="btn bp" onclick="submitNewDocument()">Add</button>
+    </div>
+  </div>
+</div>
 <div class="mo" id="modal-new-grn">
   <div class="md" style="max-width:560px">
     <div class="mh">

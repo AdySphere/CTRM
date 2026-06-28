@@ -211,6 +211,29 @@ async function setupDatabase() {
   `);
   console.log('✓ contract_material_lines (migration)');
 
+  // Documents tab — was 9 hardcoded rows, every Upload button showed 'Requires backend',
+  // and the contract-level Save & Sync button was a pure success toast. Real per-contract
+  // checklist now, genuinely add/remove-able, matching what was asked for: a master the
+  // client can edit, each item with a mandatory YES/NO flag.
+  await query(`
+    CREATE TABLE IF NOT EXISTS contract_documents (
+      id              SERIAL PRIMARY KEY,
+      contract_id     INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      document_name   VARCHAR(150) NOT NULL,
+      copies_required VARCHAR(30),
+      payment_milestone VARCHAR(60),
+      mandatory       BOOLEAN DEFAULT TRUE,
+      received        BOOLEAN DEFAULT FALSE,  -- on SC this means 'sent by us'
+      date_received   DATE,                   -- on SC this means 'date sent'
+      buyer_confirmed BOOLEAN DEFAULT FALSE,   -- SC only — buyer confirmed receipt
+      ref_no          VARCHAR(60),
+      line_no         INT,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_contract_documents_contract ON contract_documents(contract_id);
+  `);
+  console.log('✓ contract_documents');
+
   // GRN module — extend lots with GRN-specific fields. Wrapped in try/catch since lots
   // is created later in this file's main schema block on a fresh database.
   try {
@@ -1234,6 +1257,18 @@ async function setupDatabase() {
     CREATE INDEX IF NOT EXISTS idx_material_lines_contract ON contract_material_lines(contract_id);
   `);
   console.log('✓ contract_material_lines');
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS contract_documents (
+      id SERIAL PRIMARY KEY, contract_id INT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+      document_name VARCHAR(150) NOT NULL, copies_required VARCHAR(30),
+      payment_milestone VARCHAR(60), mandatory BOOLEAN DEFAULT TRUE, received BOOLEAN DEFAULT FALSE,
+      date_received DATE, buyer_confirmed BOOLEAN DEFAULT FALSE, ref_no VARCHAR(60), line_no INT,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_contract_documents_contract ON contract_documents(contract_id);
+  `);
+  console.log('✓ contract_documents (main)');
 
   // ── INVOICE ADJUSTMENT LINES ──────────────────────────────────
   await query(`
