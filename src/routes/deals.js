@@ -1575,19 +1575,145 @@ lotsRouter.get('/', async (req, res) => {
     // Item 7 fix: support filtering lots by contract — joins through logistics since
     // lots link to logistics_id, and logistics links to contract_id. Needed to surface
     // real gross/tare/net weight on the PC/SC contract screens instead of nowhere.
+    // GRN module fix: lo.* now includes lots.contract_id directly (added for GRN). Avoid
+    // selecting a second column with the same name from the logistics join — that relied
+    // on node-postgres's 'last duplicate column wins' behavior, which works but is fragile.
+    // logistics_contract_id is a clearly-named fallback for older lots that only have the
+    // logistics-derived link; the app should prefer contract_id and fall back to it.
     let sql = `
-      SELECT lo.*, l.log_no, l.contract_id
+      SELECT lo.*, l.log_no, l.contract_id as logistics_contract_id
       FROM lots lo
       LEFT JOIN logistics l ON l.id = lo.logistics_id
       WHERE 1=1`;
     const params = [];
     if (lot_no) { params.push(lot_no); sql += ` AND lo.lot_no=$${params.length}`; }
-    if (contract_id) { params.push(contract_id); sql += ` AND l.contract_id=$${params.length}`; }
+    if (contract_id) { params.push(contract_id); sql += ` AND COALESCE(lo.contract_id, l.contract_id)=$${params.length}`; }
     sql += ' ORDER BY lo.id DESC';
     const result = await query(sql, params);
     res.json({ success: true, data: result.rows });
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
+// GRN module — was a fully mocked screen (6 hardcoded GRN rows, no save path, 'Post
+// GRN to ERP' just showed a toast). lots already had the right shape for MRN sub-lots
+// (mrn_no, lot_type PRIMARY/SEGREGATED) — extended with the GRN-specific fields instead
+// of inventing a separate, parallel concept.
+lotsRouter.get('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT lo.*, l.log_no, l.contract_id as logistics_contract_id,
+        cp.name as expected_commodity_name, cm.name as actual_commodity_name,
+        c.contract_no
+      FROM lots lo
+      LEFT JOIN logistics l ON l.id = lo.logistics_id
+      LEFT JOIN commodities cp ON cp.code = lo.expected_commodity_code
+      LEFT JOIN commodities cm ON cm.code = lo.commodity_code
+      LEFT JOIN contracts c ON c.id = COALESCE(lo.contract_id, l.contract_id)
+      WHERE lo.id=$1
+    `, [req.params.id]);
+    if (!result.rows.length) return res.status(404).json({ error: 'Lot not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+lotsRouter.post('/', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { lot_no, mrn_no, container_id, receipt_id, logistics_id, contract_id,
+      commodity_code, expected_commodity_code, gross_weight_mt, tare_mt, moisture_pct,
+      lot_type, grn_date, accepted_qty_mt, rejected_qty_mt } = req.body;
+    if (!lot_no) return res.status(400).json({ error: 'lot_no is required' });
+
+    const netWeight = (gross_weight_mt != null && tare_mt != null) ? (parseFloat(gross_weight_mt) - parseFloat(tare_mt)) : null;
+    const dryWeight = (netWeight != null && moisture_pct != null) ? (netWeight * (1 - parseFloat(moisture_pct) / 100)) : netWeight;
+
+    // Discrepancy auto-derived: item mismatch, qty mismatch, both, or none.
+    const itemDiff = expected_commodity_code && commodity_code && expected_commodity_code !== commodity_code;
+    const qtyDiff = rejected_qty_mt != null && parseFloat(rejected_qty_mt) > 0;
+    const discrepancyType = (itemDiff && qtyDiff) ? 'BOTH' : itemDiff ? 'ITEM_DIFF' : qtyDiff ? 'QTY_DIFF' : 'NONE';
+
+    const cntRes = await query(`SELECT COUNT(*) FROM lots WHERE grn_no IS NOT NULL`);
+    const grnNo = 'GRN-' + String(parseInt(cntRes.rows[0].count) + 1).padStart(3, '0');
+
+    const result = await query(`
+      INSERT INTO lots
+        (lot_no, mrn_no, container_id, receipt_id, logistics_id, contract_id, commodity_code,
+         expected_commodity_code, gross_weight_mt, tare_mt, net_weight_mt, moisture_pct,
+         dry_weight_mt, lot_type, grn_no, grn_date, accepted_qty_mt, rejected_qty_mt,
+         discrepancy_type, grn_status, lot_status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,'DRAFT',$20)
+      RETURNING *
+    `, [lot_no, mrn_no || null, container_id || null, receipt_id || null, logistics_id || null,
+        contract_id || null, commodity_code || null, expected_commodity_code || null,
+        gross_weight_mt || null, tare_mt || null, netWeight, moisture_pct || null, dryWeight,
+        lot_type || 'PRIMARY', grnNo, grn_date || null, accepted_qty_mt || null,
+        rejected_qty_mt || null, discrepancyType, discrepancyType === 'NONE' ? 'CLEARED' : 'DISCREPANCY']);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+lotsRouter.patch('/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['grn_date', 'commodity_code', 'expected_commodity_code', 'accepted_qty_mt',
+      'rejected_qty_mt', 'po_amended', 'grn_status', 'lot_status'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+
+    // Recompute discrepancy if the relevant inputs changed.
+    if ('commodity_code' in fields || 'expected_commodity_code' in fields || 'rejected_qty_mt' in fields) {
+      const currentRes = await query('SELECT commodity_code, expected_commodity_code, rejected_qty_mt FROM lots WHERE id=$1', [req.params.id]);
+      const current = currentRes.rows[0] || {};
+      const expected = 'expected_commodity_code' in fields ? fields.expected_commodity_code : current.expected_commodity_code;
+      const actual = 'commodity_code' in fields ? fields.commodity_code : current.commodity_code;
+      const rejected = 'rejected_qty_mt' in fields ? fields.rejected_qty_mt : current.rejected_qty_mt;
+      const itemDiff = expected && actual && expected !== actual;
+      const qtyDiff = rejected != null && parseFloat(rejected) > 0;
+      fields.discrepancy_type = (itemDiff && qtyDiff) ? 'BOTH' : itemDiff ? 'ITEM_DIFF' : qtyDiff ? 'QTY_DIFF' : 'NONE';
+      fields.lot_status = fields.discrepancy_type === 'NONE' ? 'CLEARED' : 'DISCREPANCY';
+    }
+
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE lots SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Posting to ERP is a deliberate, irreversible action — same pattern as locking the BL
+// date — not just another field update. Once posted, the GRN is immutable per the spec
+// ('Stage 3 of 3. GRN is final and immutable once posted to ERP').
+lotsRouter.post('/:id/post-to-erp', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const currentRes = await query('SELECT * FROM lots WHERE id=$1', [req.params.id]);
+    if (!currentRes.rows.length) return res.status(404).json({ error: 'Lot not found' });
+    const current = currentRes.rows[0];
+    if (current.grn_status === 'POSTED') return res.status(409).json({ error: 'Already posted to ERP' });
+    if (!current.grn_date) return res.status(400).json({ error: 'Cannot post — GRN date is required first' });
+
+    const erpRef = 'BC-GRN-' + new Date().getFullYear() + '-' + String(req.params.id).padStart(5, '0');
+    const result = await query(`
+      UPDATE lots SET grn_status='POSTED', erp_grn_reference=$2, erp_posted_at=NOW(), po_amended=TRUE
+      WHERE id=$1 RETURNING *
+    `, [req.params.id, erpRef]);
+
+    // GRN date confirmed -> write it back to the Event Date Master, the genuine missing
+    // link Prashant flagged — Payment Tranches anchored to grn_date can now calculate.
+    const contractId = current.contract_id;
+    if (contractId) {
+      const edRes = await query('SELECT id FROM contract_event_dates WHERE contract_id=$1', [contractId]);
+      if (edRes.rows.length) {
+        await query('UPDATE contract_event_dates SET grn_date=$2, grn_reference=$3, grn_erp_posted=TRUE WHERE contract_id=$1', [contractId, current.grn_date, erpRef]);
+      } else {
+        await query('INSERT INTO contract_event_dates (contract_id, grn_date, grn_reference, grn_erp_posted) VALUES ($1,$2,$3,TRUE)', [contractId, current.grn_date, erpRef]);
+      }
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports.lotsRouter = lotsRouter;
 
 // ── ADJUSTMENT CODES MASTER ───────────────────────────────────────

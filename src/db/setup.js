@@ -211,6 +211,22 @@ async function setupDatabase() {
   `);
   console.log('✓ contract_material_lines (migration)');
 
+  // GRN module — extend lots with GRN-specific fields. Wrapped in try/catch since lots
+  // is created later in this file's main schema block on a fresh database.
+  try {
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS grn_no VARCHAR(20) UNIQUE`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS contract_id INT REFERENCES contracts(id)`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS grn_date DATE`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS expected_commodity_code VARCHAR(20) REFERENCES commodities(code)`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS accepted_qty_mt DECIMAL(10,4)`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS rejected_qty_mt DECIMAL(10,4)`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS discrepancy_type VARCHAR(20) DEFAULT 'NONE'`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS po_amended BOOLEAN DEFAULT FALSE`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS grn_status VARCHAR(20) DEFAULT 'DRAFT'`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS erp_grn_reference VARCHAR(50)`);
+    await query(`ALTER TABLE lots ADD COLUMN IF NOT EXISTS erp_posted_at TIMESTAMPTZ`);
+  } catch(e) { /* table created later in this run — main schema block below covers it */ }
+
   // Item 3 — extend qp_period_master with the additional fields the Setup form already
   // asked for, no backend existed for any of it.
   try {
@@ -970,6 +986,20 @@ async function setupDatabase() {
       lot_type        VARCHAR(20),          -- PRIMARY, SEGREGATED
       inventory_status VARCHAR(20) DEFAULT 'IN-TRANSIT',
       lot_status      VARCHAR(20) DEFAULT 'PENDING',  -- CLEARED, DISCREPANCY, ON-HOLD
+      -- GRN module: was a fully mocked screen (GRN-001 through GRN-006 hardcoded,
+      -- 'Post GRN to ERP' did nothing). These fields make a lot ALSO function as the
+      -- GRN record once yard segregation confirms the actual item/qty for this sub-lot.
+      grn_no          VARCHAR(20) UNIQUE,
+      contract_id     INT REFERENCES contracts(id),
+      grn_date        DATE,
+      expected_commodity_code VARCHAR(20) REFERENCES commodities(code),
+      accepted_qty_mt DECIMAL(10,4),
+      rejected_qty_mt DECIMAL(10,4),
+      discrepancy_type VARCHAR(20) DEFAULT 'NONE',  -- NONE, ITEM_DIFF, QTY_DIFF, BOTH
+      po_amended      BOOLEAN DEFAULT FALSE,
+      grn_status      VARCHAR(20) DEFAULT 'DRAFT',  -- DRAFT, PENDING_APPROVAL, POSTED
+      erp_grn_reference VARCHAR(50),
+      erp_posted_at   TIMESTAMPTZ,
       created_at      TIMESTAMPTZ DEFAULT NOW()
     );
   `);
