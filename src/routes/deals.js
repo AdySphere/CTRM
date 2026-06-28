@@ -246,17 +246,88 @@ fixRouter.get('/', async (req, res) => {
 });
 
 // POST /api/fixations — record a price fixation (Fix Today)
+// H4: rebuilt with all 5 validation rules from the Fix Today spec, genuinely enforced
+// server-side (not just suggested client-side) — and real container linkage, since hedge
+// is tracked at container level per the spec, not contract level.
 fixRouter.post('/', async (req, res) => {
   try {
-    const { lot_ref, deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date, hedge_ref, contract_id } = req.body;
+    const { lot_ref, deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date, hedge_ref,
+      contract_id, notes, price_overridden, price_override_reason, market_price_at_fix,
+      created_by, containers } = req.body;
     if (!deal_id || !fixed_price || !fixed_qty_mt || !fix_date) {
       return res.status(400).json({ error: 'deal_id, fixed_price, fixed_qty_mt, fix_date required' });
     }
+
+    // Rule 1: price must be positive.
+    if (parseFloat(fixed_price) <= 0) {
+      return res.status(400).json({ error: 'Fixed price must be greater than zero' });
+    }
+
+    // Rule 2: no future-dated fixations.
+    const today = new Date().toISOString().split('T')[0];
+    if (fix_date > today) {
+      return res.status(400).json({ error: 'Fixation date cannot be in the future' });
+    }
+
+    // Rule 3: qty cannot exceed the unpriced balance remaining on this contract.
+    if (contract_id) {
+      const cRes = await query('SELECT qty_mt, index_pct FROM contracts c LEFT JOIN contract_pricing_lines pl ON pl.contract_id=c.id WHERE c.id=$1 LIMIT 1', [contract_id]);
+      if (cRes.rows.length) {
+        const qtyMt = parseFloat(cRes.rows[0].qty_mt) || 0;
+        const indexPct = parseFloat(cRes.rows[0].index_pct) || 100;
+        const payableQty = qtyMt * (indexPct / 100);
+        const pricedRes = await query('SELECT COALESCE(SUM(fixed_qty_mt),0) as priced FROM fixation_lots WHERE contract_id=$1', [contract_id]);
+        const alreadyPriced = parseFloat(pricedRes.rows[0].priced) || 0;
+        const unpricedBalance = Math.max(0, payableQty - alreadyPriced);
+        if (parseFloat(fixed_qty_mt) > unpricedBalance + 0.001) {
+          return res.status(400).json({ error: 'Fix quantity (' + fixed_qty_mt + ' MT) exceeds unpriced balance remaining (' + unpricedBalance.toFixed(3) + ' MT)' });
+        }
+      }
+    }
+
+    // Rule 4: if containers are selected, their combined quantity must reconcile with
+    // the quantity being fixed (within rounding tolerance).
+    if (containers && containers.length) {
+      const containerQtySum = containers.reduce(function(s, c){ return s + (parseFloat(c.qty_covered_mt) || 0); }, 0);
+      if (Math.abs(containerQtySum - parseFloat(fixed_qty_mt)) > 0.01) {
+        return res.status(400).json({ error: 'Selected container quantity (' + containerQtySum.toFixed(3) + ' MT) does not match the quantity being fixed (' + fixed_qty_mt + ' MT)' });
+      }
+    }
+
+    // Rule 5: if a rollover prompt date is given, it must fall on a weekday — the LME
+    // doesn't trade weekends. Note: this checks weekends only, not the full LME holiday
+    // calendar, since no holiday calendar data exists in this system to check against.
+    if (prompt_date) {
+      const dow = new Date(prompt_date + 'T00:00:00Z').getUTCDay();
+      if (dow === 0 || dow === 6) {
+        return res.status(400).json({ error: 'Rollover prompt date falls on a weekend — LME does not trade Saturday/Sunday. Pick a weekday.' });
+      }
+    }
+
+    const lotRef = lot_ref || (`FIX-${deal_id}-${fix_date.replace(/-/g,'')}`);
     const result = await query(`
-      INSERT INTO fixation_lots (lot_ref, deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date, hedge_ref, contract_id, status)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'FIXED') RETURNING *
-    `, [lot_ref || `FIX-${deal_id}-${fix_date.replace(/-/g,'')}`, deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date, hedge_ref, contract_id]);
-    res.json({ success: true, data: result.rows[0] });
+      INSERT INTO fixation_lots
+        (lot_ref, deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date, hedge_ref,
+         contract_id, notes, price_overridden, price_override_reason, market_price_at_fix,
+         created_by, status)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'FIXED') RETURNING *
+    `, [lotRef, deal_id, fixed_price, fixed_qty_mt, fix_date, prompt_date || null, hedge_ref || null,
+        contract_id || null, notes || null, price_overridden === true, price_override_reason || null,
+        market_price_at_fix || null, created_by || null]);
+    const fixationLot = result.rows[0];
+
+    // Record which containers this fixation covers — hedge is tracked at container
+    // level per the spec, even for a full-contract fix.
+    if (containers && containers.length) {
+      for (const c of containers) {
+        await query(
+          'INSERT INTO fixation_lot_containers (fixation_lot_id, container_id, qty_covered_mt) VALUES ($1,$2,$3) ON CONFLICT (fixation_lot_id, container_id) DO NOTHING',
+          [fixationLot.id, c.container_id, c.qty_covered_mt]
+        );
+      }
+    }
+
+    res.json({ success: true, data: fixationLot });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 

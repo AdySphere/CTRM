@@ -211,6 +211,34 @@ async function setupDatabase() {
   `);
   console.log('✓ contract_material_lines (migration)');
 
+  // H4 — fixation_lot_containers: per the Fix Today spec, hedge is linked at container
+  // level, not contract level — even a full fix needs to record which physical containers
+  // are covered so each hedge leg can be traced to the right physical unit. Genuinely
+  // missing before; fixation_lots had no link to which containers a fixation covered.
+  // Wrapped in try/catch — same lesson as the earlier Group A migration bug: fixation_lots
+  // and containers are both created later in this file's main schema block, so this would
+  // fail on a genuinely fresh database. Only safe in practice on the live DB because both
+  // tables already exist from earlier sessions.
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS fixation_lot_containers (
+        id              SERIAL PRIMARY KEY,
+        fixation_lot_id INT NOT NULL REFERENCES fixation_lots(id) ON DELETE CASCADE,
+        container_id    INT NOT NULL REFERENCES containers(id),
+        qty_covered_mt  DECIMAL(10,4) NOT NULL,
+        created_at      TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(fixation_lot_id, container_id)
+      );
+      CREATE INDEX IF NOT EXISTS idx_flc_fixation ON fixation_lot_containers(fixation_lot_id);
+    `);
+    await query(`ALTER TABLE fixation_lots ADD COLUMN IF NOT EXISTS notes TEXT`);
+    await query(`ALTER TABLE fixation_lots ADD COLUMN IF NOT EXISTS price_overridden BOOLEAN DEFAULT FALSE`);
+    await query(`ALTER TABLE fixation_lots ADD COLUMN IF NOT EXISTS price_override_reason TEXT`);
+    await query(`ALTER TABLE fixation_lots ADD COLUMN IF NOT EXISTS market_price_at_fix DECIMAL(12,4)`);
+    await query(`ALTER TABLE fixation_lots ADD COLUMN IF NOT EXISTS created_by VARCHAR(50)`);
+  } catch(e) { /* tables created later in this run — main schema block below covers it */ }
+  console.log('✓ fixation_lot_containers (migration)');
+
   await query(`
     CREATE TABLE IF NOT EXISTS payment_terms (
       id              SERIAL PRIMARY KEY,
@@ -961,9 +989,23 @@ async function setupDatabase() {
       pricing_line_id INT REFERENCES contract_pricing_lines(id),
       hedge_ref       VARCHAR(30),
       status          VARCHAR(20) DEFAULT 'FIXED',
+      notes           TEXT,
+      price_overridden BOOLEAN DEFAULT FALSE,
+      price_override_reason TEXT,
+      market_price_at_fix DECIMAL(12,4),
+      created_by      VARCHAR(50),
       created_at      TIMESTAMPTZ DEFAULT NOW()
     );
     CREATE INDEX IF NOT EXISTS idx_fixations_deal ON fixation_lots(deal_id);
+    CREATE TABLE IF NOT EXISTS fixation_lot_containers (
+      id SERIAL PRIMARY KEY,
+      fixation_lot_id INT NOT NULL REFERENCES fixation_lots(id) ON DELETE CASCADE,
+      container_id INT NOT NULL REFERENCES containers(id),
+      qty_covered_mt DECIMAL(10,4) NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(fixation_lot_id, container_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_flc_fixation ON fixation_lot_containers(fixation_lot_id);
   `);
   console.log('✓ fixation_lots');
 

@@ -853,4 +853,25 @@ router.delete('/:id/material-lines/:lineId', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// H4: containers for a contract — joins through logistics since containers don't have
+// a direct contract_id (containers.logistics_id -> logistics.contract_id). Always shown
+// in Fix Today whenever this list is non-empty, for both full and partial fixes, per spec.
+router.get('/:id/containers', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const result = await query(`
+      SELECT ct.id, ct.container_no, ct.seal_no, ct.size, ct.gross_weight_mt, ct.tare_mt,
+        (ct.gross_weight_mt - ct.tare_mt) as net_weight_mt, ct.status,
+        COALESCE(SUM(flc.qty_covered_mt), 0) as already_fixed_mt
+      FROM containers ct
+      JOIN logistics l ON l.id = ct.logistics_id
+      LEFT JOIN fixation_lot_containers flc ON flc.container_id = ct.id
+      WHERE l.contract_id = $1
+      GROUP BY ct.id, ct.container_no, ct.seal_no, ct.size, ct.gross_weight_mt, ct.tare_mt, ct.status
+      ORDER BY ct.container_no
+    `, [req.params.id]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports = router;
