@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.46</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.47</div>
   </div>
   <nav class="sb-nav">
 
@@ -7502,6 +7502,15 @@ async function openNewRolloverModal() {
       window._rolloverTriggerDate = lines[0].qp_end_date.split('T')[0];
       window._rolloverMissedPeriodStart = lines[0].qp_start_date ? lines[0].qp_start_date.split('T')[0] : window._rolloverTriggerDate;
       if (triggerEl) triggerEl.textContent = new Date(lines[0].qp_end_date).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+      // Hard block: rollover cannot be created before the QP window has actually closed —
+      // the backend enforces this regardless, but checking here means the trader sees the
+      // reason immediately instead of filling out the whole form first.
+      const today = new Date().toISOString().split('T')[0];
+      if (window._rolloverTriggerDate >= today) {
+        toast('Too Early', 'QP window closes ' + new Date(window._rolloverTriggerDate).toLocaleDateString('en-GB') + ' — rollover cannot be created until then', 'warning');
+        return;
+      }
     } else if (triggerEl) {
       triggerEl.textContent = 'No QP window set on this contract yet';
     }
@@ -7533,6 +7542,10 @@ async function submitNewRollover() {
   const newQpEnd = g('nr-new-qp-end');
 
   if (!window._rolloverTriggerDate) { toast('No QP Window', 'This contract has no QP window set — add a pricing line first', 'warning'); return; }
+  const todayCheck = new Date().toISOString().split('T')[0];
+  if (window._rolloverTriggerDate >= todayCheck) {
+    toast('Too Early', 'QP window has not closed yet — rollover cannot be submitted', 'warning'); return;
+  }
   if (!qty) { toast('Required', 'Please enter the unfixed quantity', 'warning'); return; }
   if (!rateValue) { toast('Required', 'Please enter the rate', 'warning'); return; }
   if (!amount) { toast('Required', 'Please enter the calculated amount', 'warning'); return; }

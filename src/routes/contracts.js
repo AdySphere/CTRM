@@ -297,6 +297,14 @@ router.post('/:id/rollover-events', async (req, res) => {
       return res.status(400).json({ error: 'period_from, period_to, unfixed_qty, rate_basis, rate_value and amount_usd are required' });
     }
 
+    // Rollover must not be allowed to be created before the QP window has actually
+    // expired — confirmed as a hard validation rule, genuinely missing until now. period_to
+    // is the missed window's trigger (end) date; today must be strictly after it.
+    const today = new Date().toISOString().split('T')[0];
+    if (period_to >= today) {
+      return res.status(400).json({ error: 'Cannot create a rollover before the QP window has closed (QP ends ' + period_to + ', today is ' + today + ')' });
+    }
+
     const contractRes = await query('SELECT contract_no FROM contracts WHERE id=$1', [id]);
     if (!contractRes.rows.length) return res.status(404).json({ error: 'Contract not found' });
     const contractNo = contractRes.rows[0].contract_no;
