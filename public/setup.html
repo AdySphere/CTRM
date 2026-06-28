@@ -386,7 +386,7 @@ html,body{height:100%;margin:0;padding:0}
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.42</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.44</div>
   </div>
   <nav class="sb-nav">
 
@@ -901,29 +901,25 @@ html,body{height:100%;margin:0;padding:0}
         <div class="ph-r"><button class="btn bp" onclick="openModal('modal-add-qp')">＋ Add QP Period</button></div></div>
       <div class="ban bi"><span>ℹ</span>Each QP period is a data row — anchor event links to a logistics or assay date (BL_DATE, ETD, ETA, ARRIVAL_DATE, ASSAY_RECEIPT_DATE). Start/end rules + offsets derive the actual pricing window per contract. Admin configures, no developer involvement.</div>
       <div class="card"><div class="ch"><div class="ct">QP Period Definitions</div></div>
-        <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Basis</th><th>Rule Type</th><th>Anchor Event</th><th>Start Rule</th><th>Start Offset</th><th>End Rule</th><th>End Offset</th><th>Window Days</th><th>Missing Price Rule</th><th>Active</th><th></th></tr></thead>
-          <tbody id="md-qp-tbody">
-<tr><td class="mono ta fw6">LME-M1</td><td class="f11 fw6">LME M+1 Average</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">NEXT-MONTH-START</td><td class="mono f10">0</td><td class="f10">NEXT-MONTH-END</td><td class="mono f10">0</td><td class="mono f10">22 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">LME-M</td><td class="f11 fw6">LME Current Month Average</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">MONTH-START</td><td class="mono f10">0</td><td class="f10">MONTH-END</td><td class="mono f10">0</td><td class="mono f10">22 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">BL-PLUS10</td><td class="f11 fw6">BL + 10 Calendar Days</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">SAME-DAY</td><td class="mono f10">0</td><td class="f10">OFFSET-CD</td><td class="mono f10">+10</td><td class="mono f10">10 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">ASSAY-5WD</td><td class="f11 fw6">5 WD After Assay Receipt</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">ASSAY_RECEIPT_DATE</td><td class="f10">SAME-DAY</td><td class="mono f10">0</td><td class="f10">OFFSET-BD</td><td class="mono f10">+5</td><td class="mono f10">5 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr>
-<tr><td class="mono ta fw6">PLATTS-3DAY</td><td class="f11 fw6">Platts 3-Day Average (BL)</td><td class="f11">average</td><td class="f11">event_based</td><td class="f10 ta2">BL_DATE</td><td class="f10">OFFSET-BD</td><td class="mono f10">−1</td><td class="f10">OFFSET-BD</td><td class="mono f10">+1</td><td class="mono f10">3 bd</td><td class="f10">USE-LAST-AVAILABLE</td><td><span class="badge bd-confirmed">YES</span></td><td><button class="btn bxs bg">Edit</button></td></tr></tbody></table></div></div>
+        <div class="cbf"><table class="dt"><thead><tr><th>Code</th><th>Name</th><th>Basis</th><th>Rule Type</th><th>Anchor Event</th><th>Start Rule</th><th>Start Offset</th><th>End Rule</th><th>End Offset</th><th>Missing Price Rule</th><th>Active</th><th></th></tr></thead>
+          <tbody id="md-qp-tbody"><tr><td colspan="11" style="text-align:center;padding:16px;color:#888">Loading…</td></tr></tbody></table></div></div>
       <div class="card mt16"><div class="ch"><div class="ct">Add / Edit QP Period</div></div>
         <div class="cb"><div class="fg">
-          <div class="f"><div class="fl">QP Code <span class="req">*</span></div><input type="text" class="fi" placeholder="e.g. LME-M1"></div>
-          <div class="f"><div class="fl">Name</div><input type="text" class="fi" placeholder="e.g. LME M+1 Average"></div>
-          <div class="f"><div class="fl">Pricing Basis</div><select class="fs"><option>average</option><option>daily_fixation</option><option>selected_date</option></select></div>
-          <div class="f"><div class="fl">Date Rule Type</div><select class="fs"><option>event_based</option><option>fixed_range</option><option>manual</option></select></div>
-          <div class="f"><div class="fl">Anchor Event <span class="req">*</span></div><select class="fs"><option>BL_DATE</option><option>ETD</option><option>ETA</option><option>ARRIVAL_DATE</option><option>ASSAY_RECEIPT_DATE</option><option>DOCS_RECEIPT</option><option>FIXED_DATE</option></select></div>
-          <div class="f"><div class="fl">Anchor Offset Days</div><input type="number" class="fi" value="0" placeholder="e.g. +10 = 10 days after anchor"></div>
-          <div class="f"><div class="fl">Window Start Rule</div><select class="fs"><option>NEXT-MONTH-START</option><option>MONTH-START</option><option>SAME-DAY</option><option>NEXT-BD</option><option>OFFSET-CD</option><option>OFFSET-BD</option></select></div>
-          <div class="f"><div class="fl">Start Offset Value</div><input type="number" class="fi" value="0"></div>
-          <div class="f"><div class="fl">Window End Rule</div><select class="fs"><option>NEXT-MONTH-END</option><option>MONTH-END</option><option>SAME-DAY</option><option>OFFSET-CD</option><option>OFFSET-BD</option><option>ANCHOR-PLUS-N</option></select></div>
-          <div class="f"><div class="fl">End Offset Value</div><input type="number" class="fi" value="0"></div>
-          <div class="f"><div class="fl">Business Days Only</div><select class="fs"><option>YES</option><option>NO</option></select></div>
-          <div class="f"><div class="fl">Holiday Calendar</div><select class="fs"><option>LME-CAL</option><option>CME-CAL</option><option>PLATTS-CAL</option><option>CUSTOM</option></select></div>
-          <div class="f"><div class="fl">Missing Price Rule</div><select class="fs"><option>USE-LAST-AVAILABLE</option><option>EXCLUDE-DAY</option><option>BLOCK-CALCULATION</option><option>USE-MANUAL-ENTRY</option></select></div>
-          <div class="f"><div class="fl">Provisional Basis</div><select class="fs"><option>RUNNING-AVERAGE</option><option>LAST-KNOWN-PRICE</option><option>MANUAL-RATE</option></select></div>
+          <input type="hidden" id="qp-edit-id" value="">
+          <div class="f"><div class="fl">QP Code <span class="req">*</span></div><input type="text" class="fi" id="qp-code" placeholder="e.g. LME-M1"></div>
+          <div class="f"><div class="fl">Name</div><input type="text" class="fi" id="qp-name" placeholder="e.g. LME M+1 Average"></div>
+          <div class="f"><div class="fl">Pricing Basis</div><select class="fs" id="qp-pricing-basis"><option value="average">average</option><option value="daily_fixation">daily_fixation</option><option value="selected_date">selected_date</option></select></div>
+          <div class="f"><div class="fl">Date Rule Type</div><select class="fs" id="qp-rule-type"><option value="event_based">event_based</option><option value="fixed_range">fixed_range</option><option value="manual">manual</option></select></div>
+          <div class="f"><div class="fl">Anchor Event <span class="req">*</span></div><select class="fs" id="qp-anchor-event"><option value="BL_DATE">BL_DATE</option><option value="ETD">ETD</option><option value="ETA">ETA</option><option value="ARRIVAL_DATE">ARRIVAL_DATE</option><option value="ASSAY_RECEIPT_DATE">ASSAY_RECEIPT_DATE</option><option value="DOCS_RECEIPT">DOCS_RECEIPT</option><option value="FIXED_DATE">FIXED_DATE</option></select></div>
+          <div class="f"><div class="fl">Anchor Offset Days</div><input type="number" class="fi" id="qp-anchor-offset" value="0" placeholder="e.g. +10 = 10 days after anchor"></div>
+          <div class="f"><div class="fl">Window Start Rule</div><select class="fs" id="qp-start-rule"><option value="NEXT-MONTH-START">NEXT-MONTH-START</option><option value="MONTH-START">MONTH-START</option><option value="SAME-DAY">SAME-DAY</option><option value="NEXT-BD">NEXT-BD</option><option value="OFFSET-CD">OFFSET-CD</option><option value="OFFSET-BD">OFFSET-BD</option></select></div>
+          <div class="f"><div class="fl">Start Offset Value</div><input type="number" class="fi" id="qp-start-offset" value="0"></div>
+          <div class="f"><div class="fl">Window End Rule</div><select class="fs" id="qp-end-rule"><option value="NEXT-MONTH-END">NEXT-MONTH-END</option><option value="MONTH-END">MONTH-END</option><option value="SAME-DAY">SAME-DAY</option><option value="OFFSET-CD">OFFSET-CD</option><option value="OFFSET-BD">OFFSET-BD</option><option value="ANCHOR-PLUS-N">ANCHOR-PLUS-N</option></select></div>
+          <div class="f"><div class="fl">End Offset Value</div><input type="number" class="fi" id="qp-end-offset" value="0"></div>
+          <div class="f"><div class="fl">Business Days Only</div><select class="fs" id="qp-bd-only"><option value="YES">YES</option><option value="NO">NO</option></select></div>
+          <div class="f"><div class="fl">Holiday Calendar</div><select class="fs" id="qp-holiday-cal"><option value="LME-CAL">LME-CAL</option><option value="CME-CAL">CME-CAL</option><option value="PLATTS-CAL">PLATTS-CAL</option><option value="CUSTOM">CUSTOM</option></select></div>
+          <div class="f"><div class="fl">Missing Price Rule</div><select class="fs" id="qp-fallback-rule"><option value="USE-LAST-AVAILABLE">USE-LAST-AVAILABLE</option><option value="EXCLUDE-DAY">EXCLUDE-DAY</option><option value="BLOCK-CALCULATION">BLOCK-CALCULATION</option><option value="USE-MANUAL-ENTRY">USE-MANUAL-ENTRY</option></select></div>
+          <div class="f"><div class="fl">Provisional Basis</div><select class="fs" id="qp-prov-basis"><option value="RUNNING-AVERAGE">RUNNING-AVERAGE</option><option value="LAST-KNOWN-PRICE">LAST-KNOWN-PRICE</option><option value="MANUAL-RATE">MANUAL-RATE</option></select></div>
         </div>
         <div class="br-row right mt12"><button class="btn bp" onclick="saveQPPeriod()">Save QP Period</button></div>
         </div></div>
@@ -1399,8 +1395,96 @@ function addPTLine() {
     + '<td><button class="btn bxs bd" onclick="this.closest(&quot;tr&quot;).remove()">✕</button></td>';
   tb.appendChild(tr);
 }
-function saveQPPeriod() {
-  showSetupToast('QP Period Saved', 'QP period rule saved to master', 'success');
+// Item 3: was a pure toast, no save path at all — same bug class as Currency/UOM/Tax.
+async function loadMDQP() {
+  const tbody = document.getElementById('md-qp-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API + '/api/master/qp-periods');
+    const json = await res.json();
+    const periods = json.data || [];
+    if (!periods.length) {
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:#888">No QP periods defined yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = periods.map(function(p){
+      return '<tr>'
+        + '<td class="mono ta fw6">'+p.code+'</td>'
+        + '<td class="f11 fw6">'+p.name+'</td>'
+        + '<td class="f11">'+(p.pricing_type||'—')+'</td>'
+        + '<td class="f11">'+(p.rule_type||'—')+'</td>'
+        + '<td class="f10 ta2">'+(p.anchor_event||'—')+'</td>'
+        + '<td class="f10">'+(p.start_offset_type||'—')+'</td>'
+        + '<td class="mono f10">'+(p.start_offset_days||0)+'</td>'
+        + '<td class="f10">'+(p.end_offset_type||'—')+'</td>'
+        + '<td class="mono f10">'+(p.end_offset_days||0)+'</td>'
+        + '<td class="f10">'+(p.fallback_rule||'—')+'</td>'
+        + '<td><span class="badge '+(p.active?'bd-confirmed':'bd-draft')+'">'+(p.active?'YES':'NO')+'</span></td>'
+        + '<td><button class="btn bxs bg" data-qp-id="'+p.id+'" onclick="editQPPeriod(this.dataset.qpId)">Edit</button></td>'
+        + '</tr>';
+    }).join('');
+    window._qpPeriodsCache = {};
+    periods.forEach(function(p){ window._qpPeriodsCache[p.id] = p; });
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:#e05252;font-size:11px">Error: ' + e.message + '</td></tr>';
+  }
+}
+
+function editQPPeriod(id) {
+  const p = window._qpPeriodsCache && window._qpPeriodsCache[id];
+  if (!p) return;
+  document.getElementById('qp-edit-id').value = p.id;
+  document.getElementById('qp-code').value = p.code;
+  document.getElementById('qp-name').value = p.name;
+  document.getElementById('qp-pricing-basis').value = p.pricing_type || 'average';
+  document.getElementById('qp-rule-type').value = p.rule_type || 'event_based';
+  document.getElementById('qp-anchor-event').value = p.anchor_event || 'BL_DATE';
+  document.getElementById('qp-anchor-offset').value = p.anchor_offset_days || 0;
+  document.getElementById('qp-start-rule').value = p.start_offset_type || 'SAME-DAY';
+  document.getElementById('qp-start-offset').value = p.start_offset_days || 0;
+  document.getElementById('qp-end-rule').value = p.end_offset_type || 'SAME-DAY';
+  document.getElementById('qp-end-offset').value = p.end_offset_days || 0;
+  document.getElementById('qp-bd-only').value = p.business_days_only === false ? 'NO' : 'YES';
+  document.getElementById('qp-holiday-cal').value = p.holiday_calendar || 'LME-CAL';
+  document.getElementById('qp-fallback-rule').value = p.fallback_rule || 'USE-LAST-AVAILABLE';
+  document.getElementById('qp-prov-basis').value = p.provisional_basis || 'RUNNING-AVERAGE';
+  showSetupToast('Editing', p.code, 'info');
+}
+
+async function saveQPPeriod() {
+  const g = function(id){ return document.getElementById(id)?.value; };
+  const editId = g('qp-edit-id');
+  const code = g('qp-code');
+  const name = g('qp-name');
+  const anchorEvent = g('qp-anchor-event');
+  if (!code || !name || !anchorEvent) { showSetupToast('Required', 'QP Code, Name and Anchor Event are required', 'warning'); return; }
+
+  const payload = {
+    code: code, name: name, pricing_type: g('qp-pricing-basis'), rule_type: g('qp-rule-type'),
+    anchor_event: anchorEvent, anchor_offset_days: parseInt(g('qp-anchor-offset')) || 0,
+    start_offset_type: g('qp-start-rule'), start_offset_days: parseInt(g('qp-start-offset')) || 0,
+    end_offset_type: g('qp-end-rule'), end_offset_days: parseInt(g('qp-end-offset')) || 0,
+    business_days_only: g('qp-bd-only') === 'YES', holiday_calendar: g('qp-holiday-cal'),
+    fallback_rule: g('qp-fallback-rule'), provisional_basis: g('qp-prov-basis')
+  };
+
+  try {
+    let res;
+    if (editId) {
+      res = await fetch(API + '/api/master/qp-periods/' + editId, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch(API + '/api/master/qp-periods', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      });
+    }
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    showSetupToast('QP Period Saved', code + ' saved to master', 'success');
+    document.getElementById('qp-edit-id').value = '';
+    await loadMDQP();
+  } catch(e) { showSetupToast('Error', e.message, 'error'); }
 }
 function removeCalcParam(btn) {
   const row = btn.closest('tr');
@@ -1778,6 +1862,7 @@ window.nav = function(pageId, navEl) {
   else if (pageId === 'md-location') loadMDLocations();
   else if (pageId === 'md-other') { loadMDCurrencies(); loadMDUOM(); loadMDTaxCodes(); }
   else if (pageId === 'event-date-master') loadEDMContractDropdown();
+  else if (pageId === 'md-qp') loadMDQP();
 };
 </script>
 </body>

@@ -211,6 +211,16 @@ async function setupDatabase() {
   `);
   console.log('✓ contract_material_lines (migration)');
 
+  // Item 3 — extend qp_period_master with the additional fields the Setup form already
+  // asked for, no backend existed for any of it.
+  try {
+    await query(`ALTER TABLE qp_period_master ADD COLUMN IF NOT EXISTS rule_type VARCHAR(20) DEFAULT 'event_based'`);
+    await query(`ALTER TABLE qp_period_master ADD COLUMN IF NOT EXISTS anchor_offset_days INT DEFAULT 0`);
+    await query(`ALTER TABLE qp_period_master ADD COLUMN IF NOT EXISTS business_days_only BOOLEAN DEFAULT TRUE`);
+    await query(`ALTER TABLE qp_period_master ADD COLUMN IF NOT EXISTS provisional_basis VARCHAR(30) DEFAULT 'RUNNING-AVERAGE'`);
+    await query(`ALTER TABLE qp_period_master ADD COLUMN IF NOT EXISTS notes TEXT`);
+  } catch(e) { /* table created later in this run on a fresh database — main schema block below covers it */ }
+
   // H4 — fixation_lot_containers: per the Fix Today spec, hedge is linked at container
   // level, not contract level — even a full fix needs to record which physical containers
   // are covered so each hedge leg can be traced to the right physical unit. Genuinely
@@ -264,7 +274,13 @@ async function setupDatabase() {
       end_offset_days INT DEFAULT 0,
       holiday_calendar VARCHAR(20) DEFAULT 'LME',
       fallback_rule    VARCHAR(30) DEFAULT 'USE-LAST-AVAILABLE',
-      active          BOOLEAN DEFAULT TRUE
+      active          BOOLEAN DEFAULT TRUE,
+      -- Item 3 additions — the Setup form already asked for these, no backend existed at all
+      rule_type        VARCHAR(20) DEFAULT 'event_based',  -- event_based, fixed_range, manual
+      anchor_offset_days INT DEFAULT 0,
+      business_days_only BOOLEAN DEFAULT TRUE,
+      provisional_basis VARCHAR(30) DEFAULT 'RUNNING-AVERAGE',
+      notes            TEXT
     );
   `);
   console.log('✓ qp_period_master');

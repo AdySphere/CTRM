@@ -161,4 +161,46 @@ masterRouter.get('/qp-periods', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+// Item 3 — was GET-only despite the Setup screen already having a full add/edit form;
+// saveQPPeriod() on that screen was a pure toast with no save path at all.
+masterRouter.post('/qp-periods', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const { code, name, pricing_type, anchor_event, start_offset_type, start_offset_days,
+      end_offset_type, end_offset_days, holiday_calendar, fallback_rule, rule_type,
+      anchor_offset_days, business_days_only, provisional_basis, notes } = req.body;
+    if (!code || !name || !anchor_event) {
+      return res.status(400).json({ error: 'code, name and anchor_event are required' });
+    }
+    const result = await query(`
+      INSERT INTO qp_period_master
+        (code, name, pricing_type, anchor_event, start_offset_type, start_offset_days,
+         end_offset_type, end_offset_days, holiday_calendar, fallback_rule, rule_type,
+         anchor_offset_days, business_days_only, provisional_basis, notes)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+      RETURNING *
+    `, [code.toUpperCase(), name, pricing_type || 'average', anchor_event,
+        start_offset_type || 'SAME-DAY', start_offset_days || 0, end_offset_type || 'SAME-DAY',
+        end_offset_days || 0, holiday_calendar || 'LME-CAL', fallback_rule || 'USE-LAST-AVAILABLE',
+        rule_type || 'event_based', anchor_offset_days || 0, business_days_only !== false,
+        provisional_basis || 'RUNNING-AVERAGE', notes || null]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+masterRouter.patch('/qp-periods/:id', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try {
+    const allowed = ['name', 'pricing_type', 'anchor_event', 'start_offset_type', 'start_offset_days',
+      'end_offset_type', 'end_offset_days', 'holiday_calendar', 'fallback_rule', 'rule_type',
+      'anchor_offset_days', 'business_days_only', 'provisional_basis', 'notes', 'active'];
+    const fields = {};
+    Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
+    if (!Object.keys(fields).length) return res.json({ success: true, data: null });
+    const sets = Object.keys(fields).map(function(k, i) { return k + '=$' + (i + 2); }).join(',');
+    const result = await query(`UPDATE qp_period_master SET ${sets} WHERE id=$1 RETURNING *`, [req.params.id, ...Object.values(fields)]);
+    res.json({ success: true, data: result.rows[0] });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 module.exports.masterRouter = masterRouter;
