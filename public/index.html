@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.52</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.53</div>
   </div>
   <nav class="sb-nav">
 
@@ -4046,6 +4046,8 @@ async function fixToday(dealId) {
   document.getElementById('ft-notes').value = '';
   document.getElementById('ft-prompt-date').value = '';
   document.getElementById('ft-validation-banner').style.display = 'none';
+  const submitBtnReset = document.getElementById('ft-submit-btn');
+  if (submitBtnReset) submitBtnReset.disabled = true;
   document.getElementById('ft-fix-type').value = 'full';
 
   // Reference price — same lookup the old version used, now genuinely keyed off this
@@ -10501,6 +10503,8 @@ async function openNewChargeLineModal() {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('nch-gl').textContent = '—';
+  document.getElementById('nch-accrual-trigger').value = '';
+  document.getElementById('nch-accrual-reversal').value = '';
 
   try {
     const res = await fetch(API_BASE + '/api/adjustment-codes');
@@ -10544,6 +10548,12 @@ function onNchCodeChange() {
     else if (ac.calc_type === 'PER_UNIT') basisEl.value = 'PER_MT';
     else if (ac.calc_type === 'FLAT') basisEl.value = 'FIXED';
   }
+  // Pre-fill accrual trigger/reversal from this charge type's own defaults — was never
+  // wired even though adjustment_codes already has default_trigger_event/default_reversal_event.
+  const triggerEl = document.getElementById('nch-accrual-trigger');
+  const reversalEl = document.getElementById('nch-accrual-reversal');
+  if (ac && triggerEl && !triggerEl.value && ac.default_trigger_event) triggerEl.value = ac.default_trigger_event;
+  if (ac && reversalEl && !reversalEl.value && ac.default_reversal_event) reversalEl.value = ac.default_reversal_event;
   calcChargeAmount();
 }
 
@@ -10585,6 +10595,8 @@ async function submitNewChargeLine() {
         calc_basis: basis, calc_value: parseFloat(value),
         computed_amount: g('nch-computed') ? parseFloat(g('nch-computed')) : null,
         counterparty_id: g('nch-counterparty') ? parseInt(g('nch-counterparty')) : null,
+        accrual_trigger_event: g('nch-accrual-trigger'),
+        accrual_reversal_event: g('nch-accrual-reversal'),
         notes: g('nch-notes')
       })
     });
@@ -11562,12 +11574,18 @@ function validateFixToday() {
     overrideField.style.display = 'none';
   }
 
+  const submitBtn = document.getElementById('ft-submit-btn');
   if (errors.length) {
     banner.style.display = 'block';
     banner.innerHTML = '<span>⚠</span>' + errors.join(' · ');
+    if (submitBtn) submitBtn.disabled = true;
     return false;
   }
   banner.style.display = 'none';
+  // Per the Fix Today spec: 'Submit button disabled until qty matches' — also require
+  // qty and price to genuinely be entered, not just free of errors, since 0/blank passes
+  // the checks above trivially but isn't a real submission yet.
+  if (submitBtn) submitBtn.disabled = !(qty > 0 && price > 0);
   return true;
 }
 
@@ -12426,7 +12444,7 @@ async function submitChangeDeal() {
     </div>
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-fix-today')">Cancel</button>
-      <button class="btn bp" onclick="submitFixToday()">Record Fixation</button>
+      <button class="btn bp" onclick="submitFixToday()" id="ft-submit-btn">Record Fixation</button>
     </div>
   </div>
 </div>
@@ -12571,6 +12589,27 @@ async function submitChangeDeal() {
       <div class="fg" style="grid-template-columns:repeat(2,1fr)">
         <div class="f"><div class="fl">Payable To</div><select class="fs" id="nch-counterparty"><option value="">— Select —</option></select></div>
         <div class="f"><div class="fl">GL Account</div><div class="fc mono ta2" id="nch-gl">—</div></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Accrual Trigger</div>
+          <select class="fs" id="nch-accrual-trigger">
+            <option value="">— None —</option>
+            <option value="contract_date">Contract Date</option>
+            <option value="bl_date">BL Date</option>
+            <option value="eta_date">ETA Date</option>
+            <option value="pr_date">PR Date</option>
+            <option value="grn_date">GRN Date</option>
+            <option value="assay_date">Assay Date</option>
+            <option value="qp_close_date">QP Close Date</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Accrual Reversal</div>
+          <select class="fs" id="nch-accrual-reversal">
+            <option value="">— None —</option>
+            <option value="grn_date">GRN Date</option>
+            <option value="payment_due_date">Payment Due Date</option>
+          </select>
+        </div>
       </div>
       <div class="f"><div class="fl">Notes</div><input type="text" class="fi" id="nch-notes"></div>
     </div>
