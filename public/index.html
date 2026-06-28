@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.44</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.46</div>
   </div>
   <nav class="sb-nav">
 
@@ -7011,7 +7011,9 @@ async function loadMaterialLines(contractId, prefix) {
     const totalQtyDisplay = document.getElementById(prefix + '-total-mat-qty');
     if (totalQtyDisplay) totalQtyDisplay.textContent = totalQty > 0 ? totalQty.toLocaleString() + ' ' + (primary?.uom||'MT') : '—';
 
-    await recalcCostSummary(contractId, prefix);
+    // Flicker fix: pass the material lines we just fetched instead of letting
+    // recalcCostSummary fetch them again.
+    await recalcCostSummary(contractId, prefix, lines, null);
   } catch(e) { console.warn('loadMaterialLines:', e); }
 }
 
@@ -7669,11 +7671,16 @@ async function loadContractTabs(contractId, prefix) {
       // tabs than any other screen, that meant the panel kept visibly repainting in
       // stages for longer than necessary. None of these four depend on each other, so
       // they now load together instead of in sequence.
+      // H2 fix: loadMaterialLines now runs in this same batch instead of sequentially
+      // after it — it was the cause of the duplicate material-lines/charge-lines fetches
+      // visible in the network panel (load once here, then loadMaterialLines's own
+      // recalcCostSummary call fetched both again right after).
       await Promise.all([
         loadPaymentLines(contractId, prefix),
         loadQCSpecs(contractId, prefix + '-qc-tbody'),
         loadChargeLines(contractId, prefix),
-        loadCommissionAgents(contractId, prefix)
+        loadCommissionAgents(contractId, prefix),
+        loadMaterialLines(contractId, prefix)
       ]);
 
       // Fix 1: sync the Calculation Method panel with the contract's real saved pricing
@@ -7737,10 +7744,6 @@ async function loadContractTabs(contractId, prefix) {
       } catch(e) { console.warn('lots load:', e); }
     }
 
-    // H2: was wiping the material tab to a fake empty state on every load and never
-    // fetching anything real — this is the actual cause of 'Total Contract Quantity
-    // always resets to —', confirmed and fixed now with a genuine load from the database.
-    await loadMaterialLines(contractId, prefix);
   } catch(e) { console.warn('loadContractTabs:', e); }
 }
 
@@ -11255,14 +11258,21 @@ async function decideDealFeasibility(decision) {
 // H2: Cost Summary — Total Cost per MT and Total Contract Value, per the Excel spec's
 // 'Product $X + charges $Y' breakdown. Combines material line provisional value with
 // the sum of charge line estimated amounts.
-async function recalcCostSummary(contractId, prefix) {
+// Flicker fix: was always re-fetching material-lines and charge-lines itself, even when
+// the caller (loadMaterialLines) had just fetched material-lines a moment earlier —
+// confirmed via the network panel showing duplicate fetches for the same contract open.
+// Now accepts already-fetched data when available, only fetching what it's missing.
+async function recalcCostSummary(contractId, prefix, preloadedMatLines, preloadedChgLines) {
   try {
-    const [matRes, chgRes] = await Promise.all([
-      fetch(API_BASE + '/api/contracts/' + contractId + '/material-lines').then(r=>r.json()),
-      fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines').then(r=>r.json())
-    ]);
-    const matLines = matRes.data || [];
-    const chgLines = chgRes.data || [];
+    let matLines = preloadedMatLines, chgLines = preloadedChgLines;
+    if (!matLines || !chgLines) {
+      const [matRes, chgRes] = await Promise.all([
+        matLines ? Promise.resolve({data: matLines}) : fetch(API_BASE + '/api/contracts/' + contractId + '/material-lines').then(r=>r.json()),
+        chgLines ? Promise.resolve({data: chgLines}) : fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines').then(r=>r.json())
+      ]);
+      matLines = matLines || matRes.data || [];
+      chgLines = chgLines || chgRes.data || [];
+    }
 
     const totalQty = matLines.reduce(function(s,l){ return s + (parseFloat(l.qty_gross)||0); }, 0);
     const totalMatValue = matLines.reduce(function(s,l){ return s + (parseFloat(l.provisional_value)||0); }, 0);

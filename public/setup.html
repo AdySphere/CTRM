@@ -386,7 +386,7 @@ html,body{height:100%;margin:0;padding:0}
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.44</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.46</div>
   </div>
   <nav class="sb-nav">
 
@@ -892,6 +892,19 @@ html,body{height:100%;margin:0;padding:0}
           <button class="btn bd" onclick="lockBLDate()" id="edm-lock-btn">🔒 Lock BL Date</button>
         </div>
       </div>
+    </div>
+
+    <!-- Item 4: Payment Terms Matrix — reference guidance for which anchor event suits
+         which commodity / trade type, per the spec's own matrix. Helps a trader pick the
+         right anchor event when building a Payment Term Tranche, rather than guessing. -->
+    <div class="card mt16"><div class="ch"><div class="ct">Payment Terms Matrix — Reference</div><div class="cs">Which anchor event suits which commodity and trade type — use this when building Payment Term Tranches on a contract</div></div>
+      <div class="cbf"><table class="dt"><thead><tr>
+        <th>Payment Term Type</th><th>Anchor Event</th><th>Formula Example</th>
+        <th>Metals (Cu/Al/Ni/Zn)</th><th>Metals (Conc.)</th><th>Oil (Crude)</th><th>Oil (Products)</th><th>Agri (Grains)</th><th>Agri (Softs)</th>
+      </tr></thead>
+        <tbody id="edm-ptm-tbody"></tbody>
+      </table></div>
+      <div class="ban bi" style="margin:12px 16px"><span>i</span><span id="edm-ptm-note">Hover a row for usage notes.</span></div>
     </div>
   </div>
 </div>
@@ -1690,6 +1703,75 @@ async function lockBLDate() {
   } catch(e) { showSetupToast('Error', e.message, 'error'); }
 }
 
+// Item 4: Payment Terms Matrix — reference data from the spec, genuinely static (it
+// doesn't change per contract, just helps a trader pick the right anchor event).
+const PAYMENT_TERMS_MATRIX = [
+  { type: 'Net N days from BL date', anchor: 'BL Date (Event 3)', formula: 'BL date + 30 days',
+    metals: 'PRIMARY', conc: 'PRIMARY', crude: 'YES', products: 'YES', grains: 'YES', softs: 'YES',
+    notes: 'Most common across all commodities. N typically 30/60/90 days. Simple, clean, widely used.' },
+  { type: 'Net N days from ETA', anchor: 'ETA Date (Event 4)', formula: 'ETA + 14 days',
+    metals: 'YES', conc: 'YES', crude: 'OPTIONAL', products: 'OPTIONAL', grains: 'OPTIONAL', softs: 'OPTIONAL',
+    notes: 'Common in metals where buyer needs arrival confirmation. Protects buyer from long voyages.' },
+  { type: 'Net N days from GRN', anchor: 'GRN Date (Event 6)', formula: 'GRN + 7 days',
+    metals: 'OPTIONAL', conc: 'OPTIONAL', crude: '—', products: '—', grains: 'YES', softs: 'YES',
+    notes: 'Used where quality/quantity must be verified before payment obligation arises.' },
+  { type: 'Net N days from assay agreed', anchor: 'Assay Date (Event 7)', formula: 'Assay agreed + 5 days',
+    metals: 'YES', conc: 'PRIMARY', crude: '—', products: '—', grains: '—', softs: '—',
+    notes: 'Very common for concentrates and ores where payable qty depends on final assay results.' },
+  { type: 'Net N days from QP close', anchor: 'QP Close (Event 8)', formula: 'QP close + 5 days',
+    metals: 'OPTIONAL', conc: 'OPTIONAL', crude: '—', products: '—', grains: '—', softs: '—',
+    notes: 'Less common. Used where price uncertainty means payment deferred until QP closes.' },
+  { type: 'LC at sight vs BL documents', anchor: 'BL Date (Event 3)', formula: 'On presentation of BL docs',
+    metals: 'YES', conc: 'YES', crude: 'PRIMARY', products: 'YES', grains: 'YES', softs: 'YES',
+    notes: 'Letter of Credit — payment on presentation of shipping documents. Bank involvement. Very common in oil.' },
+  { type: 'LC usance — N days from BL', anchor: 'BL Date (Event 3)', formula: 'BL date + 60 days (usance)',
+    metals: 'OPTIONAL', conc: 'OPTIONAL', crude: 'YES', products: 'YES', grains: 'OPTIONAL', softs: 'OPTIONAL',
+    notes: 'Deferred LC. Seller gets LC security, buyer gets payment deferral. Common in oil trading.' },
+  { type: 'CAD — Cash Against Documents', anchor: 'BL Date (Event 3)', formula: 'On release of BL docs',
+    metals: 'OPTIONAL', conc: 'OPTIONAL', crude: 'YES', products: 'YES', grains: 'YES', softs: 'OPTIONAL',
+    notes: 'Documents held by bank, released on payment. No LC. Simpler than LC but less secure for seller.' },
+  { type: 'Open account — N days invoice', anchor: 'Invoice Date', formula: 'Invoice date + 30 days',
+    metals: 'OPTIONAL', conc: '—', crude: '—', products: '—', grains: 'OPTIONAL', softs: 'OPTIONAL',
+    notes: 'Clean open account. Used only with trusted/creditworthy counterparties. High credit risk.' },
+  { type: 'Provisional + Final settlement', anchor: 'Multiple events', formula: '90% on BL + 10% on QP close',
+    metals: 'YES', conc: 'PRIMARY', crude: 'YES', products: 'YES', grains: '—', softs: '—',
+    notes: 'Most common metals structure. 90% provisional on BL date. Final 10% (delta) when QP closes and assay agreed.' },
+  { type: 'TT in advance', anchor: 'Contract Date (Event 1)', formula: 'Before shipment',
+    metals: 'OPTIONAL', conc: 'OPTIONAL', crude: 'OPTIONAL', products: 'OPTIONAL', grains: 'OPTIONAL', softs: 'OPTIONAL',
+    notes: 'Pre-payment. Seller-friendly. Used where buyer is unknown/high risk or seller has strong position.' },
+];
+
+function badgeForRule(val) {
+  if (val === 'PRIMARY') return '<span class="badge bd-act">PRIMARY</span>';
+  if (val === 'YES') return '<span class="badge bd-confirmed">YES</span>';
+  if (val === 'OPTIONAL') return '<span class="badge bd-draft">optional</span>';
+  return '<span style="color:#555">—</span>';
+}
+
+function renderPaymentTermsMatrix() {
+  const tbody = document.getElementById('edm-ptm-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = PAYMENT_TERMS_MATRIX.map(function(row, idx){
+    return '<tr data-row-idx="' + idx + '" onmouseenter="showPTMNote(' + idx + ')" style="cursor:default">'
+      + '<td class="f11 fw6">' + row.type + '</td>'
+      + '<td class="f10 ta2">' + row.anchor + '</td>'
+      + '<td class="f10 mono">' + row.formula + '</td>'
+      + '<td>' + badgeForRule(row.metals) + '</td>'
+      + '<td>' + badgeForRule(row.conc) + '</td>'
+      + '<td>' + badgeForRule(row.crude) + '</td>'
+      + '<td>' + badgeForRule(row.products) + '</td>'
+      + '<td>' + badgeForRule(row.grains) + '</td>'
+      + '<td>' + badgeForRule(row.softs) + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function showPTMNote(idx) {
+  const row = PAYMENT_TERMS_MATRIX[idx];
+  const noteEl = document.getElementById('edm-ptm-note');
+  if (row && noteEl) noteEl.textContent = row.notes;
+}
+
 // ── LOAD LOCATIONS — was 5 hardcoded mock rows, never real, since this file was built ──
 async function loadMDLocations() {
   const tbody = document.getElementById('md-location-tbody');
@@ -1861,7 +1943,7 @@ window.nav = function(pageId, navEl) {
   else if (pageId === 'md-counterparty') loadMDCounterparties();
   else if (pageId === 'md-location') loadMDLocations();
   else if (pageId === 'md-other') { loadMDCurrencies(); loadMDUOM(); loadMDTaxCodes(); }
-  else if (pageId === 'event-date-master') loadEDMContractDropdown();
+  else if (pageId === 'event-date-master') { loadEDMContractDropdown(); renderPaymentTermsMatrix(); }
   else if (pageId === 'md-qp') loadMDQP();
 };
 </script>
