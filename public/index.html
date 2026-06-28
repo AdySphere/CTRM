@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.48</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.50</div>
   </div>
   <nav class="sb-nav">
 
@@ -2665,52 +2665,29 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <div class="page" id="page-grn">
       <div class="ph">
         <div class="ph-l"><div class="pt">Stage 3 — GRN / Final Receipt</div><div class="ps">Goods Receipt Note · Final material and quantity confirmed · Posted to ERP · Cannot be amended after posting · Triggers final pricing and payment</div></div>
-        <div class="ph-r"><button class="btn bp" onclick="toast('GRN','GRN draft created from Provisional Receipt','success')">＋ Create GRN from Receipt</button></div>
+        <div class="ph-r"><button class="btn bp" onclick="openNewGRNModal()">＋ Create GRN from Receipt</button></div>
       </div>
       <div class="ban bdan"><span>⚠</span>Stage 3 of 3. GRN is final and immutable once posted to ERP. Actual item codes and quantities here may differ from Stage 1 (In Transit). MRN sub-lots are created here when segregation reveals multiple grades. PO is amended in BC to match actual receipt.</div>
-      <div class="sr">
-        <div class="sc"><div class="scl">GRN Draft</div><div class="scv ta2">3</div></div>
-        <div class="sc"><div class="scl">Posted to BC</div><div class="scv tg">0</div></div>
-        <div class="sc"><div class="scl">PO Amended</div><div class="scv tdim">0</div></div>
-        <div class="sc"><div class="scl">Discrepancies</div><div class="scv td">3</div><div class="scs">Berry found vs MillBerry expected</div></div>
+      <div class="sr" id="grn-summary-row">
+        <div class="sc"><div class="scl">GRN Draft</div><div class="scv ta2" id="grn-stat-draft">—</div></div>
+        <div class="sc"><div class="scl">Posted to BC</div><div class="scv tg" id="grn-stat-posted">—</div></div>
+        <div class="sc"><div class="scl">PO Amended</div><div class="scv tdim" id="grn-stat-amended">—</div></div>
+        <div class="sc"><div class="scl">Discrepancies</div><div class="scv td" id="grn-stat-discrepancy">—</div></div>
       </div>
       <div class="card">
         <div class="ch"><div class="ct">GRN Records</div><div class="cs">Final receipt · After yard segregation · Actual item codes confirmed · ERP sync pending</div></div>
         <div class="cbf"><table class="dt">
-          <thead><tr><th>GRN No.</th><th>From Receipt</th><th>MRN Lot</th><th>Contract</th><th>GRN Date</th><th>Expected Item</th><th>Actual Item</th><th>BL Qty</th><th>Accepted Qty</th><th>Rejected Qty</th><th>Discrepancy</th><th>Purchase Order Amended</th><th>GRN Status</th><th></th></tr></thead>
-          <tbody>
-            <!-- SH1 → splits into MRN1-01 (MillBerry 18MT) + MRN1-02 (Berry 6MT) -->
-            <tr style="cursor:pointer" onclick="openGRNDetail('GRN-001')">
-              <td class="mono ta fw6">GRN-001</td><td class="mono ta">PR-001</td><td class="mono ta2 fw6">MRN1-01</td>
-              <td class="mono">PC-2026-001</td><td class="mono">2026-05-01</td>
-              <td class="f11">Copper MillBerry</td><td class="f11 tg">Copper MillBerry</td>
-              <td class="mono">—</td><td class="mono tg fw6">18</td><td class="mono tdim">0</td>
-              <td><span class="badge bd-confirmed">NONE</span></td>
-              <td><span class="badge bd-draft">PENDING</span></td>
-              <td><span class="badge bd-ship">DRAFT</span></td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openGRNDetail('GRN-001')">Open</button></td>
-            </tr>
-            <tr style="cursor:pointer;background:rgba(240,165,0,.04)" onclick="openGRNDetail('GRN-002')">
-              <td class="mono ta fw6">GRN-002</td><td class="mono ta">PR-001</td><td class="mono ta2 fw6">MRN1-02</td>
-              <td class="mono">PC-2026-001</td><td class="mono">2026-05-01</td>
-              <td class="f11">Copper MillBerry</td><td class="f11 td fw6">Copper Berry ⚠</td>
-              <td class="mono">—</td><td class="mono ta2 fw6">6</td><td class="mono tdim">0</td>
-              <td><span class="badge bd-ship">ITEM DIFF</span></td>
-              <td><span class="badge bd-ship">PENDING AMEND</span></td>
-              <td><span class="badge bd-ship">DRAFT</span></td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openGRNDetail('GRN-002')">Open</button></td>
-            </tr>
-            <tr style="cursor:pointer"><td class="mono ta fw6">GRN-003</td><td class="mono ta">PR-002</td><td class="mono ta2 fw6">MRN2-01</td><td class="mono">PC-2026-001</td><td class="mono">2026-05-02</td><td class="f11">Copper MillBerry</td><td class="f11 tg">Copper MillBerry</td><td class="mono">—</td><td class="mono tg fw6">18.75</td><td class="mono tdim">0</td><td><span class="badge bd-confirmed">NONE</span></td><td><span class="badge bd-draft">PENDING</span></td><td><span class="badge bd-ship">DRAFT</span></td><td><button class="btn bxs bg">Open</button></td></tr>
-            <tr style="cursor:pointer;background:rgba(240,165,0,.04)"><td class="mono ta fw6">GRN-004</td><td class="mono ta">PR-002</td><td class="mono ta2 fw6">MRN2-02</td><td class="mono">PC-2026-001</td><td class="mono">2026-05-02</td><td class="f11">Copper MillBerry</td><td class="f11 td fw6">Copper Berry ⚠</td><td class="mono">—</td><td class="mono ta2 fw6">6.25</td><td class="mono tdim">0</td><td><span class="badge bd-ship">ITEM DIFF</span></td><td><span class="badge bd-ship">PENDING AMEND</span></td><td><span class="badge bd-ship">DRAFT</span></td><td><button class="btn bxs bg">Open</button></td></tr>
-            <tr style="cursor:pointer"><td class="mono ta fw6">GRN-005</td><td class="mono ta">PR-003</td><td class="mono ta2 fw6">MRN3-01</td><td class="mono">PC-2026-001</td><td class="mono">2026-05-03</td><td class="f11">Copper MillBerry</td><td class="f11 tg">Copper MillBerry</td><td class="mono">—</td><td class="mono tg fw6">19.5</td><td class="mono tdim">0</td><td><span class="badge bd-confirmed">NONE</span></td><td><span class="badge bd-draft">PENDING</span></td><td><span class="badge bd-ship">DRAFT</span></td><td><button class="btn bxs bg">Open</button></td></tr>
-            <tr style="cursor:pointer;background:rgba(240,165,0,.04)"><td class="mono ta fw6">GRN-006</td><td class="mono ta">PR-003</td><td class="mono ta2 fw6">MRN3-02</td><td class="mono">PC-2026-001</td><td class="mono">2026-05-03</td><td class="f11">Copper MillBerry</td><td class="f11 td fw6">Copper Berry ⚠</td><td class="mono">—</td><td class="mono ta2 fw6">6.5</td><td class="mono tdim">0</td><td><span class="badge bd-ship">ITEM DIFF</span></td><td><span class="badge bd-ship">PENDING AMEND</span></td><td><span class="badge bd-ship">DRAFT</span></td><td><button class="btn bxs bg">Open</button></td></tr>
+          <thead><tr><th>GRN No.</th><th>MRN Lot</th><th>Contract</th><th>GRN Date</th><th>Expected Item</th><th>Actual Item</th><th>Accepted Qty</th><th>Rejected Qty</th><th>Discrepancy</th><th>PO Amended</th><th>GRN Status</th><th></th></tr></thead>
+          <tbody id="grn-list-tbody">
+            <tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading…</td></tr>
           </tbody>
         </table></div>
       </div>
       <!-- GRN DETAIL -->
       <div class="card mt14" id="grn-detail-card" style="display:none">
-        <div class="ch"><div class="ct" id="grn-detail-title">GRN-002 — Discrepancy Detail</div><div class="cs">MRN1-02 · Copper Berry (expected: MillBerry)</div>
-          <button class="btn bp bsm" style="margin-left:auto" onclick="toast('GRN Posted','GRN-002 posted to · BC will amend PO to Copper Berry item code · Exposure recalculated','success')">Post GRN to ERP</button>
+        <div class="ch"><div class="ct" id="grn-detail-title">GRN Detail</div><div class="cs" id="grn-detail-subtitle">—</div>
+          <button class="btn bg bsm" style="margin-left:auto" onclick="saveGRNHeader()">Save</button>
+          <button class="btn bp bsm" style="margin-left:7px" onclick="postGRNToERP()" id="grn-post-btn">Post GRN to ERP</button>
         </div>
         <div class="fts">
           <div class="ft active grnt" data-tab="grn-gen">GRN Header</div>
@@ -2720,60 +2697,40 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft grnt" data-tab="grn-attach">Attachments</div>
         </div>
         <div id="grn-gen" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">GRN No.</div><div class="fc">GRN-002</div></div>
-          <div class="f"><div class="fl">From Provisional Receipt</div><div class="fc ta">PR-001</div></div>
-          <div class="f"><div class="fl">MRN Lot ID (sub-lot)</div><div class="fc ta2 fw7">MRN1-02</div></div>
-          <div class="f"><div class="fl">Parent MRN Lot</div><div class="fc">MRN1</div></div>
-          <div class="f"><div class="fl">Linked Contract</div><div class="fc">PC-2026-001</div></div>
-          <div class="f"><div class="fl">GRN Date <span class="req">*</span></div><input type="date" class="fi" value="2026-05-01"></div>
-          <div class="f"><div class="fl">GRN Status</div><select class="fs"><option>DRAFT</option><option>PENDING_APPROVAL</option><option>POSTED</option></select></div>
-          <div class="f"><div class="fl">ERP GRN Reference</div><div class="fc tdim">— Pending post</div></div>
-          <div class="f"><div class="fl">Warehouse / Bay</div><input type="text" class="fi" value="Main Yard — Bay A3 / Stack 2B"></div>
-          <div class="f"><div class="fl">Expected Item Code</div><div class="fc">Copper MillBerry (CU-MILLBERRY)</div></div>
-          <div class="f"><div class="fl">Actual Item Code <span class="req">*</span></div><select class="fs"><option>Copper Berry (CU-BERRY)</option><option>Copper MillBerry (CU-MILLBERRY)</option><option>Copper Cathode A (CU-CATHODE-A)</option></select></div>
-          <div class="f"><div class="fl">Discrepancy Type</div><div class="fc td fw7">ITEM_MISMATCH — Berry received vs MillBerry expected</div></div>
+          <div class="f"><div class="fl">GRN No.</div><div class="fc" id="grn-no-display">—</div></div>
+          <div class="f"><div class="fl">MRN Lot ID (sub-lot)</div><div class="fc ta2 fw7" id="grn-lot-no">—</div></div>
+          <div class="f"><div class="fl">Linked Contract</div><div class="fc" id="grn-contract-no">—</div></div>
+          <div class="f"><div class="fl">GRN Date <span class="req">*</span></div><input type="date" class="fi" id="grn-date-input"></div>
+          <div class="f"><div class="fl">GRN Status</div><div class="fc" id="grn-status-display"><span class="badge bd-draft">DRAFT</span></div></div>
+          <div class="f"><div class="fl">ERP GRN Reference</div><div class="fc tdim" id="grn-erp-ref">— Pending post</div></div>
+          <div class="f"><div class="fl">Expected Item Code</div><div class="fc" id="grn-expected-item">—</div></div>
+          <div class="f"><div class="fl">Actual Item Code <span class="req">*</span></div><select class="fs" id="grn-actual-item-sel"><option value="">— Select —</option></select></div>
+          <div class="f"><div class="fl">Accepted Qty (MT)</div><input type="number" class="fi" id="grn-accepted-qty" step="0.001"></div>
+          <div class="f"><div class="fl">Rejected Qty (MT)</div><input type="number" class="fi" id="grn-rejected-qty" step="0.001" value="0"></div>
+          <div class="f"><div class="fl">Discrepancy Type</div><div class="fc td fw7" id="grn-discrepancy-display">—</div></div>
         </div></div>
         <div id="grn-lines" class="ftc hidden">
-          <table class="lt"><thead><tr><th>Line</th><th>Lot ID</th><th>Expected Item</th><th>Actual Item</th><th>Gross Qty</th><th>Accepted Qty</th><th>Rejected Qty</th><th>Dry Qty</th><th>Payable Qty</th><th>Inventory Status</th><th>Quality Profile</th></tr></thead>
-          <tbody>
-            <tr style="background:rgba(224,82,82,.04)">
-              <td class="mono f10">1</td><td class="mono f10 ta fw6 ta2">MRN1-02</td>
-              <td class="f10">Copper MillBerry</td>
-              <td><select class="fs" style="font-size:10px;min-width:120px"><option>Copper Berry (CU-BERRY)</option><option>Copper MillBerry</option></select></td>
-              <td><input type="number" class="fi" style="width:60px;font-size:10px" value="6"></td>
-              <td><input type="number" class="fi" style="width:60px;font-size:10px" value="6"></td>
-              <td><input type="number" class="fi" style="width:55px;font-size:10px" value="0"></td>
-              <td><input type="number" class="fi" style="width:60px;font-size:10px" placeholder="Post moisture"></td>
-              <td><input type="number" class="fi" style="width:60px;font-size:10px" placeholder="Post deductions"></td>
-              <td><select class="fs" style="font-size:9px"><option>ACCEPTED</option><option>ON_HOLD</option><option>REJECTED</option></select></td>
-              <td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="Berry-Grade"></td>
-            </tr>
-          </tbody></table>
+          <div class="ban bi mb12"><span>i</span>One GRN line per lot — gross/tare/net weight and moisture come from the container record on the linked logistics shipment. Edit accepted/rejected quantity and the actual item code on the GRN Header tab; this view reflects what's saved there.</div>
+          <table class="lt"><thead><tr><th>Lot No.</th><th>Actual Item</th><th>Gross Wt</th><th>Net Wt</th><th>Dry Wt</th><th>Accepted Qty</th><th>Rejected Qty</th><th>Status</th></tr></thead>
+            <tbody id="grn-lines-tbody"><tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">—</td></tr></tbody>
+          </table>
         </div>
         <div id="grn-discrepancy" class="ftc hidden">
-          <div class="ban bdan mb12"><span>⚠</span>Discrepancy between contracted and received material. Commercial team must decide pricing basis for Berry material. This will amend the PO item code in BC and trigger exposure recalculation.</div>
+          <div class="ban bdan mb12" id="grn-discrepancy-banner"><span>⚠</span>Loading…</div>
           <div class="fg">
-            <div class="f"><div class="fl">Contracted Material</div><div class="fc">Copper MillBerry — 91% LME formula</div></div>
-            <div class="f"><div class="fl">Received Material</div><div class="fc td fw7">Copper Berry — 80% LME formula (decision required)</div></div>
-            <div class="f"><div class="fl">Contracted Unit Price</div><div class="fc mono">USD 8,051.68/MT (91% × $8,848)</div></div>
-            <div class="f"><div class="fl">Actual Unit Price (Berry)</div><div class="fc ta2 fw7">USD 7,078.40/MT (80% × $8,848)</div></div>
-            <div class="f"><div class="fl">Price Impact (6 MT Berry)</div><div class="fc td fw7">−USD 5,836.80 vs contracted</div></div>
-            <div class="f"><div class="fl">Commercial Decision</div><select class="fs"><option>ACCEPT AT BERRY PRICE (80% LME)</option><option>CLAIM AGAINST SUPPLIER</option><option>REJECT AND RETURN</option><option>NEGOTIATE ADJUSTMENT</option></select></div>
-            <div class="f"><div class="fl">Hedge Exposure Impact</div><div class="fc ta2">Over-hedged by 2.0625 MT — Forced Spec adjustment triggered in Hedge Card</div></div>
-            <div class="f"><div class="fl">Purchase Order Amendment Required</div><div class="fc td">YES — PO item code must change from CU-MILLBERRY to CU-BERRY for 6 MT</div></div>
-            <div class="f"><div class="fl">Claims / Notes</div><input type="text" class="fi" placeholder="Notes on claim or negotiation with supplier"></div>
+            <div class="f"><div class="fl">Expected Item</div><div class="fc" id="grn-disc-expected">—</div></div>
+            <div class="f"><div class="fl">Actual Item Received</div><div class="fc td fw7" id="grn-disc-actual">—</div></div>
+            <div class="f"><div class="fl">Accepted Qty</div><div class="fc mono" id="grn-disc-accepted">—</div></div>
+            <div class="f"><div class="fl">Rejected Qty</div><div class="fc mono td" id="grn-disc-rejected">—</div></div>
+            <div class="f"><div class="fl">PO Amendment Required</div><div class="fc" id="grn-disc-po-status">—</div></div>
+            <div class="f"><div class="fl">Claims / Notes</div><input type="text" class="fi" id="grn-disc-notes" placeholder="Notes on claim or negotiation with supplier" onblur="saveGRNHeader()"></div>
           </div>
         </div>
         <div id="grn-pricing-impact" class="ftc hidden">
+          <div class="ban bi mb12"><span>i</span>Pricing impact depends on the contract's pricing formula being applied to the actual item received — calculate this on the linked contract's Pricing & QP tab once the actual item code is confirmed and saved here.</div>
           <div class="fg">
-            <div class="f"><div class="fl">Original Formula (MillBerry)</div><div class="fc">91% of LME = USD 8,051.68/MT</div></div>
-            <div class="f"><div class="fl">Revised Formula (Berry)</div><div class="fc ta2">80% of LME = USD 7,078.40/MT</div></div>
-            <div class="f"><div class="fl">Qty Affected</div><div class="fc mono td">6 MT (MRN1-02)</div></div>
-            <div class="f"><div class="fl">Price Delta per MT</div><div class="fc td">−USD 973.28/MT</div></div>
-            <div class="f"><div class="fl">Total Impact on Invoice</div><div class="fc td fw7">−USD 5,836.80</div></div>
-            <div class="f"><div class="fl">Hedge Adjustment Required</div><div class="fc ta2">Forced Spec SHORT 2.0625 MT @ prevailing price → see Hedge Card</div></div>
-            <div class="f"><div class="fl">QP Window Impact</div><div class="fc">No change — BL date anchor unchanged</div></div>
-            <div class="f"><div class="fl">Provisional Invoice Adjustment</div><div class="fc ta2">Pro-forma invoice to be updated before payment trigger</div></div>
+            <div class="f"><div class="fl">Qty Affected (rejected)</div><div class="fc mono td" id="grn-pi-qty">—</div></div>
+            <div class="f"><div class="fl">Linked Contract</div><div class="fc" id="grn-pi-contract">—</div></div>
           </div>
         </div>
         <div id="grn-attach" class="ftc hidden">
@@ -6563,6 +6520,7 @@ function afterNav(pageId) {
     else if (pageId === 'provisional-receipt') loadProvReceiptList();
     else if (pageId === 'shipment') loadQCResultsList();
     else if (pageId === 'qpwindow') { loadQPListView(); loadQPDealOptions(); runAutomaticRolloverCheck(true); }
+    else if (pageId === 'grn') loadGRNList();
     else if (pageId === 'exposure') { renderExposureTable(); renderPortfolioRollup(); }
     else if (pageId === 'rfq') { loadRFQList(); loadCommodityDropdowns(); }
     else if (pageId === 'allocation') loadAllocationPage();
@@ -11764,6 +11722,245 @@ function openEventDateMasterForContract() {
   window.open('/setup?page=event-date-master&contract=' + c.id, '_blank');
 }
 
+// GRN module — was genuinely a complete mock (6 hardcoded rows, 'Post GRN to ERP' just
+// showed a toast). Rebuilt against the real lots backend, staying within scope for
+// testing receiving and invoicing: GRN Header and the discrepancy/PO status it derives
+// are real and saved; Discrepancy Review and Pricing Impact tabs now reflect real data
+// rather than rebuilding the full hedge-adjustment calculation the original mock implied.
+async function loadGRNList() {
+  const tbody = document.getElementById('grn-list-tbody');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/lots');
+    const data = await res.json();
+    const lots = (data.data || []).filter(function(l){ return l.grn_no; });
+
+    const stats = { draft: 0, posted: 0, amended: 0, discrepancy: 0 };
+    lots.forEach(function(l){
+      if (l.grn_status === 'DRAFT') stats.draft++;
+      if (l.grn_status === 'POSTED') stats.posted++;
+      if (l.po_amended) stats.amended++;
+      if (l.discrepancy_type && l.discrepancy_type !== 'NONE') stats.discrepancy++;
+    });
+    const setStat = function(id, v){ const el = document.getElementById(id); if (el) el.textContent = v; };
+    setStat('grn-stat-draft', stats.draft); setStat('grn-stat-posted', stats.posted);
+    setStat('grn-stat-amended', stats.amended); setStat('grn-stat-discrepancy', stats.discrepancy);
+
+    if (!lots.length) {
+      tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No GRNs yet — click + Create GRN from Receipt</td></tr>';
+      return;
+    }
+    tbody.innerHTML = lots.map(function(l){
+      const discCls = l.discrepancy_type === 'NONE' ? 'bd-confirmed' : 'bd-ship';
+      const statusCls = l.grn_status === 'POSTED' ? 'bd-confirmed' : l.grn_status === 'PENDING_APPROVAL' ? 'bd-ship' : 'bd-draft';
+      const rowBg = l.discrepancy_type !== 'NONE' ? 'background:rgba(240,165,0,.04)' : '';
+      return '<tr style="cursor:pointer;'+rowBg+'" data-lot-id="'+l.id+'" onclick="openGRNDetail(this.dataset.lotId)">'
+        + '<td class="mono ta fw6">'+l.grn_no+'</td>'
+        + '<td class="mono ta2 fw6">'+l.lot_no+'</td>'
+        + '<td class="mono">'+(l.contract_no||'—')+'</td>'
+        + '<td class="mono">'+(l.grn_date?new Date(l.grn_date).toLocaleDateString('en-GB'):'—')+'</td>'
+        + '<td class="f11">'+(l.expected_commodity_code||'—')+'</td>'
+        + '<td class="f11'+(l.discrepancy_type!=='NONE'?' td fw6':'')+'">'+(l.commodity_code||'—')+(l.discrepancy_type!=='NONE'?' ⚠':'')+'</td>'
+        + '<td class="mono fw6">'+(l.accepted_qty_mt!=null?l.accepted_qty_mt:'—')+'</td>'
+        + '<td class="mono tdim">'+(l.rejected_qty_mt!=null?l.rejected_qty_mt:0)+'</td>'
+        + '<td><span class="badge '+discCls+'">'+(l.discrepancy_type||'NONE').replace('_',' ')+'</span></td>'
+        + '<td><span class="badge '+(l.po_amended?'bd-confirmed':'bd-draft')+'">'+(l.po_amended?'YES':'PENDING')+'</span></td>'
+        + '<td><span class="badge '+statusCls+'">'+l.grn_status+'</span></td>'
+        + '<td><button class="btn bxs bg" data-lot-id="'+l.id+'" onclick="event.stopPropagation();openGRNDetail(this.dataset.lotId)">Open</button></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:14px;color:var(--danger);font-size:11px">Error: '+e.message+'</td></tr>';
+  }
+}
+
+async function openNewGRNModal() {
+  ['ngrn-lot-no','ngrn-gross','ngrn-accepted'].forEach(function(id){ const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('ngrn-tare').value = '0';
+  document.getElementById('ngrn-rejected').value = '0';
+  document.getElementById('ngrn-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ngrn-expected-display').textContent = '—';
+
+  try {
+    const res = await fetch(API_BASE + '/api/contracts?type=PC');
+    const data = await res.json();
+    const contracts = data.data || [];
+    const sel = document.getElementById('ngrn-contract-sel');
+    if (sel) sel.innerHTML = '<option value="">— Select —</option>' + contracts.map(function(c){
+      return '<option value="'+c.id+'" data-commodity="'+(c.commodity_code||'')+'">'+c.contract_no+' — '+(c.counterparty_name||'—')+'</option>';
+    }).join('');
+  } catch(e) { /* non-fatal */ }
+
+  try {
+    const cmRes = await fetch(API_BASE + '/api/master/commodities');
+    const cmData = await cmRes.json();
+    const commodities = cmData.data || [];
+    const actualSel = document.getElementById('ngrn-actual-sel');
+    if (actualSel) actualSel.innerHTML = '<option value="">— Select —</option>' + commodities.map(function(cm){
+      return '<option value="'+cm.code+'">'+cm.name+' ('+cm.code+')</option>';
+    }).join('');
+  } catch(e) { /* non-fatal */ }
+
+  openModal('modal-new-grn');
+}
+
+function onNewGRNContractChange() {
+  const sel = document.getElementById('ngrn-contract-sel');
+  const opt = sel.options[sel.selectedIndex];
+  const commodityCode = opt?.dataset?.commodity;
+  const display = document.getElementById('ngrn-expected-display');
+  if (display) display.textContent = commodityCode || '—';
+  window._ngrnExpectedCode = commodityCode || null;
+}
+
+async function submitNewGRN() {
+  const g = function(id){ return document.getElementById(id)?.value || null; };
+  const contractId = g('ngrn-contract-sel');
+  const lotNo = g('ngrn-lot-no');
+  const actualItem = g('ngrn-actual-sel');
+  if (!contractId) { toast('Required', 'Please select a contract', 'warning'); return; }
+  if (!lotNo) { toast('Required', 'Please enter a lot number', 'warning'); return; }
+  if (!actualItem) { toast('Required', 'Please select the actual item received', 'warning'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/lots', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        lot_no: lotNo, contract_id: parseInt(contractId),
+        commodity_code: actualItem, expected_commodity_code: window._ngrnExpectedCode,
+        gross_weight_mt: g('ngrn-gross') ? parseFloat(g('ngrn-gross')) : null,
+        tare_mt: g('ngrn-tare') ? parseFloat(g('ngrn-tare')) : 0,
+        accepted_qty_mt: g('ngrn-accepted') ? parseFloat(g('ngrn-accepted')) : null,
+        rejected_qty_mt: g('ngrn-rejected') ? parseFloat(g('ngrn-rejected')) : 0,
+        grn_date: g('ngrn-date'), lot_type: 'PRIMARY'
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('GRN Created', data.data.grn_no + ' created', 'success');
+    closeModal('modal-new-grn');
+    await loadGRNList();
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function openGRNDetail(lotId) {
+  try {
+    const res = await fetch(API_BASE + '/api/lots/' + lotId);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const l = data.data;
+    window._currentGRN = l;
+
+    document.getElementById('grn-detail-card').style.display = 'block';
+    document.getElementById('grn-detail-title').textContent = l.grn_no + ' — ' + (l.discrepancy_type !== 'NONE' ? 'Discrepancy Detail' : 'Detail');
+    document.getElementById('grn-detail-subtitle').textContent = l.lot_no + ' · ' + (l.actual_commodity_name || l.commodity_code || '—')
+      + (l.discrepancy_type !== 'NONE' ? ' (expected: ' + (l.expected_commodity_name || l.expected_commodity_code) + ')' : '');
+
+    document.getElementById('grn-no-display').textContent = l.grn_no;
+    document.getElementById('grn-lot-no').textContent = l.lot_no;
+    document.getElementById('grn-contract-no').textContent = l.contract_no || '—';
+    document.getElementById('grn-date-input').value = l.grn_date ? l.grn_date.split('T')[0] : '';
+    document.getElementById('grn-expected-item').textContent = l.expected_commodity_name || l.expected_commodity_code || '—';
+    document.getElementById('grn-accepted-qty').value = l.accepted_qty_mt != null ? l.accepted_qty_mt : '';
+    document.getElementById('grn-rejected-qty').value = l.rejected_qty_mt != null ? l.rejected_qty_mt : 0;
+    document.getElementById('grn-discrepancy-display').textContent = (l.discrepancy_type || 'NONE').replace('_', ' ');
+
+    try {
+      const cmRes = await fetch(API_BASE + '/api/master/commodities');
+      const cmData = await cmRes.json();
+      const commodities = cmData.data || [];
+      const sel = document.getElementById('grn-actual-item-sel');
+      if (sel) {
+        sel.innerHTML = '<option value="">— Select —</option>' + commodities.map(function(cm){
+          return '<option value="'+cm.code+'"'+(cm.code===l.commodity_code?' selected':'')+'>'+cm.name+' ('+cm.code+')</option>';
+        }).join('');
+      }
+    } catch(e) { /* non-fatal */ }
+
+    const statusEl = document.getElementById('grn-status-display');
+    const statusCls = l.grn_status === 'POSTED' ? 'bd-confirmed' : l.grn_status === 'PENDING_APPROVAL' ? 'bd-ship' : 'bd-draft';
+    if (statusEl) statusEl.innerHTML = '<span class="badge '+statusCls+'">'+l.grn_status+'</span>';
+    document.getElementById('grn-erp-ref').textContent = l.erp_grn_reference || '— Pending post';
+
+    const postBtn = document.getElementById('grn-post-btn');
+    if (postBtn) {
+      postBtn.disabled = l.grn_status === 'POSTED';
+      postBtn.textContent = l.grn_status === 'POSTED' ? 'Already Posted' : 'Post GRN to ERP';
+    }
+
+    // GRN Lines (read-only reflection)
+    const linesTbody = document.getElementById('grn-lines-tbody');
+    if (linesTbody) {
+      linesTbody.innerHTML = '<tr>'
+        + '<td class="mono f10 fw6">'+l.lot_no+'</td>'
+        + '<td class="f10">'+(l.actual_commodity_name||l.commodity_code||'—')+'</td>'
+        + '<td class="mono f10">'+(l.gross_weight_mt!=null?l.gross_weight_mt:'—')+'</td>'
+        + '<td class="mono f10">'+(l.net_weight_mt!=null?l.net_weight_mt:'—')+'</td>'
+        + '<td class="mono f10">'+(l.dry_weight_mt!=null?l.dry_weight_mt:'—')+'</td>'
+        + '<td class="mono f10 fw6">'+(l.accepted_qty_mt!=null?l.accepted_qty_mt:'—')+'</td>'
+        + '<td class="mono f10">'+(l.rejected_qty_mt!=null?l.rejected_qty_mt:0)+'</td>'
+        + '<td><span class="badge '+(l.lot_status==='CLEARED'?'bd-confirmed':'bd-ship')+'">'+l.lot_status+'</span></td>'
+        + '</tr>';
+    }
+
+    // Discrepancy Review (real data)
+    const hasDiscrepancy = l.discrepancy_type && l.discrepancy_type !== 'NONE';
+    const discBanner = document.getElementById('grn-discrepancy-banner');
+    if (discBanner) {
+      discBanner.innerHTML = hasDiscrepancy
+        ? '<span>⚠</span>Discrepancy between contracted and received material. This will require a PO amendment in the ERP once posted.'
+        : '<span>✓</span>No discrepancy — actual item and quantity match what was expected.';
+    }
+    document.getElementById('grn-disc-expected').textContent = l.expected_commodity_name || l.expected_commodity_code || '—';
+    document.getElementById('grn-disc-actual').textContent = l.actual_commodity_name || l.commodity_code || '—';
+    document.getElementById('grn-disc-accepted').textContent = (l.accepted_qty_mt!=null?l.accepted_qty_mt+' MT':'—');
+    document.getElementById('grn-disc-rejected').textContent = (l.rejected_qty_mt!=null?l.rejected_qty_mt+' MT':'0 MT');
+    document.getElementById('grn-disc-po-status').textContent = l.po_amended ? 'Already amended' : (hasDiscrepancy ? 'YES — required before posting' : 'Not required');
+    document.getElementById('grn-disc-notes').value = l.notes || '';
+
+    document.getElementById('grn-pi-qty').textContent = (l.rejected_qty_mt!=null?l.rejected_qty_mt+' MT':'0 MT');
+    document.getElementById('grn-pi-contract').textContent = l.contract_no || '—';
+
+    wireTabs('grnt');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function saveGRNHeader() {
+  const l = window._currentGRN;
+  if (!l) return;
+  const g = function(id){ return document.getElementById(id)?.value; };
+  try {
+    const res = await fetch(API_BASE + '/api/lots/' + l.id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        grn_date: g('grn-date-input') || null,
+        commodity_code: g('grn-actual-item-sel') || null,
+        accepted_qty_mt: g('grn-accepted-qty') ? parseFloat(g('grn-accepted-qty')) : null,
+        rejected_qty_mt: g('grn-rejected-qty') ? parseFloat(g('grn-rejected-qty')) : 0
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Saved', l.grn_no + ' updated', 'success');
+    await openGRNDetail(l.id);
+    await loadGRNList();
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function postGRNToERP() {
+  const l = window._currentGRN;
+  if (!l) return;
+  if (!confirm('Post ' + l.grn_no + ' to ERP? This is final and immutable once posted — actual item code and quantities cannot be amended afterward.')) return;
+  try {
+    const res = await fetch(API_BASE + '/api/lots/' + l.id + '/post-to-erp', { method: 'POST' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('GRN Posted', l.grn_no + ' posted to ERP · ' + data.data.erp_grn_reference, 'success');
+    await openGRNDetail(l.id);
+    await loadGRNList();
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -12043,6 +12240,38 @@ async function submitChangeDeal() {
     </div>
     <div class="modal-ft">
       <button class="btn bs2" onclick="closeModal('modal-pt-template')">Close</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: New GRN (Receiving) -->
+<div class="mo" id="modal-new-grn">
+  <div class="md" style="max-width:560px">
+    <div class="mh">
+      <div class="mt">Create GRN from Receipt</div>
+      <button class="mc" onclick="closeModal('modal-new-grn')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="f"><div class="fl">Contract <span class="req">*</span></div>
+        <select class="fs" id="ngrn-contract-sel" onchange="onNewGRNContractChange()"><option value="">— Select —</option></select>
+      </div>
+      <div class="f"><div class="fl">Lot No. <span class="req">*</span></div><input type="text" class="fi" id="ngrn-lot-no" placeholder="e.g. MRN1-01"></div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Expected Item</div><div class="fc" id="ngrn-expected-display">—</div></div>
+        <div class="f"><div class="fl">Actual Item Received <span class="req">*</span></div><select class="fs" id="ngrn-actual-sel"><option value="">— Select —</option></select></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Gross Weight (MT)</div><input type="number" class="fi" id="ngrn-gross" step="0.0001"></div>
+        <div class="f"><div class="fl">Tare Weight (MT)</div><input type="number" class="fi" id="ngrn-tare" step="0.0001" value="0"></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Accepted Qty (MT)</div><input type="number" class="fi" id="ngrn-accepted" step="0.001"></div>
+        <div class="f"><div class="fl">Rejected Qty (MT)</div><input type="number" class="fi" id="ngrn-rejected" step="0.001" value="0"></div>
+      </div>
+      <div class="f"><div class="fl">GRN Date</div><input type="date" class="fi" id="ngrn-date"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-new-grn')">Cancel</button>
+      <button class="btn bp" onclick="submitNewGRN()">Create GRN</button>
     </div>
   </div>
 </div>
