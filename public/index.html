@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.47</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.48</div>
   </div>
   <nav class="sb-nav">
 
@@ -1260,6 +1260,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="btn bp bsm" style="margin-left:7px" onclick="confirmContract('PC')">Confirm Contract →</button>
           <button class="btn bg bsm" style="margin-left:7px" onclick="printPCContract()">Print</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'pcd-audit-panel')">History</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="openEventDateMasterForContract()">📅 Event Dates</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('pc-detail-card').style.display='none'">✕ Close</button>
         </div>
         <div id="pcd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
@@ -1650,6 +1651,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <button class="btn bp bsm" style="margin-left:7px" onclick="erpStub('BC')">Sync to ERP →</button>
           <button class="btn bg bsm" style="margin-left:7px" onclick="printSCContract()">Print</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="toggleAuditPanel('contract', window._currentContract?.id, 'scd-audit-panel')">History</button>
+          <button class="btn bg bsm" style="margin-left:4px" onclick="openEventDateMasterForContract()">📅 Event Dates</button>
           <button class="btn bg bsm" style="margin-left:4px" onclick="document.getElementById('sc-detail-card').style.display='none'">✕ Close</button>
         </div>
         <div id="scd-audit-panel" style="display:none;padding:12px 18px;background:var(--surface2);border-bottom:1px solid var(--border)">
@@ -4334,6 +4336,19 @@ document.addEventListener('DOMContentLoaded', function() {
     await renderProvInvoice('DEAL456');
     await renderFinalInvoice('DEAL456');
     await recalcPricing();
+
+    // Item: receiving end of the Event Date Master -> Contract link. Opens directly to
+    // the right Purchase/Sales Contract when arriving via that link's 'Open Contract'.
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const openContractId = params.get('openContract');
+      const contractType = params.get('contractType');
+      if (openContractId && contractType) {
+        nav(contractType === 'PC' ? 'purchase-contracts' : 'sales-contracts',
+          document.querySelector('[data-page=' + (contractType === 'PC' ? 'purchase-contracts' : 'sales-contracts') + ']'));
+        await openContractDetail(openContractId, contractType);
+      }
+    } catch(e) { console.warn('Could not auto-open contract from URL:', e); }
   }, 300);
 });
 
@@ -11737,6 +11752,16 @@ async function applyPTTemplate(idx) {
     closeModal('modal-pt-template');
     await loadPaymentLines(c.id, prefix);
   } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+// Item: links PC/SC directly to the Event Date Master screen in Setup for the open
+// contract — was genuinely missing before, confirmed by Prashant. Setup is a separate
+// page (different route), so this opens it with URL parameters rather than calling
+// across pages directly.
+function openEventDateMasterForContract() {
+  const c = window._currentContract;
+  if (!c) { toast('No Contract', 'Open a contract first', 'warning'); return; }
+  window.open('/setup?page=event-date-master&contract=' + c.id, '_blank');
 }
 
 function jumpToLinkedDeal() {

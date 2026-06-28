@@ -386,7 +386,7 @@ html,body{height:100%;margin:0;padding:0}
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.46</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.48</div>
   </div>
   <nav class="sb-nav">
 
@@ -1615,7 +1615,10 @@ async function loadEventDateMaster() {
   const contractJson = await contractRes.json();
   const c = contractJson.data;
   const summaryEl = document.getElementById('edm-contract-summary');
-  if (summaryEl) summaryEl.textContent = c.contract_no + ' · ' + (c.counterparty_name||'—') + ' · ' + (c.commodity_name||c.commodity_code||'—');
+  if (summaryEl) {
+    summaryEl.innerHTML = c.contract_no + ' · ' + (c.counterparty_name||'—') + ' · ' + (c.commodity_name||c.commodity_code||'—')
+      + ' &nbsp;·&nbsp; <a href="/?openContract=' + c.id + '&contractType=' + c.contract_type + '" target="_blank" style="color:var(--accent2)">Open Contract →</a>';
+  }
 
   const tbody = document.getElementById('edm-events-tbody');
   if (tbody) {
@@ -1946,6 +1949,27 @@ window.nav = function(pageId, navEl) {
   else if (pageId === 'event-date-master') { loadEDMContractDropdown(); renderPaymentTermsMatrix(); }
   else if (pageId === 'md-qp') loadMDQP();
 };
+
+// Item: PC/SC -> Event Date Master link. Setup is a genuinely separate page from the
+// main app (different route entirely), so the link works via a URL parameter rather
+// than a direct function call across pages — opening /setup?contract=<id>&page=event-date-master
+// navigates straight to that contract's event timeline instead of leaving the trader to
+// hunt for it in a dropdown.
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const targetPage = params.get('page');
+  const targetContract = params.get('contract');
+  if (targetPage === 'event-date-master') {
+    nav('event-date-master', document.querySelector('[data-page="event-date-master"]'));
+    loadEDMContractDropdown().then(function() {
+      if (targetContract) {
+        const sel = document.getElementById('edm-contract-sel');
+        if (sel) { sel.value = targetContract; loadEventDateMaster(); }
+      }
+    });
+    renderPaymentTermsMatrix();
+  }
+})();
 </script>
 </body>
 </html>
