@@ -6,6 +6,12 @@ const pool = new Pool({
   max: 10,
 });
 
+pool.on('error', (err) => {
+  console.error('Unexpected pg pool error (idle client):', err.message);
+  // swallow — without this handler, an idle connection error
+  // from Supabase's pooler crashes the whole Node process
+});
+
 async function query(text, params) {
   try {
     return await pool.query(text, params);
