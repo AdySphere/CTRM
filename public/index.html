@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.39</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.41</div>
   </div>
   <nav class="sb-nav">
 
@@ -4069,17 +4069,16 @@ async function saveMarketPrice(commodityCode, date, prices) {
 }
 
 // ── FIX TODAY — POST to /api/fixations ───────────────────────
+// H4: rebuilt entirely — was hardcoded to LME-CU-BENCH regardless of the contract's
+// actual commodity, always fixed the ENTIRE unpriced balance with no way to do a partial
+// fix, never asked for a fixation date, and had no container selection at all. Now opens
+// a real modal per the Fix Today spec: full vs partial, container selection whenever the
+// contract has containers, and all validation enforced again client-side for instant
+// feedback (the backend enforces the same 5 rules regardless, so this can't be bypassed).
 async function fixToday(dealId) {
-  dealId = dealId || document.getElementById('qp-deal-select')?.value || 'DEAL123';
+  dealId = dealId || document.getElementById('qp-deal-select')?.value;
+  if (!dealId) { toast('No Deal', 'Select a contract first', 'warning'); return; }
 
-  // Get current market price
-  const mkt = await api('/api/market-prices/latest');
-  if (!mkt) { toast('No Price', 'No market price available', 'warning'); return; }
-
-  const price = parseFloat(mkt.find(m => m.commodity_code === 'LME-CU-BENCH')?.settlement || 0);
-  if (!price) { toast('No Price', 'No LME Cu settlement price found — enter price first', 'warning'); return; }
-
-  // Get current unpriced qty from exposure
   const exp = await api(`/api/exposure?deal_id=${dealId}`);
   if (!exp || !exp.length) { toast('Error', 'Deal not found', 'warning'); return; }
   const r = exp[0];
@@ -4087,24 +4086,52 @@ async function fixToday(dealId) {
   if (r.state === 'PRE_QP') { toast('Cannot Fix', 'QP window has not opened yet', 'warning'); return; }
   if (r.state === 'PRICED') { toast('Already Fixed', 'All quantity already priced', 'warning'); return; }
 
-  const today = new Date().toISOString().split('T')[0];
-  const data = await api('/api/fixations', {
-    method: 'POST',
-    body: JSON.stringify({
-      deal_id: dealId,
-      fixed_price: price,
-      fixed_qty_mt: r.F,
-      fix_date: today,
-      contract_id: r.contract_id,
-    }),
-  });
+  window._fixTodayContext = { dealId: dealId, contractId: r.contract_id, unpricedBalance: r.F, commodityCode: r.commodity_code };
 
-  if (data) {
-    toast('Price Fixed', `${dealId} · ${fmt(r.F,2)} MT fixed @ ${fmt(price)} · State → PRICED`, 'success');
-    renderExposureTable();
-    renderQPWindow(r.contract_id); // C23 fix: pass contract_id, not deal_id
-    renderProvInvoice(dealId);
+  document.getElementById('ft-contract-no').textContent = r.contract_no || dealId;
+  document.getElementById('ft-unpriced-balance').textContent = fmt(r.F,3) + ' MT';
+  document.getElementById('ft-fix-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ft-fixed-price').value = '';
+  document.getElementById('ft-override-reason').value = '';
+  document.getElementById('ft-override-reason-field').style.display = 'none';
+  document.getElementById('ft-notes').value = '';
+  document.getElementById('ft-prompt-date').value = '';
+  document.getElementById('ft-validation-banner').style.display = 'none';
+  document.getElementById('ft-fix-type').value = 'full';
+
+  // Reference price — same lookup the old version used, now genuinely keyed off this
+  // contract's actual commodity instead of a hardcoded LME-CU-BENCH.
+  try {
+    const mkt = await api('/api/market-prices/latest');
+    const priceRow = mkt?.find(m => m.commodity_code === r.commodity_code);
+    const refPrice = priceRow ? parseFloat(priceRow.settlement) : null;
+    document.getElementById('ft-ref-price').textContent = refPrice ? fmt(refPrice) : '— no price found for ' + (r.commodity_code||'this commodity');
+    window._fixTodayContext.refPrice = refPrice;
+  } catch(e) { document.getElementById('ft-ref-price').textContent = '—'; }
+
+  onFixTypeChange();
+  await loadFixTodayContainers();
+  openModal('modal-fix-today');
+}
+
+function onFixTypeChange() {
+  const ctx = window._fixTodayContext;
+  if (!ctx) return;
+  const fixType = document.getElementById('ft-fix-type').value;
+  const qtyInput = document.getElementById('ft-qty');
+  if (fixType === 'full') {
+    qtyInput.value = ctx.unpricedBalance;
+    qtyInput.disabled = true;
+  } else {
+    qtyInput.disabled = false;
+    qtyInput.value = '';
   }
+  onFixQtyChange();
+  applyContainerPreTicking();
+}
+
+function onFixQtyChange() {
+  validateFixToday();
 }
 
 // ── LOGISTICS — POST to /api/logistics ───────────────────────
@@ -11296,6 +11323,215 @@ async function openQPTab2ForContract(contractId, mode) {
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
+// H4: container selection — always shown whenever the contract has containers, per spec,
+// for both full and partial fixes.
+async function loadFixTodayContainers() {
+  const ctx = window._fixTodayContext;
+  const section = document.getElementById('ft-containers-section');
+  const tbody = document.getElementById('ft-containers-tbody');
+  if (!ctx || !section || !tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + ctx.contractId + '/containers');
+    const data = await res.json();
+    const containers = data.data || [];
+    ctx.containers = containers;
+    if (!containers.length) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    tbody.innerHTML = containers.map(function(c){
+      const netWt = parseFloat(c.net_weight_mt) || 0;
+      const alreadyFixed = parseFloat(c.already_fixed_mt) || 0;
+      const available = Math.max(0, netWt - alreadyFixed);
+      const disabled = available <= 0.001;
+      return '<tr data-container-id="'+c.id+'" data-available="'+available+'">'
+        + '<td><input type="checkbox" id="ft-ctr-chk-'+c.id+'" '+(disabled?'disabled':'')+' onchange="onFixContainerToggle('+c.id+')"></td>'
+        + '<td class="mono f10 fw6">'+c.container_no+'</td>'
+        + '<td class="mono f10">'+(c.seal_no||'—')+'</td>'
+        + '<td class="mono f10">'+netWt.toFixed(3)+'</td>'
+        + '<td class="mono f10 tdim">'+alreadyFixed.toFixed(3)+'</td>'
+        + '<td><input type="number" class="fi" id="ft-ctr-qty-'+c.id+'" step="0.001" max="'+available+'" style="font-size:10px;width:90px" disabled value="" oninput="onFixContainerQtyChange()"></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    section.style.display = 'none';
+    console.warn('loadFixTodayContainers:', e);
+  }
+}
+
+// Full fix -> pre-tick every available container, splitting the fix qty proportionally
+// across them. Partial fix -> none pre-ticked, trader picks which containers it covers.
+function applyContainerPreTicking() {
+  const ctx = window._fixTodayContext;
+  if (!ctx || !ctx.containers || !ctx.containers.length) return;
+  const fixType = document.getElementById('ft-fix-type').value;
+  const fixQty = parseFloat(document.getElementById('ft-qty').value) || 0;
+
+  if (fixType === 'full') {
+    let remaining = fixQty;
+    ctx.containers.forEach(function(c){
+      const netWt = parseFloat(c.net_weight_mt) || 0;
+      const alreadyFixed = parseFloat(c.already_fixed_mt) || 0;
+      const available = Math.max(0, netWt - alreadyFixed);
+      const chk = document.getElementById('ft-ctr-chk-' + c.id);
+      const qtyInput = document.getElementById('ft-ctr-qty-' + c.id);
+      if (!chk || available <= 0.001) return;
+      const allocate = Math.min(available, remaining);
+      if (allocate > 0.001) {
+        chk.checked = true;
+        qtyInput.disabled = false;
+        qtyInput.value = allocate.toFixed(3);
+        remaining -= allocate;
+      } else {
+        chk.checked = false;
+        qtyInput.disabled = true;
+        qtyInput.value = '';
+      }
+    });
+  } else {
+    ctx.containers.forEach(function(c){
+      const chk = document.getElementById('ft-ctr-chk-' + c.id);
+      const qtyInput = document.getElementById('ft-ctr-qty-' + c.id);
+      if (!chk) return;
+      chk.checked = false;
+      qtyInput.disabled = true;
+      qtyInput.value = '';
+    });
+  }
+  recalcContainerTotal();
+}
+
+function onFixContainerToggle(containerId) {
+  const chk = document.getElementById('ft-ctr-chk-' + containerId);
+  const qtyInput = document.getElementById('ft-ctr-qty-' + containerId);
+  if (!chk || !qtyInput) return;
+  qtyInput.disabled = !chk.checked;
+  if (!chk.checked) qtyInput.value = '';
+  recalcContainerTotal();
+}
+
+function onFixContainerQtyChange() {
+  recalcContainerTotal();
+}
+
+function recalcContainerTotal() {
+  const ctx = window._fixTodayContext;
+  if (!ctx || !ctx.containers) return;
+  let total = 0;
+  ctx.containers.forEach(function(c){
+    const qtyInput = document.getElementById('ft-ctr-qty-' + c.id);
+    if (qtyInput && !qtyInput.disabled) total += parseFloat(qtyInput.value) || 0;
+  });
+  const display = document.getElementById('ft-container-total');
+  if (display) display.textContent = total.toFixed(3) + ' MT';
+  validateFixToday();
+}
+
+// H4: client-side mirror of the same 5 rules enforced server-side, for instant feedback —
+// the backend is the real authority and re-checks all of these regardless, so none of this
+// can be bypassed by skipping the UI.
+function validateFixToday() {
+  const ctx = window._fixTodayContext;
+  const banner = document.getElementById('ft-validation-banner');
+  if (!ctx || !banner) return true;
+
+  const errors = [];
+  const qty = parseFloat(document.getElementById('ft-qty').value) || 0;
+  const price = parseFloat(document.getElementById('ft-fixed-price').value) || 0;
+  const fixDate = document.getElementById('ft-fix-date').value;
+  const promptDate = document.getElementById('ft-prompt-date').value;
+  const today = new Date().toISOString().split('T')[0];
+
+  if (qty > ctx.unpricedBalance + 0.001) {
+    errors.push('Quantity exceeds unpriced balance (' + fmt(ctx.unpricedBalance,3) + ' MT remaining)');
+  }
+  if (document.getElementById('ft-fixed-price').value && price <= 0) {
+    errors.push('Fixed price must be greater than zero');
+  }
+  if (fixDate && fixDate > today) {
+    errors.push('Fixation date cannot be in the future');
+  }
+  if (promptDate) {
+    const dow = new Date(promptDate + 'T00:00:00Z').getUTCDay();
+    if (dow === 0 || dow === 6) errors.push('Rollover prompt date falls on a weekend');
+  }
+  if (ctx.containers && ctx.containers.length) {
+    const containerTotal = parseFloat(document.getElementById('ft-container-total')?.textContent) || 0;
+    if (qty > 0 && Math.abs(containerTotal - qty) > 0.01) {
+      errors.push('Selected container quantity (' + containerTotal.toFixed(3) + ' MT) does not match the quantity to fix (' + qty.toFixed(3) + ' MT)');
+    }
+  }
+
+  // Price override reason required if fixed price differs materially from reference.
+  const overrideField = document.getElementById('ft-override-reason-field');
+  if (ctx.refPrice && price > 0 && Math.abs(price - ctx.refPrice) > 0.01) {
+    overrideField.style.display = 'block';
+    if (!document.getElementById('ft-override-reason').value.trim()) {
+      errors.push('Price differs from reference price — override reason is required');
+    }
+  } else {
+    overrideField.style.display = 'none';
+  }
+
+  if (errors.length) {
+    banner.style.display = 'block';
+    banner.innerHTML = '<span>⚠</span>' + errors.join(' · ');
+    return false;
+  }
+  banner.style.display = 'none';
+  return true;
+}
+
+async function submitFixToday() {
+  const ctx = window._fixTodayContext;
+  if (!ctx) return;
+  if (!validateFixToday()) { toast('Cannot Submit', 'Please resolve the validation issues shown', 'warning'); return; }
+
+  const qty = parseFloat(document.getElementById('ft-qty').value) || 0;
+  const price = parseFloat(document.getElementById('ft-fixed-price').value) || 0;
+  if (!qty) { toast('Required', 'Please enter the quantity to fix', 'warning'); return; }
+  if (!price) { toast('Required', 'Please enter the fixed price', 'warning'); return; }
+
+  const fixDate = document.getElementById('ft-fix-date').value;
+  const promptDate = document.getElementById('ft-prompt-date').value || null;
+  const notes = document.getElementById('ft-notes').value || null;
+  const overridden = ctx.refPrice && Math.abs(price - ctx.refPrice) > 0.01;
+  const overrideReason = overridden ? document.getElementById('ft-override-reason').value : null;
+
+  const containerPayload = [];
+  if (ctx.containers) {
+    ctx.containers.forEach(function(c){
+      const chk = document.getElementById('ft-ctr-chk-' + c.id);
+      const qtyInput = document.getElementById('ft-ctr-qty-' + c.id);
+      if (chk && chk.checked && qtyInput.value) {
+        containerPayload.push({ container_id: c.id, qty_covered_mt: parseFloat(qtyInput.value) });
+      }
+    });
+  }
+
+  try {
+    const res = await fetch(API_BASE + '/api/fixations', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        deal_id: ctx.dealId, contract_id: ctx.contractId,
+        fixed_price: price, fixed_qty_mt: qty, fix_date: fixDate,
+        prompt_date: promptDate, notes: notes,
+        price_overridden: overridden, price_override_reason: overrideReason,
+        market_price_at_fix: ctx.refPrice || null,
+        containers: containerPayload.length ? containerPayload : undefined
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Price Fixed', ctx.dealId + ' · ' + fmt(qty,2) + ' MT fixed @ ' + fmt(price), 'success');
+    closeModal('modal-fix-today');
+    renderExposureTable();
+    renderQPWindow(ctx.contractId);
+    renderProvInvoice(ctx.dealId);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 function jumpToLinkedDeal() {
   const c = window._currentContract;
   if (!c || !c.deal_no) { toast('No Deal Linked', 'This contract has no deal attached yet — click Edit to attach one', 'info'); return; }
@@ -11505,6 +11741,57 @@ async function submitChangeDeal() {
   </div>
 </div>
 <!-- MODAL: New Rollover Event (Fix 3 — append-only, multi-instance per contract) -->
+<!-- MODAL: Fix Today — Record Price Fixation (H4) -->
+<div class="mo" id="modal-fix-today">
+  <div class="md" style="max-width:680px">
+    <div class="mh">
+      <div class="mt">Fix Today — Record Price Fixation</div>
+      <button class="mc" onclick="closeModal('modal-fix-today')">✕</button>
+    </div>
+    <div class="mb">
+      <div class="f"><div class="fl">Contract</div><div class="fc mono fw7" id="ft-contract-no">—</div></div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Fix Type</div>
+          <select class="fs" id="ft-fix-type" onchange="onFixTypeChange()">
+            <option value="full">Full — fix entire unpriced balance</option>
+            <option value="partial">Partial — fix a specific quantity</option>
+          </select>
+        </div>
+        <div class="f"><div class="fl">Unpriced Balance</div><div class="fc mono fw7 td" id="ft-unpriced-balance">—</div></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Quantity to Fix (MT)</div><input type="number" class="fi" id="ft-qty" step="0.001" oninput="onFixQtyChange()"></div>
+        <div class="f"><div class="fl">Fixation Date</div><input type="date" class="fi" id="ft-fix-date" onchange="validateFixToday()"></div>
+      </div>
+      <div class="fg" style="grid-template-columns:repeat(2,1fr)">
+        <div class="f"><div class="fl">Reference Price</div><div class="fc mono fw7 ta" id="ft-ref-price">—</div></div>
+        <div class="f"><div class="fl">Fixed Price <span class="req">*</span></div><input type="number" class="fi" id="ft-fixed-price" step="0.0001" oninput="validateFixToday()"></div>
+      </div>
+      <div class="f" id="ft-override-reason-field" style="display:none">
+        <div class="fl">Price Override Reason <span class="req">*</span></div>
+        <input type="text" class="fi" id="ft-override-reason" placeholder="Required when fixed price differs from reference price" oninput="validateFixToday()">
+      </div>
+
+      <!-- Container selection — always shown whenever this contract has containers, per spec -->
+      <div id="ft-containers-section" style="display:none">
+        <div class="divl mt12">Containers Covered</div>
+        <div class="ban bi mb8"><span>i</span>Hedge is tracked at the container level. Select which containers this fixation covers — for a full fix, every available container is pre-ticked; for a partial fix, none are pre-ticked.</div>
+        <table class="lt"><thead><tr><th></th><th>Container</th><th>Seal No.</th><th>Net Wt (MT)</th><th>Already Fixed</th><th>Qty to Cover</th></tr></thead>
+          <tbody id="ft-containers-tbody"></tbody>
+        </table>
+        <div class="f mt8"><div class="fl">Container Qty Selected</div><div class="fc mono fw7" id="ft-container-total">0.000 MT</div></div>
+      </div>
+
+      <div class="f csf mt12"><div class="fl">Notes</div><textarea class="fta" id="ft-notes" style="min-height:50px"></textarea></div>
+      <div class="f" id="ft-prompt-date-field"><div class="fl">Rollover Prompt Date (if applicable)</div><input type="date" class="fi" id="ft-prompt-date" onchange="validateFixToday()"></div>
+      <div class="ban bw mt8" id="ft-validation-banner" style="display:none"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn bs2" onclick="closeModal('modal-fix-today')">Cancel</button>
+      <button class="btn bp" onclick="submitFixToday()">Record Fixation</button>
+    </div>
+  </div>
+</div>
 <div class="mo" id="modal-new-rollover">
   <div class="md" style="max-width:560px">
     <div class="mh">
