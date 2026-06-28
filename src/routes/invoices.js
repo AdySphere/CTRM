@@ -67,11 +67,29 @@ invoiceRouter.post('/compute', async (req, res) => {
     const provisionalAmt = grossAmount * (paymentPct / 100);
     const balanceDue     = grossAmount - provisionalAmt;
 
-    // Payment due = BL date + 5 WD
-    const logRes = await query(`
-      SELECT bl_date FROM logistics WHERE contract_id=$1 ORDER BY created_at DESC LIMIT 1
+    // Invoicing reconciliation fix: was reading bl_date from logistics, a column that
+    // genuinely doesn't exist on that table at all — this silently returned null on every
+    // single invoice computed, regardless of whether a real BL date existed anywhere.
+    // contract_event_dates.bl_date is the actual, lockable single source of truth for this.
+    const edRes = await query(`
+      SELECT bl_date, bl_date_locked FROM contract_event_dates WHERE contract_id=$1
     `, [pl.contract_id]);
-    const blDate = logRes.rows[0]?.bl_date;
+    const blDate = edRes.rows[0]?.bl_date;
+    const blDateLocked = edRes.rows[0]?.bl_date_locked || false;
+
+    // Was a hardcoded 'BL date + 5 working days' with no connection to the contract's
+    // actual Payment Term Tranches at all — if real tranches exist, use the first
+    // (provisional) tranche's already-calculated due date and percentage instead.
+    const trancheRes = await query(`
+      SELECT tranche_name, percentage, calculated_due_date, calculated_amount, anchor_event
+      FROM payment_term_tranches WHERE contract_id=$1 ORDER BY tranche_number LIMIT 1
+    `, [pl.contract_id]);
+    const firstTranche = trancheRes.rows[0] || null;
+    const usingRealTranche = firstTranche != null;
+    const effectivePaymentPct = usingRealTranche ? parseFloat(firstTranche.percentage) : paymentPct;
+    const effectiveProvisionalAmt = grossAmount * (effectivePaymentPct / 100);
+    const effectiveBalanceDue = grossAmount - effectiveProvisionalAmt;
+    const dueDate = usingRealTranche ? firstTranche.calculated_due_date : null;
 
     res.json({
       success: true,
@@ -83,10 +101,14 @@ invoiceRouter.post('/compute', async (req, res) => {
         payable_price: Math.round(payablePrice * 100) / 100,
         qty_mt: qty,
         gross_amount: Math.round(grossAmount * 100) / 100,
-        payment_pct: paymentPct,
-        provisional_amount: Math.round(provisionalAmt * 100) / 100,
-        balance_due: Math.round(balanceDue * 100) / 100,
+        payment_pct: effectivePaymentPct,
+        provisional_amount: Math.round(effectiveProvisionalAmt * 100) / 100,
+        balance_due: Math.round(effectiveBalanceDue * 100) / 100,
         bl_date: blDate,
+        bl_date_locked: blDateLocked,
+        due_date: dueDate,
+        using_real_tranche: usingRealTranche,
+        tranche_name: firstTranche?.tranche_name || null,
         pricing_rule: pl.pricing_rule,
         as_of_date: today,
       }

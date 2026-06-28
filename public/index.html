@@ -402,7 +402,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="sb-icon">C</div>
       <div class="sb-name">CTRM Platform</div>
     </div>
-    <div class="sb-tag">CTRM PLATFORM · V17.50</div>
+    <div class="sb-tag">CTRM PLATFORM · V17.51</div>
   </div>
   <nav class="sb-nav">
 
@@ -5582,7 +5582,16 @@ async function submitCreateInvoice(){
       set('inv-computed-payable-price', fmt(d.payable_price));
       set('inv-computed-gross', fmt(d.gross_amount, 0));
       set('inv-computed-provisional', fmt(d.provisional_amount, 0));
-      set('inv-computed-due', d.bl_date ? addWorkingDays(d.bl_date, 5) : '— no BL date yet —');
+      // Invoicing reconciliation fix: due date now comes from the contract's real first
+      // Payment Term Tranche when one exists, instead of a hardcoded 'BL date + 5 WD'
+      // that had no connection to whatever payment terms were actually set up.
+      if (d.using_real_tranche && d.due_date) {
+        set('inv-computed-due', new Date(d.due_date).toLocaleDateString('en-GB') + ' (' + (d.tranche_name||'tranche') + ')');
+      } else if (d.bl_date) {
+        set('inv-computed-due', addWorkingDays(d.bl_date, 5) + ' — no Payment Term Tranche set up yet, using default +5 WD from BL date');
+      } else {
+        set('inv-computed-due', '— no BL date yet — enter it on the Event Dates screen for this contract');
+      }
       document.getElementById('invoice-computed-section').style.display = 'block';
     } else {
       toast('Compute Error', data.error || 'Could not compute invoice amounts', 'warning');
@@ -5618,7 +5627,11 @@ async function saveInvoice(){
       net_amount: computed.gross_amount,
       provisional_pct: computed.payment_pct || 90,
       provisional_amount: computed.provisional_amount,
-      payment_due_date: computed.bl_date ? addWorkingDays(computed.bl_date, 5) : null,
+      // Invoicing reconciliation fix: use the real tranche due date when one was used to
+      // compute this invoice, same fix as the display above — was hardcoded +5 WD here too.
+      payment_due_date: computed.using_real_tranche && computed.due_date
+        ? computed.due_date
+        : (computed.bl_date ? addWorkingDays(computed.bl_date, 5) : null),
       balance_due: computed.balance_due || null
     })
   });
