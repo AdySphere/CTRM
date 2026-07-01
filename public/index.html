@@ -6552,32 +6552,30 @@ function calcSnAdj() {
 (function() {
   let isDown = false;
   let retryCount = 0;
-  let retryTimer = null;
   const banner = document.getElementById('conn-banner');
   const countdown = document.getElementById('conn-countdown');
 
-  async function checkHealth() {
-    try {
-      const res = await fetch(API_BASE + '/api/health', {
-        method: 'GET',
-        cache: 'no-store',
-        signal: AbortSignal.timeout(5000)
-      });
-      if (res.ok) {
+  function checkHealth() {
+    // Use XMLHttpRequest for max browser compatibility (no AbortSignal needed)
+    const xhr = new XMLHttpRequest();
+    xhr.timeout = 5000;
+    xhr.open('GET', API_BASE + '/api/health', true);
+    xhr.onload = function() {
+      if (xhr.status >= 200 && xhr.status < 300) {
         if (isDown) {
-          // Server came back — hide banner and reload to clear broken state
           isDown = false;
           retryCount = 0;
           if (banner) banner.style.display = 'none';
           toast('Reconnected', 'Server is back — reloading…', 'success');
-          setTimeout(() => window.location.reload(), 1200);
+          setTimeout(function() { window.location.reload(); }, 1500);
         }
       } else {
         markDown();
       }
-    } catch (e) {
-      markDown();
-    }
+    };
+    xhr.onerror = function() { markDown(); };
+    xhr.ontimeout = function() { markDown(); };
+    xhr.send();
   }
 
   function markDown() {
@@ -6589,11 +6587,12 @@ function calcSnAdj() {
     if (countdown) countdown.textContent = '(attempt ' + retryCount + ')';
   }
 
-  // Start after 3s, then every 8s
+  // Wait 10s before first check (gives Railway time to finish deploying)
+  // then check every 15s — less aggressive than before
   setTimeout(function loop() {
     checkHealth();
-    setTimeout(loop, 8000);
-  }, 3000);
+    setTimeout(loop, 15000);
+  }, 10000);
 })();
 
 // ── MISSING BUTTON FUNCTIONS ─────────────────────────────────
