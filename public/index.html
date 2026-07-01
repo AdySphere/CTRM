@@ -395,6 +395,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
 </head>
 <body>
+<div id="conn-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;
+  background:#b91c1c;color:#fff;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;
+  letter-spacing:.02em;box-shadow:0 2px 8px rgba(0,0,0,.4)">
+  ⚠ Server connection lost — reconnecting automatically…
+  <span id="conn-countdown" style="margin-left:10px;opacity:.8"></span>
+</div>
+
 <div class="app">
 <aside class="sidebar">
   <div class="sb-logo">
@@ -6536,6 +6543,58 @@ function calcSnAdj() {
     el.textContent = snPct > 0 ? '−' + (snPct * 100).toFixed(4) + '%' : '—';
   });
 }
+
+
+// ── CONNECTION HEALTH MONITOR ─────────────────────────────────
+// Pings the server every 8s. Shows a persistent red banner if the server
+// is unreachable (Railway restart, credit exhaustion, etc.) so users see
+// a clear message instead of a broken/cut screen.
+(function() {
+  let isDown = false;
+  let retryCount = 0;
+  let retryTimer = null;
+  const banner = document.getElementById('conn-banner');
+  const countdown = document.getElementById('conn-countdown');
+
+  async function checkHealth() {
+    try {
+      const res = await fetch(API_BASE + '/api/health', {
+        method: 'GET',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000)
+      });
+      if (res.ok) {
+        if (isDown) {
+          // Server came back — hide banner and reload to clear broken state
+          isDown = false;
+          retryCount = 0;
+          if (banner) banner.style.display = 'none';
+          toast('Reconnected', 'Server is back — reloading…', 'success');
+          setTimeout(() => window.location.reload(), 1200);
+        }
+      } else {
+        markDown();
+      }
+    } catch (e) {
+      markDown();
+    }
+  }
+
+  function markDown() {
+    if (!isDown) {
+      isDown = true;
+      if (banner) banner.style.display = '';
+    }
+    retryCount++;
+    if (countdown) countdown.textContent = '(attempt ' + retryCount + ')';
+  }
+
+  // Start after 3s, then every 8s
+  setTimeout(function loop() {
+    checkHealth();
+    setTimeout(loop, 8000);
+  }, 3000);
+})();
 
 // ── MISSING BUTTON FUNCTIONS ─────────────────────────────────
 
