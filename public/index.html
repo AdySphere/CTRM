@@ -504,7 +504,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="sc"><div class="scl">Open</div><div class="scv ta3">2</div></div>
         <div class="sc"><div class="scl">Quoted</div><div class="scv" style="color:var(--purple)">1</div></div>
         <div class="sc"><div class="scl">Converted</div><div class="scv tg">1</div></div>
-        <div class="sc"><div class="scl">Pending Approval</div><div class="scv ta2">1</div></div>
+        <div class="sc"><div class="scl">Pending Approval</div><div class="scv ta2" id="appr-stat-others">—</div></div>
       </div>
       <div class="card">
         <div class="ch"><div class="ct">Enquiry List</div><div class="cs">Click row to open · Confirmed quotation creates the deal</div></div>
@@ -549,7 +549,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <!-- GENERAL -->
         <div id="enq-gen" class="ftc active">
           <div class="fg">
-            <div class="f"><div class="fl">Enquiry No.</div><div class="fc">ENQ-2026-0001</div></div>
+            <div class="f"><div class="fl">Enquiry No.</div><div class="fc" id="enq-detail-no">—</div></div>
             <div class="f"><div class="fl">Enquiry Date</div><input type="date" class="fi" ></div>
             <div class="f"><div class="fl">Validity Date</div><input type="date" class="fi"></div>
             <div class="f"><div class="fl">Status</div><div class="fc ta">OPEN</div></div>
@@ -1464,11 +1464,11 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Contract Qty</div><div class="fc mono">100 MT</div></div>
             <div class="f"><div class="fl">Index % (metal content)</div><div class="fc mono ta">91%</div></div>
             <div class="f"><div class="fl">Derived MT Exposure (Qty × Index %)</div><div class="fc tg fw7">91.00 MT — hedge sizing basis</div></div>
-            <div class="f"><div class="fl">Reference Price (blended/selected)</div><div class="fc mono">USD 9,850/MT (Cash Ask)</div></div>
+            <div class="f"><div class="fl">Reference Price (blended/selected)</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Payable / Recovery %</div><div class="fc mono ta">91%</div></div>
-            <div class="f"><div class="fl">Payable Price (Ref × Payable %)</div><div class="fc mono ta2">USD 8,963.50/MT</div></div>
+            <div class="f"><div class="fl">Payable Price (Ref × Payable %)</div><div class="fc mono ta2">—</div></div>
             <div class="f"><div class="fl">Premium / Discount</div><div class="fc mono">+ USD 0.00/MT</div></div>
-            <div class="f"><div class="fl">Net Provisional Price</div><div class="fc ta fw7" style="font-size:14px">USD 8,963.50/MT</div></div>
+            <div class="f"><div class="fl">Net Provisional Price</div><div class="fc ta fw7" style="font-size:14px">—</div></div>
             <div class="f"><div class="fl">Provisional Contract Value (100 MT)</div><div class="fc tg fw7">—</div></div>
             <div class="f"><div class="fl">Price Status</div><div class="fc ta2">PROVISIONAL — QP window Nov 1–30, 2026</div></div>
           </div>
@@ -1562,7 +1562,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f" id="rollover-rate-field"><div class="fl">Rate (USD/MT/period)</div><input type="number" class="fi" id="rollover-rate-val" value="2" oninput="calcRolloverDerived()"></div>
             <div class="f hidden" id="rollover-fixed-field"><div class="fl">Fixed Total Amount (USD)</div><input type="number" class="fi" id="rollover-fixed-val" placeholder="e.g. 1000" oninput="calcRolloverDerived()"></div>
             <div class="f hidden" id="rollover-pct-field"><div class="fl">Rate (%)</div><input type="number" class="fi" id="rollover-pct-val" placeholder="e.g. 0.5" oninput="calcRolloverDerived()"></div>
-            <div class="f"><div class="fl">Derived Per-MT Rate</div><div class="fc ta fw7" id="rollover-derived-rate">USD 2.00 / MT / period</div></div>
+            <div class="f"><div class="fl">Derived Per-MT Rate</div><div class="fc ta fw7" id="rollover-derived-rate">—</div></div>
           </div>
           <div class="lar"><button class="btn bp bsm" onclick="saveRolloverConfig()">Save Rollover Configuration</button></div>
           <div class="divl">Rollover Events — Append-Only Log</div>
@@ -1797,10 +1797,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Contract Qty</div><div class="fc mono">56.25 MT delivered</div></div>
             <div class="f"><div class="fl">Index % (metal content)</div><div class="fc mono ta">95%</div></div>
             <div class="f"><div class="fl">Derived MT Exposure</div><div class="fc tg fw7">53.44 MT</div></div>
-            <div class="f"><div class="fl">Reference Price</div><div class="fc mono">USD 10,998/MT</div></div>
+            <div class="f"><div class="fl">Reference Price</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Payable %</div><div class="fc mono ta">95%</div></div>
             <div class="f"><div class="fl">Payable Price</div><div class="fc mono ta2"><span id="prov-payable-price">—</span>/MT</div></div>
-            <div class="f"><div class="fl">Net Provisional Price</div><div class="fc ta fw7" style="font-size:14px">USD 10,448.10/MT</div></div>
+            <div class="f"><div class="fl">Net Provisional Price</div><div class="fc ta fw7" style="font-size:14px">—</div></div>
             <div class="f"><div class="fl">Provisional Revenue (56.25 MT)</div><div class="fc tg fw7">—</div></div>
             <div class="f"><div class="fl">Price Status</div><div class="fc ta2">PROVISIONAL — awaiting Longer fixation · QP window Jan 1–31, 2026</div></div>
           </div>
@@ -2023,9 +2023,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft pot" data-tab="po-receipt">Receipt Status</div>
         </div>
         <div id="po-header" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">Purchase Order Number</div><div class="fc mono fw6">PO-20088</div></div>
-          <div class="f"><div class="fl">Source Contract</div><div class="fc ta">PC-2026-001</div></div>
-          <div class="f"><div class="fl">Vendor</div><div class="fc fw6">Glencore AG (V-001)</div></div>
+          <div class="f"><div class="fl">Purchase Order Number</div><div class="fc mono fw6" id="po-detail-no">—</div></div>
+          <div class="f"><div class="fl">Source Contract</div><div class="fc ta" id="po-pc-ref">—</div></div>
+          <div class="f"><div class="fl">Vendor</div><div class="fc fw6" id="pc-vendor">—</div></div>
           <div class="f"><div class="fl">PO Date</div><div class="fc mono">2026-04-18</div></div>
           <div class="f"><div class="fl">Expected Delivery</div><input type="date" class="fi" ></div>
           <div class="f"><div class="fl">PO Currency</div><div class="fc">USD</div></div>
@@ -2102,9 +2102,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft sot" data-tab="so-invoicing">Invoicing Status</div>
         </div>
         <div id="so-header" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">Sales Order Number</div><div class="fc mono fw6">SO-10042</div></div>
-          <div class="f"><div class="fl">Source Contract</div><div class="fc ta">SC-2026-001</div></div>
-          <div class="f"><div class="fl">Customer</div><div class="fc fw6">Tata Metals Ltd (C-001)</div></div>
+          <div class="f"><div class="fl">Sales Order Number</div><div class="fc mono fw6" id="so-detail-no">—</div></div>
+          <div class="f"><div class="fl">Source Contract</div><div class="fc ta" id="so-sc-ref">—</div></div>
+          <div class="f"><div class="fl">Customer</div><div class="fc fw6" id="piv-buyer">—</div></div>
           <div class="f"><div class="fl">SO Date</div><div class="fc mono">2026-03-22</div></div>
           <div class="f"><div class="fl">Requested Delivery</div><input type="date" class="fi" ></div>
           <div class="f"><div class="fl">SO Currency</div><div class="fc">USD</div></div>
@@ -2193,7 +2193,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="lg-route" class="ftc active"><div class="fg">
           <div class="f"><div class="fl">Logistics No.</div><div class="fc">LOG-2026-011</div></div>
-          <div class="f"><div class="fl">Linked Contract</div><div class="fc ta">PC-2026-001</div></div>
+          <div class="f"><div class="fl">Linked Contract</div><div class="fc ta" id="log-pc-ref">—</div></div>
           <div class="f"><div class="fl">Shipment Type</div><select class="fs"><option>BACK-TO-BACK</option><option>CONSOLIDATION</option><option>SPLIT</option><option>DIRECT</option><option>TRIANGULAR</option></select></div>
           <div class="f"><div class="fl">Vessel Name</div><input type="text" class="fi" value="MV Pacific Star"></div>
           <div class="f"><div class="fl">Vessel IMO No.</div><input type="text" class="fi" placeholder="IMO tracking reference"></div>
@@ -2243,7 +2243,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Total Logistics Cost</div><div class="fc ta fw7">—</div></div>
         </div></div>
         <div id="lg-dest" class="ftc hidden"><div class="fg">
-          <div class="f"><div class="fl">Customer / Buyer</div><div class="fc">Tata Metals Ltd</div></div>
+          <div class="f"><div class="fl">Customer / Buyer</div><div class="fc" id="log-counterparty">—</div></div>
           <div class="f"><div class="fl">Delivery Location Type</div><select class="fs"><option>YARD</option><option>WAREHOUSE</option><option>PORT-TERMINAL</option><option>PLANT</option></select></div>
           <div class="f"><div class="fl">Yard / Warehouse Name</div><input type="text" class="fi" placeholder="e.g. Tata Metals Yard — Nhava Sheva"></div>
           <div class="f"><div class="fl">Yard Code</div><input type="text" class="fi" placeholder="e.g. TML-NSA-01"></div>
@@ -2368,9 +2368,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Container No.</div><div class="fc mono">KMTC121</div></div>
           <div class="f"><div class="fl">Seal No.</div><input type="text" class="fi" placeholder="Seal number on container"></div>
           <div class="f"><div class="fl">Container Size</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option></select></div>
-          <div class="f"><div class="fl">Linked Contract</div><div class="fc ta">PC-2026-001</div></div>
+          <div class="f"><div class="fl">Linked Contract</div><div class="fc ta" id="ship-pc-ref">—</div></div>
           <div class="f"><div class="fl">Contract Lot ID</div><div class="fc mono">PC-LOT-001</div></div>
-          <div class="f"><div class="fl">Expected Material</div><div class="fc">Copper MillBerry</div></div>
+          <div class="f"><div class="fl">Expected Material</div><div class="fc" id="enq-commodity-display">—</div></div>
           <div class="f"><div class="fl">BL Quantity (MT)</div><div class="fc mono fw7">24</div></div>
           <div class="f"><div class="fl">Tare Weight (MT)</div><input type="number" class="fi" value="2.2"></div>
           <div class="f"><div class="fl">Gross Weight (MT)</div><input type="number" class="fi" value="26.2"></div>
@@ -2766,7 +2766,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ch"><div class="ct">Formula Pricing Setup</div><div class="cs">Per deal / contract · Source item vs benchmark · Pricing rule drives calculation method · QP start &amp; end dates</div></div>
           <div class="cb"><div class="fg">
             <div class="f"><div class="fl">Deal Reference</div><select class="fs"><option>DEAL123 — Copper MillBerry (Buy)</option><option>DEAL456 — Copper MillBerry (Sell)</option></select></div>
-            <div class="f"><div class="fl">Source Item (physical)</div><div class="fc fw6">Copper MillBerry <span class="mono f10 tdim">CU-MILLBERRY</span></div></div>
+            <div class="f"><div class="fl">Source Item (physical)</div><div class="fc fw6">—<span class="mono f10 tdim">CU-MILLBERRY</span></div></div>
             <div class="f"><div class="fl">Pricing Item / Benchmark</div><select class="fs"><option>LME Copper Cathode Grade A (LME-CU)</option><option>LME Lead (LME-PB)</option><option>LME Tin (LME-SN)</option><option>Brent ICE (BRENT)</option><option>Platts Dubai (PLATTS-DUBAI)</option></select></div>
             <div class="f"><div class="fl">Exchange</div><select class="fs"><option>LME</option><option>CME</option><option>ICE</option></select></div>
             <div class="f"><div class="fl">Reporting Agency</div><select class="fs"><option>LME (same as exchange)</option><option>Platts (separate reporting agency)</option><option>Argus</option><option>Bloomberg</option></select></div>
@@ -2807,7 +2807,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Pricing Option</div><select class="fs"><option>SUPPLIER (supplier fixes date)</option><option>LONGER (buyer fixes date)</option><option>N/A (average)</option></select></div>
             <div class="f"><div class="fl">Reference Price (from source master)</div><div class="fc ta fw7" id="ref-price-display">9,850 (Cash Ask)</div></div>
             <div class="f"><div class="fl">Derived MT Exposure (Qty × Index %)</div><div class="fc tg fw7">91.00 MT — hedge sizing basis</div></div>
-            <div class="f"><div class="fl">Net Provisional Price (Ref × Payable % ± Prem/Disc)</div><div class="fc ta fw7" id="prov-price-display">USD 8,963.50 / MT</div></div>
+            <div class="f"><div class="fl">Net Provisional Price (Ref × Payable % ± Prem/Disc)</div><div class="fc ta fw7" id="prov-price-display">—</div></div>
             <div class="f"><div class="fl">Running QP Average</div><div class="fc ta">9,441 (10/22 days)</div></div>
             <div class="f"><div class="fl">FX Rate</div><input type="number" class="fi" value="1.000" step="0.001"></div>
             <div class="f"><div class="fl">Invoice Currency</div><select class="fs"><option>USD</option><option>EUR</option></select></div>
@@ -3162,10 +3162,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
       <div id="prov-inv-empty" class="ban bi" style="display:none"><span>ℹ</span>Select a deal above to view its provisional invoice, or click + Create Invoice to generate one.</div>
       <div class="sr">
-        <div class="sc"><div class="scl">Draft</div><div class="scv tdim">1</div></div>
-        <div class="sc"><div class="scl">Sent</div><div class="scv ta2">1</div></div>
-        <div class="sc"><div class="scl">Paid (90%)</div><div class="scv tg">0</div></div>
-        <div class="sc"><div class="scl">Total Value</div><div class="scv ta">—</div></div>
+        <div class="sc"><div class="scl">Draft</div><div class="scv tdim" id="piv-stat-draft">—</div></div>
+        <div class="sc"><div class="scl">Sent</div><div class="scv ta2" id="piv-stat-sent">—</div></div>
+        <div class="sc"><div class="scl">Paid (90%)</div><div class="scv tg" id="piv-stat-paid">—</div></div>
+        <div class="sc"><div class="scl">Total Value</div><div class="scv ta" id="piv-stat-total">—</div></div>
       </div>
       <div class="card">
         <div class="ch"><div class="ct">Provisional Invoice — PINV-2026-001</div><div class="cs">SC-2026-001 · Tata Metals Ltd · 56.25 MT · Provisional price $10,450/MT</div></div>
@@ -3176,13 +3176,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft pivt" data-tab="piv-payment">Payment Details</div>
         </div>
         <div id="piv-header" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">Invoice No.</div><div class="fc mono fw7">PINV-2026-001</div></div>
+          <div class="f"><div class="fl">Invoice No.</div><div class="fc mono fw7" id="piv-invoice-no">—</div></div>
           <div class="f"><div class="fl">Invoice Type</div><div class="fc ta2 fw6">PROVISIONAL</div></div>
           <div class="f"><div class="fl">Invoice Date</div><input type="date" class="fi" ></div>
-          <div class="f"><div class="fl">Deal No.</div><div class="fc ta">DEAL456</div></div>
-          <div class="f"><div class="fl">Sales Contract</div><div class="fc">SC-2026-001</div></div>
-          <div class="f"><div class="fl">Sales Order</div><div class="fc mono">SO-10042</div></div>
-          <div class="f"><div class="fl">Bill To (Buyer)</div><div class="fc fw6">Tata Metals Ltd</div></div>
+          <div class="f"><div class="fl">Deal No.</div><div class="fc ta" id="piv-deal-no">—</div></div>
+          <div class="f"><div class="fl">Sales Contract</div><div class="fc" id="piv-sc-ref">—</div></div>
+          <div class="f"><div class="fl">Sales Order</div><div class="fc mono" id="piv-so-ref">—</div></div>
+          <div class="f"><div class="fl">Bill To (Buyer)</div><div class="fc fw6" id="fiv-buyer">—</div></div>
           <div class="f"><div class="fl">Buyer VAT / Tax Ref</div><input type="text" class="fi" placeholder="27AAACT3518Q1ZD"></div>
           <div class="f"><div class="fl">Seller (Us)</div><div class="fc">Trading Company DMCC</div></div>
           <div class="f"><div class="fl">BL Date (Payment Anchor)</div><div class="fc mono ta2">2026-01-15</div></div>
@@ -3256,13 +3256,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft fivt" data-tab="fiv-payment">Balance Payment</div>
         </div>
         <div id="fiv-header" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">Invoice No.</div><div class="fc mono fw7">FINV-2026-001</div></div>
+          <div class="f"><div class="fl">Invoice No.</div><div class="fc mono fw7" id="fiv-invoice-no">—</div></div>
           <div class="f"><div class="fl">Invoice Type</div><div class="fc tg fw6">FINAL</div></div>
           <div class="f"><div class="fl">Invoice Date</div><input type="date" class="fi" ></div>
-          <div class="f"><div class="fl">Linked Provisional Invoice</div><div class="fc ta">PINV-2026-001</div></div>
+          <div class="f"><div class="fl">Linked Provisional Invoice</div><div class="fc ta" id="fiv-prov-ref">—</div></div>
           <div class="f"><div class="fl">QP Window</div><div class="fc">May 1–31, 2026 · 22/22 days closed</div></div>
           <div class="f"><div class="fl">Final QP Average Price</div><div class="fc tg fw7">USD <span id="fin-final-price">—</span>/MT (sell leg)</div></div>
-          <div class="f"><div class="fl">Bill To</div><div class="fc fw6">Tata Metals Ltd</div></div>
+          <div class="f"><div class="fl">Bill To</div><div class="fc fw6">—</div></div>
           <div class="f"><div class="fl">Payment Due (balance 10%)</div><div class="fc mono ta fw7">2026-06-12 (5 WD after final invoice)</div></div>
           <div class="f"><div class="fl">Seller's Bank IBAN</div><input type="text" class="fi" placeholder="Full bank details required on final invoice"></div>
           <div class="f"><div class="fl">SWIFT / BIC</div><input type="text" class="fi" placeholder="SWIFT code"></div>
@@ -3311,9 +3311,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       <div class="ph"><div class="ph-l"><div class="pt">Approval Workflow</div><div class="ps">Deal approvals · Contract sign-off · Configurable tiers · Delegated authority limits · Full audit trail</div></div>
         <div class="ph-r"><div class="br-row g7"><span class="badge bd-ship">3 Pending</span><button class="btn bp" onclick="approveSelected()">Approve Selected</button></div></div></div>
       <div class="sr">
-        <div class="sc"><div class="scl">Pending My Action</div><div class="scv td">2</div></div>
+        <div class="sc"><div class="scl">Pending My Action</div><div class="scv td" id="appr-stat-mine">—</div></div>
         <div class="sc"><div class="scl">Pending Others</div><div class="scv ta2">1</div></div>
-        <div class="sc"><div class="scl">Approved Today</div><div class="scv tg">4</div></div>
+        <div class="sc"><div class="scl">Approved Today</div><div class="scv tg" id="appr-stat-today">—</div></div>
         <div class="sc"><div class="scl">Rejected</div><div class="scv tdim">0</div></div>
       </div>
       <div class="card mb14">
@@ -9346,7 +9346,7 @@ async function loadAllocationTable() {
         <div class="fg">
           <div class="f"><div class="fl">Pricing Template</div><div class="fc mono ta2" id="bld-template">LME-CU-QP-M1</div></div>
           <div class="f"><div class="fl">QP Period</div><div class="fc" id="bld-qp">M+1 after BL</div></div>
-          <div class="f"><div class="fl">Provisional Price</div><div class="fc mono" id="bld-prov-price">USD 9,360/MT</div></div>
+          <div class="f"><div class="fl">Provisional Price</div><div class="fc mono" id="bld-prov-price">—</div></div>
           <div class="f"><div class="fl">Provisional Cost</div><div class="fc mono ta2 fw7" id="bld-prov-cost">—</div></div>
         </div>
       </div>
