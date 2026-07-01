@@ -2583,7 +2583,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="cbf"><table class="dt">
             <thead><tr><th>MRN Lot</th><th>GRN Ref</th><th>Material</th><th>Gross Qty</th><th>Certificate</th><th>Agency</th><th>Assay Date</th><th>QP Anchor Used</th><th>Acceptance</th></tr></thead>
             <tbody>
-              <tr style="cursor:pointer" onclick="showAssayEntry()"><td class="mono ta fw6">MRN1-01</td><td class="mono">GRN-001</td><td class="f11 tg">Copper MillBerry</td><td class="mono">18 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">BL_DATE</td><td><span class="badge bd-ship">PENDING</span></td></tr>
+              <tr style="cursor:pointer" onclick="showAssayEntry('MRN1-01')"><td class="mono ta fw6">MRN1-01</td><td class="mono">GRN-001</td><td class="f11 tg">Copper MillBerry</td><td class="mono">18 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">BL_DATE</td><td><span class="badge bd-ship">PENDING</span></td></tr>
               <tr style="cursor:pointer;background:rgba(240,165,0,.04)"><td class="mono ta fw6">MRN1-02</td><td class="mono">GRN-002</td><td class="f11 ta2">Copper Berry</td><td class="mono">6 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">BL_DATE</td><td><span class="badge bd-ship">PENDING</span></td></tr>
               <tr style="cursor:pointer"><td class="mono ta fw6">MRN2-01</td><td class="mono">GRN-003</td><td class="f11 tg">Copper MillBerry</td><td class="mono">18.75 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">BL_DATE</td><td><span class="badge bd-ship">PENDING</span></td></tr>
             </tbody>
@@ -6545,6 +6545,130 @@ async function loadQPDealOptions() {
   } catch(e) {
     sel.innerHTML = '<option value="">— Error loading contracts —</option>';
   }
+}
+
+
+// ── MISSING BUTTON FUNCTIONS ─────────────────────────────────
+
+// Provisional Receipt — add a new receipt line row
+function addPRLine() {
+  const tbody = document.getElementById('pr-lines-tbody');
+  if (!tbody) return;
+  const rowNum = tbody.querySelectorAll('tr').length + 1;
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td class="mono f10">' + rowNum + '</td>'
+    + '<td><input type="text" class="fi" style="width:80px;font-size:10px" placeholder="LOT-00' + rowNum + '"></td>'
+    + '<td><input type="text" class="fi" style="width:80px;font-size:10px" placeholder="GRN ref"></td>'
+    + '<td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="Item code (expected)"></td>'
+    + '<td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="Item code (actual)"></td>'
+    + '<td><input type="number" class="fi" style="width:70px;font-size:10px" step="0.001" placeholder="MT"></td>'
+    + '<td><input type="number" class="fi" style="width:70px;font-size:10px" step="0.001" placeholder="MT"></td>'
+    + '<td><input type="number" class="fi" style="width:70px;font-size:10px" step="0.001" placeholder="MT"></td>'
+    + '<td><input type="number" class="fi" style="width:70px;font-size:10px" step="0.001" placeholder="MT"></td>'
+    + '<td><input type="number" class="fi" style="width:70px;font-size:10px" step="0.001" placeholder="MT"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>PENDING_QC</option><option>ON_HOLD</option><option>ACCEPTED</option><option>REJECTED</option></select></td>'
+    + '<td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="Grade / profile"></td>'
+    + '<td><input type="text" class="fi" style="font-size:10px" placeholder="Remarks"></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+  tbody.appendChild(tr);
+}
+
+// Provisional Receipt — add a QC element row
+function addPRQCLine() {
+  const tbody = document.getElementById('pr-qc-tbody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="fi" style="width:40px;font-size:10px" placeholder="e.g. Cu"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>MAIN</option><option>PAYABLE</option><option>DEDUCTION</option><option>PENALTY</option></select></td>'
+    + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.0001" placeholder="Min"></td>'
+    + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.0001" placeholder="Max"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>%</option><option>g/t</option><option>ppm</option><option>kg/t</option></select></td>'
+    + '<td><input type="number" class="fi" style="width:65px;font-size:10px" step="0.0001" placeholder="Actual"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>IN-SPEC</option><option>OUT-SPEC</option><option>PENDING</option></select></td>'
+    + '<td><input type="number" class="fi" style="width:65px;font-size:10px" step="0.001" placeholder="MT"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>ACCEPTED</option><option>REJECTED</option><option>PENDING</option></select></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+  tbody.appendChild(tr);
+}
+
+// Shipment/QC — add assay element row
+function addAssayElement() {
+  const tbody = document.getElementById('assay-elements-body');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="fi" style="width:40px;font-size:10px" placeholder="e.g. Ag"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>MAIN</option><option>PAYABLE</option><option>DEDUCTION</option><option>PENALTY</option></select></td>'
+    + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.0001" placeholder="Min"></td>'
+    + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.0001" placeholder="Max"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>%</option><option>g/t</option><option>ppm</option><option>kg/t</option></select></td>'
+    + '<td><input type="number" class="fi" style="width:65px;font-size:10px" step="0.0001" oninput="recalcPayable()" placeholder="Actual"></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>IN-SPEC</option><option>OUT-SPEC</option><option>PENDING</option></select></td>'
+    + '<td><select class="fs" style="font-size:9px"><option>ACCEPTED</option><option>REJECTED</option><option>PENDING</option></select></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+  tbody.appendChild(tr);
+}
+
+// Shipment/QC — show assay entry detail modal for a clicked QC record row
+function showAssayEntry(mrnRef) {
+  mrnRef = mrnRef || 'MRN1-01';
+  // Reuse the assay entry card already visible on the page by scrolling to it and highlighting
+  const assayCard = document.getElementById('assay-entry-card') || document.querySelector('#page-shipment .card:last-of-type');
+  if (assayCard) {
+    assayCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    assayCard.style.outline = '2px solid var(--accent)';
+    setTimeout(function() { assayCard.style.outline = ''; }, 2000);
+    const title = assayCard.querySelector('.ct');
+    if (title) title.textContent = 'Assay Entry — ' + mrnRef;
+  }
+  toast('Assay Entry', 'Editing assay for ' + mrnRef, 'info');
+}
+
+// Quotation — load standard adjustment lines from the adjustment codes master
+async function loadTemplateAdj() {
+  const tbody = document.getElementById('sell-pen-body');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API_BASE + '/api/adjustment-codes');
+    const data = await res.json();
+    const codes = (data.data || []).filter(function(c){ return c.is_active; });
+    if (!codes.length) { toast('No Templates', 'No active adjustment codes found in master', 'warning'); return; }
+    const existing = tbody.querySelectorAll('tr[data-adj-code]').length;
+    let added = 0;
+    codes.slice(0, 5).forEach(function(c, i) {
+      const tr = document.createElement('tr');
+      tr.dataset.adjCode = c.code;
+      tr.innerHTML =
+        '<td class="mono f10">' + (existing + i + 1) + '</td>'
+        + '<td class="mono f10 fw6">' + c.code + '</td>'
+        + '<td class="f10">' + (c.calc_type || '—') + '</td>'
+        + '<td class="f10">' + (c.default_trigger_event || '—') + '</td>'
+        + '<td><input type="number" class="fi" style="width:70px;font-size:10px" step="0.0001" placeholder="Rate"></td>'
+        + '<td class="f10">' + (c.calc_type === 'PCT_OF_VALUE' ? '%' : c.calc_type === 'PER_UNIT' ? '/MT' : 'Lump') + '</td>'
+        + '<td><select class="fs" style="font-size:9px"><option value="DEDUCT">DEDUCT</option><option value="ADD">ADD</option></select></td>'
+        + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+      tbody.appendChild(tr);
+      added++;
+    });
+    toast('Template Loaded', added + ' adjustment lines loaded from master', 'success');
+  } catch(e) { toast('Error', 'Could not load adjustment codes: ' + e.message, 'error'); }
+}
+
+// Pricing setup — add a Type B slab row
+function addTypeBSlab() {
+  const tbody = document.getElementById('type-b-tbody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="fi" style="width:40px;font-size:10px" placeholder="e.g. Cu"></td>'
+    + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.01" placeholder="From %"></td>'
+    + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.01" placeholder="To %"></td>'
+    + '<td class="mono f10">—</td>'
+    + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.01" placeholder="Formula %"></td>'
+    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+  tbody.appendChild(tr);
 }
 
 // ── WIRE NAV TO LOAD DATA ────────────────────────────────────
