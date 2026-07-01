@@ -1156,7 +1156,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
                 <div class="f"><div class="fl">Customer</div><div class="fv">Tata Metals Ltd</div></div>
                 <div class="f"><div class="fl">BC Customer No.</div><div class="fv mono">C-001</div></div>
                 <div class="f"><div class="fl">Quantity</div><div class="fv mono">500 MT</div></div>
-                <div class="f"><div class="fl">Incoterms</div><div class="fv">CIF · Nhava Sheva</div></div>
+                <div class="f"><div class="fl">Incoterms</div><div class="fv">—</div></div>
                 <div class="f"><div class="fl">BC Sales Order</div><div class="fv mono ta2">SO-10042</div></div>
                 <div class="f"><div class="fl">Shipment Window</div><div class="fv mono">Apr 15 → May 15, 2026</div></div>
               </div>
@@ -1195,7 +1195,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <table class="lt">
                 <thead><tr><th>Leg</th><th>Vendor</th><th>Commodity</th><th>Qty</th><th>Template</th><th>Prov. Cost</th><th>Status</th><th></th></tr></thead>
                 <tbody>
-                  <tr><td class="mono f11 ta3">BL-01</td><td class="f11">Glencore AG</td><td class="f11">CU-CATHODE-A</td><td class="mono f11">500 MT</td><td class="mono f11">LME-CU-QP-M1</td><td class="mono f11 ta2">—</td><td><span class="badge bd-act">CONTRACTED</span></td><td><button class="btn bxs bg" onclick="openBuyLegDetail()">Open</button></td></tr>
+                  <tr><td class="mono f10">—</td><td class="f11">Glencore AG</td><td class="f11">CU-CATHODE-A</td><td class="mono f11">500 MT</td><td class="mono f11">LME-CU-QP-M1</td><td class="mono f11 ta2">—</td><td><span class="badge bd-act">CONTRACTED</span></td><td><button class="btn bxs bg" onclick="openBuyLegDetail()">Open</button></td></tr>
                 </tbody>
               </table>
               <div class="div mt12"></div>
@@ -1254,7 +1254,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div class="lcb" id="pcd-lifecycle">
           <div class="lcs" id="pcd-lcs-draft">DRAFT</div><div class="lcs" id="pcd-lcs-review">UNDER REVIEW</div><div class="lcs" id="pcd-lcs-contracted">CONTRACTED</div>
-          <div class="lcs fut">PARTIALLY SHIPPED</div><div class="lcs fut">FULLY SHIPPED</div><div class="lcs fut">CLOSED</div>
+          <div class="lcs fut">—</div><div class="lcs fut">FULLY SHIPPED</div><div class="lcs fut">CLOSED</div>
         </div>
         <div class="fts">
           <div class="ft active pct" data-tab="pc-gen">General</div>
@@ -1401,7 +1401,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div>
               <div class="divl">QP Window Dates</div>
               <div class="fg">
-                <div class="f"><div class="fl">Shipment Month</div><div class="fc mono">November 2026</div></div>
+                <div class="f"><div class="fl">Shipment Month</div><div class="fc mono">—</div></div>
                 <div class="f"><div class="fl">QP Rule</div><div class="fc">—</div></div>
                 <div class="f"><div class="fl">QP Start Date <span class="req">*</span></div><input type="date" class="fi" ></div>
                 <div class="f"><div class="fl">QP End Date <span class="req">*</span></div><input type="date" class="fi" ></div>
@@ -1617,7 +1617,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div class="lcb">
           <div class="lcs done" id="scd-lcs-draft">DRAFT</div><div class="lcs done" id="scd-lcs-review">UNDER REVIEW</div><div class="lcs cur" id="scd-lcs-contracted">CONTRACTED</div>
-          <div class="lcs fut">PARTIALLY SHIPPED</div><div class="lcs fut">FULLY SHIPPED</div><div class="lcs fut">CLOSED</div>
+          <div class="lcs fut">—</div><div class="lcs fut">FULLY SHIPPED</div><div class="lcs fut">CLOSED</div>
         </div>
         <div class="fts">
           <div class="ft active sct" data-tab="sc-gen">General</div>
@@ -1983,7 +1983,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </table></div>
       </div>
       <div class="card mt14" id="po-detail-card" style="display:none">
-        <div class="ch"><div class="ct">PO-20088 — Purchase Order Detail</div><div class="cs">PC-2026-001 · Glencore AG</div>
+        <div class="ch"><div class="ct">PO-20088 — Purchase Order Detail</div><div class="cs">Select a contract to view details</div>
           <button class="btn bp bsm" style="margin-left:auto" onclick="erpStub('ERP Sync')">Sync Amendments to BC</button>
         </div>
         <div class="fts">
@@ -2018,18 +2018,18 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div id="po-amendments" class="ftc hidden">
           <table class="dt"><thead><tr><th>Amend No.</th><th>PO Line</th><th>Type</th><th>Original</th><th>Amended</th><th>Reason</th><th>Raised By</th><th>Date</th><th>ERP Sync</th></tr></thead>
           <tbody>
-            <tr><td class="mono f10 ta">AMD-001</td><td class="mono f10">1b</td><td class="f11">Item Code Change</td><td class="f10">CU-MILLBERRY (91%)</td><td class="f10 td fw6">CU-BERRY (80%)</td><td class="f10">Yard segregation — GRN-002</td><td class="f10">Commercial</td><td class="mono f10">2026-05-01</td><td><span class="badge bd-ship">PENDING</span></td></tr>
-            <tr><td class="mono f10 ta">AMD-002</td><td class="mono f10">2b</td><td class="f11">Item Code Change</td><td class="f10">CU-MILLBERRY (91%)</td><td class="f10 td fw6">CU-BERRY (80%)</td><td class="f10">Yard segregation — GRN-004</td><td class="f10">Commercial</td><td class="mono f10">2026-05-02</td><td><span class="badge bd-ship">PENDING</span></td></tr>
-            <tr><td class="mono f10 ta">AMD-003</td><td class="mono f10">3b</td><td class="f11">Item Code Change</td><td class="f10">CU-MILLBERRY (91%)</td><td class="f10 td fw6">CU-BERRY (80%)</td><td class="f10">Yard segregation — GRN-006</td><td class="f10">Commercial</td><td class="mono f10">2026-05-03</td><td><span class="badge bd-ship">PENDING</span></td></tr>
+            <tr><td class="mono f10">—</td><td class="mono f10">1b</td><td class="f11">Item Code Change</td><td class="f10">CU-MILLBERRY (91%)</td><td class="f10 td fw6">CU-BERRY (80%)</td><td class="f10">Yard segregation — GRN-002</td><td class="f10">Commercial</td><td class="mono f10">2026-05-01</td><td><span class="badge bd-ship">PENDING</span></td></tr>
+            <tr><td class="mono f10">—</td><td class="mono f10">2b</td><td class="f11">Item Code Change</td><td class="f10">CU-MILLBERRY (91%)</td><td class="f10 td fw6">CU-BERRY (80%)</td><td class="f10">Yard segregation — GRN-004</td><td class="f10">Commercial</td><td class="mono f10">2026-05-02</td><td><span class="badge bd-ship">PENDING</span></td></tr>
+            <tr><td class="mono f10">—</td><td class="mono f10">3b</td><td class="f11">Item Code Change</td><td class="f10">CU-MILLBERRY (91%)</td><td class="f10 td fw6">CU-BERRY (80%)</td><td class="f10">Yard segregation — GRN-006</td><td class="f10">Commercial</td><td class="mono f10">2026-05-03</td><td><span class="badge bd-ship">PENDING</span></td></tr>
           </tbody></table>
         </div>
         <div id="po-receipt" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Total PO Qty</div><div class="fc mono">—</div></div>
           <div class="f"><div class="fl">Received (GRN posted)</div><div class="fc mono tdim">—</div></div>
           <div class="f"><div class="fl">Outstanding</div><div class="fc mono ta2">—</div></div>
-          <div class="f"><div class="fl">Provisional Receipt Done</div><div class="fc tg">YES — PR-001, PR-002, PR-003</div></div>
-          <div class="f"><div class="fl">GRN Status</div><div class="fc ta2">6 GRN drafts — 3 with discrepancy — awaiting BC post</div></div>
-          <div class="f"><div class="fl">Next Action</div><div class="fc td fw6">Post GRN → PO amendments auto-apply in BC</div></div>
+          <div class="f"><div class="fl">Provisional Receipt Done</div><div class="fc tg">—</div></div>
+          <div class="f"><div class="fl">GRN Status</div><div class="fc ta2">—</div></div>
+          <div class="f"><div class="fl">Next Action</div><div class="fc td fw6">—</div></div>
         </div></div>
       </div>
     </div>
@@ -2055,7 +2055,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <td class="mono ta fw6">SO-10042</td><td class="mono">SC-2026-001</td><td class="f11">Tata Metals Ltd</td>
               <td class="mono f10">2026-03-22</td><td class="f11">Copper MillBerry</td>
               <td class="mono">100</td><td class="mono ta2">56.25 (partial)</td><td class="mono">43.75</td>
-              <td class="mono tdim">—</td><td><span class="badge bd-ship">PARTIALLY SHIPPED</span></td>
+              <td class="mono tdim">—</td><td><span class="badge bd-ship">—</span></td>
               <td><button class="btn bxs bg" onclick="event.stopPropagation();openSODetail()">Open</button></td>
             </tr>
           </tbody>
@@ -2078,15 +2078,15 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">SO Date</div><div class="fc mono">2026-03-22</div></div>
           <div class="f"><div class="fl">Requested Delivery</div><input type="date" class="fi" ></div>
           <div class="f"><div class="fl">SO Currency</div><div class="fc">USD</div></div>
-          <div class="f"><div class="fl">SO Status</div><div class="fc ta2">PARTIALLY SHIPPED</div></div>
-          <div class="f"><div class="fl">Incoterms</div><div class="fc">CIF · Nhava Sheva</div></div>
+          <div class="f"><div class="fl">SO Status</div><div class="fc ta2">—</div></div>
+          <div class="f"><div class="fl">Incoterms</div><div class="fc">—</div></div>
           <div class="f"><div class="fl">Payment Terms</div><div class="fc">90% provisional 5 WD after BL · 10% on final assay</div></div>
           <div class="f"><div class="fl">Provisional Invoice Value</div><div class="fc tg fw7">USD <span id="prov-gross-amount">—</span> (56.25 MT × $10,450)</div></div>
         </div></div>
         <div id="so-lines" class="ftc hidden">
           <table class="dt"><thead><tr><th>SO Line</th><th>Item</th><th>Description</th><th>SO Qty</th><th>Shipped</th><th>Outstanding</th><th>Unit Price</th><th>Line Amount</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td class="mono f10">1</td><td class="mono f10">CU-MILLBERRY</td><td class="f11">Copper MillBerry — 95% LME Highest of 4</td><td class="mono">100</td><td class="mono ta2">56.25</td><td class="mono">43.75</td><td class="mono f10 tdim">Provisional $10,450</td><td class="mono tg fw6">—</td><td><span class="badge bd-ship">PART SHIPPED</span></td></tr>
+            <tr><td class="mono f10">1</td><td class="mono f10">—</td><td class="f11">Copper MillBerry — 95% LME Highest of 4</td><td class="mono">100</td><td class="mono ta2">56.25</td><td class="mono">43.75</td><td class="mono f10 tdim">Provisional $10,450</td><td class="mono tg fw6">—</td><td><span class="badge bd-ship">PART SHIPPED</span></td></tr>
           </tbody></table>
         </div>
         <div id="so-shipments" class="ftc hidden">
@@ -2100,18 +2100,18 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">SC Quantity</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Delivered (MillBerry only)</div><div class="fc mono tg">—</div></div>
             <div class="f"><div class="fl">Outstanding</div><div class="fc mono ta2">—</div></div>
-            <div class="f"><div class="fl">Reason for Short Delivery</div><div class="fc td">Berry received vs MillBerry contracted — Berry excluded from outbound to customer</div></div>
+            <div class="f"><div class="fl">Reason for Short Delivery</div><div class="fc td">—</div></div>
           </div>
         </div>
         <div id="so-invoicing" class="ftc hidden"><div class="fg">
-          <div class="f"><div class="fl">Provisional Invoice Status</div><div class="fc ta2">READY TO RAISE — 56.25 MT shipped</div></div>
+          <div class="f"><div class="fl">Provisional Invoice Status</div><div class="fc ta2">—</div></div>
           <div class="f"><div class="fl">Provisional Invoice Amount</div><div class="fc tg fw7">—</div></div>
-          <div class="f"><div class="fl">90% Payment Trigger</div><div class="fc">5 WD after BL Date (2026-01-15)</div></div>
+          <div class="f"><div class="fl">90% Payment Trigger</div><div class="fc">—</div></div>
           <div class="f"><div class="fl">90% Payment Due</div><div class="fc mono ta"><span id="prov-payment-due">—</span></div></div>
           <div class="f"><div class="fl">90% Amount Due</div><div class="fc tg fw7">—</div></div>
-          <div class="f"><div class="fl">Final Invoice Status</div><div class="fc tdim">Pending — QP window + final assay required</div></div>
-          <div class="f"><div class="fl">QP Window</div><div class="fc ta2">OPEN — 30 days from January shipment month</div></div>
-          <div class="f"><div class="fl">BC Invoice Status</div><div class="fc tdim">NOT POSTED — pending provisional invoice raise</div></div>
+          <div class="f"><div class="fl">Final Invoice Status</div><div class="fc tdim">—</div></div>
+          <div class="f"><div class="fl">QP Window</div><div class="fc ta2">—</div></div>
+          <div class="f"><div class="fl">BC Invoice Status</div><div class="fc tdim">—</div></div>
           </div>
           <div class="br-row right mt12">
             <button class="btn bs2" onclick="toast('Pro Forma','Pro forma invoice created · Go to Invoicing','success')">Create Pro Forma Invoice</button>
@@ -2135,7 +2135,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <tr style="cursor:pointer" onclick="openLogDetail()">
               <td class="mono ta">—</td><td class="mono">PC-2026-001</td>
               <td><span class="badge bd-act" style="font-size:8px">BACK-TO-BACK</span></td>
-              <td class="f11">—</td><td class="f11">Shanghai, CN</td><td class="f11">Nhava Sheva, IN</td>
+              <td class="f11">—</td><td class="f11">Shanghai, CN</td><td class="f11">—</td>
               <td class="f10">Asia-Pacific</td><td class="mono">2026-04-15</td><td class="mono">2026-05-02</td>
               <td class="mono ta2">2026-04-18</td><td class="mono">22.50</td>
               <td><span class="badge bd-ship">IN-TRANSIT</span></td>
@@ -2144,7 +2144,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <tr style="cursor:pointer">
               <td class="mono ta">LOG-2026-012</td><td class="mono">PC-2026-002</td>
               <td><span class="badge bd-rfq" style="font-size:8px">CONSOLIDATION</span></td>
-              <td class="f11">TBC</td><td class="f11">Hamburg, DE</td><td class="f11">Nhava Sheva, IN</td>
+              <td class="f11">TBC</td><td class="f11">Hamburg, DE</td><td class="f11">—</td>
               <td class="f10">Europe</td><td class="mono">2026-04-25</td><td class="mono">2026-05-18</td>
               <td class="mono tdim">—</td><td class="mono">28.00</td>
               <td><span class="badge bd-open">BOOKING-CONF</span></td>
@@ -2196,7 +2196,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Anchor Date Used</div><div class="fc ta" id="qp-anchor-date">2026-04-18</div></div>
             <div class="f"><div class="fl">QP Window Start (M+1)</div><div class="fc ta" id="qp-win-start">2026-05-01</div></div>
             <div class="f"><div class="fl">QP Window End</div><div class="fc ta" id="qp-win-end">2026-05-31</div></div>
-            <div class="f"><div class="fl">QP Window Status</div><div class="fc ta2">IN-PROGRESS · 10/22 days</div></div>
+            <div class="f"><div class="fl">QP Window Status</div><div class="fc ta2">—</div></div>
             <div class="f"><div class="fl">Payment Trigger (AGAINST-BL)</div><div class="fc">Due: 30 days after BL = <strong>2026-05-18</strong></div></div>
           </div>
         </div>
@@ -2284,9 +2284,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">BL Quantity (MT)</div><div class="fc mono fw7">24</div></div>
           <div class="f"><div class="fl">Tare Weight (MT)</div><input type="number" class="fi" value="2.2"></div>
           <div class="f"><div class="fl">Gross Weight (MT)</div><input type="number" class="fi" value="26.2"></div>
-          <div class="f"><div class="fl">Packing Type</div><div class="fc">Bags · 25kg per ingot · ~1MT bundles</div></div>
-          <div class="f"><div class="fl">Port of Loading (POL)</div><div class="fc">Dar es Salaam, TZ</div></div>
-          <div class="f"><div class="fl">Port of Discharge (POD)</div><div class="fc">Nhava Sheva, IN</div></div>
+          <div class="f"><div class="fl">Packing Type</div><div class="fc">—</div></div>
+          <div class="f"><div class="fl">Port of Loading (POL)</div><div class="fc">—</div></div>
+          <div class="f"><div class="fl">Port of Discharge (POD)</div><div class="fc">—</div></div>
           <div class="f"><div class="fl">Vessel Name</div><div class="fc">—</div></div>
           <div class="f"><div class="fl">Shipping Line</div><input type="text" class="fi" placeholder="e.g. Maersk, CMA CGM"></div>
           <div class="f"><div class="fl">Voyage No.</div><input type="text" class="fi" placeholder="Voyage reference"></div>
@@ -2296,7 +2296,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">ATD (Actual Departure)</div><input type="date" class="fi" ></div>
           <div class="f"><div class="fl">ETA (Est. Arrival)</div><input type="date" class="fi" ></div>
           <div class="f"><div class="fl">Receipt Status</div><div class="fc ta2">—</div></div>
-          <div class="f"><div class="fl">QP Window (from BL Date)</div><div class="fc ta">May 1–31, 2026 (M+1 after BL)</div></div>
+          <div class="f"><div class="fl">QP Window (from BL Date)</div><div class="fc ta">—</div></div>
         </div></div>
         <div id="st-docs" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>Document checklist auto-generated from contract terms. As per Sample 1 contract: BL, Provisional Invoice, Packing List, Certificate of Origin, Insurance Policy required for provisional payment trigger.</div>
@@ -2414,15 +2414,15 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <table class="lt">
             <thead><tr><th>Lot ID</th><th>expected_item_code</th><th>actual_item_code</th><th>lot_status</th><th>accepted_quantity</th><th>rejected_quantity</th><th>inventory_status</th><th>Commercial Decision</th></tr></thead>
             <tbody>
-              <tr><td class="mono f10 ta fw6">MRN1</td><td class="f10">CU-MILLBERRY</td><td class="f10 tg">CU-MILLBERRY</td><td><span class="badge bd-confirmed" style="font-size:8px">IN_TRANSIT</span></td><td class="mono f10">24</td><td class="mono f10 tdim">0</td><td><span class="badge bd-ship">PENDING_QC</span></td><td class="f10 tdim">—</td></tr>
-              <tr style="background:rgba(240,165,0,.04)"><td class="mono f10 ta fw6">MRN1-02</td><td class="f10">CU-MILLBERRY</td><td class="f10 td fw6">CU-BERRY</td><td><span class="badge bd-danger" style="font-size:8px">DISCREPANCY</span></td><td class="mono f10 ta2">6</td><td class="mono f10 tdim">0</td><td><span class="badge bd-ship">ON_HOLD</span></td><td><select class="fs" style="font-size:9px"><option>PENDING DECISION</option><option>ACCEPT AT BERRY PRICE</option><option>CLAIM AGAINST SUPPLIER</option><option>REJECT AND RETURN</option></select></td></tr>
+              <tr><td class="mono f10 ta fw6">MRN1</td><td class="f10">—</td><td class="f10 tg">—</td><td><span class="badge bd-confirmed" style="font-size:8px">IN_TRANSIT</span></td><td class="mono f10">24</td><td class="mono f10 tdim">0</td><td><span class="badge bd-ship">PENDING_QC</span></td><td class="f10 tdim">—</td></tr>
+              <tr style="background:rgba(240,165,0,.04)"><td class="mono f10 ta fw6">MRN1-02</td><td class="f10">—</td><td class="f10 td fw6">CU-BERRY</td><td><span class="badge bd-danger" style="font-size:8px">DISCREPANCY</span></td><td class="mono f10 ta2">6</td><td class="mono f10 tdim">0</td><td><span class="badge bd-ship">ON_HOLD</span></td><td><select class="fs" style="font-size:9px"><option>PENDING DECISION</option><option>ACCEPT AT BERRY PRICE</option><option>CLAIM AGAINST SUPPLIER</option><option>REJECT AND RETURN</option></select></td></tr>
             </tbody>
           </table>
         </div>
         <div id="pr-qc" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>New fields added to <strong>qc_results</strong> table: <em>goods_receipt_line_id</em> (links result to a specific receipt line), <em>acceptance_status</em> (ACCEPTED / DOWNGRADED / REJECTED — determines inventory flow), <em>quality_profile_code</em> (groups results into a named quality profile for pricing), <em>payable_quantity</em> (calculated from assay — feeds directly into pricing engine).</div>
           <div class="fg mb12">
-            <div class="f"><div class="fl">goods_receipt_line_id (Links to Receipt Line)</div><div class="fc mono ta">PR-001 / Line 1 → MRN1</div></div>
+            <div class="f"><div class="fl">goods_receipt_line_id (Links to Receipt Line)</div><div class="fc mono ta">—</div></div>
             <div class="f"><div class="fl">Inspection Agency</div><select class="fs"><option>SGS</option><option>Bureau Veritas</option><option>Intertek</option><option>ALS</option><option>Alfred H. Knight (AHK)</option><option>End-User Lab</option><option>Internal</option></select></div>
             <div class="f"><div class="fl">Certificate No.</div><input type="text" class="fi" placeholder="e.g. SGS-2026-XXXXX"></div>
             <div class="f"><div class="fl">Certificate Date</div><input type="date" class="fi"></div>
@@ -2442,10 +2442,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="divl mt12">payable_quantity Calculation</div>
           <div class="fg">
             <div class="f"><div class="fl">gross_quantity (wet weight)</div><div class="fc mono">—</div></div>
-            <div class="f"><div class="fl">Moisture % Actual</div><div class="fc mono ta2">9.2% — above 8% spec</div></div>
-            <div class="f"><div class="fl">dry_quantity = gross × (1 − moisture%)</div><div class="fc mono">24 × (1−9.2%) = 21.792 dmt</div></div>
-            <div class="f"><div class="fl">Payable Grade (Cu % − 1% deduction)</div><div class="fc mono">28.5% − 1% = 27.5%</div></div>
-            <div class="f"><div class="fl">payable_quantity = dry × payable grade</div><div class="fc tg fw7">21.792 × 27.5% = 5.993 MT Cu</div></div>
+            <div class="f"><div class="fl">Moisture % Actual</div><div class="fc mono ta2">—</div></div>
+            <div class="f"><div class="fl">dry_quantity = gross × (1 − moisture%)</div><div class="fc mono">—</div></div>
+            <div class="f"><div class="fl">Payable Grade (Cu % − 1% deduction)</div><div class="fc mono">—</div></div>
+            <div class="f"><div class="fl">payable_quantity = dry × payable grade</div><div class="fc tg fw7">—</div></div>
             <div class="f"><div class="fl">→ Feeds into Pricing Engine</div><div class="fc ta">—</div></div>
           </div>
         </div>
@@ -2477,15 +2477,15 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="cbf"><table class="dt">
             <thead><tr><th>MRN Lot</th><th>GRN Ref</th><th>Material</th><th>Gross Qty</th><th>Certificate</th><th>Agency</th><th>Assay Date</th><th>QP Anchor Used</th><th>Acceptance</th></tr></thead>
             <tbody>
-              <tr style="cursor:pointer" onclick="showAssayEntry('MRN1-01')"><td class="mono ta fw6">MRN1-01</td><td class="mono">GRN-001</td><td class="f11 tg">Copper MillBerry</td><td class="mono">18 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">—</td><td><span class="badge bd-ship">PENDING</span></td></tr>
-              <tr style="cursor:pointer;background:rgba(240,165,0,.04)"><td class="mono ta fw6">MRN1-02</td><td class="mono">GRN-002</td><td class="f11 ta2">Copper Berry</td><td class="mono">6 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">—</td><td><span class="badge bd-ship">PENDING</span></td></tr>
-              <tr style="cursor:pointer"><td class="mono ta fw6">MRN2-01</td><td class="mono">GRN-003</td><td class="f11 tg">Copper MillBerry</td><td class="mono">18.75 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">—</td><td><span class="badge bd-ship">PENDING</span></td></tr>
+              <tr style="cursor:pointer" onclick="showAssayEntry('MRN1-01')"><td class="mono ta fw6">MRN1-01</td><td class="mono f10">—</td><td class="f11 tg">Copper MillBerry</td><td class="mono">18 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">—</td><td><span class="badge bd-ship">PENDING</span></td></tr>
+              <tr style="cursor:pointer;background:rgba(240,165,0,.04)"><td class="mono ta fw6">MRN1-02</td><td class="mono f10">—</td><td class="f11 ta2">Copper Berry</td><td class="mono">6 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">—</td><td><span class="badge bd-ship">PENDING</span></td></tr>
+              <tr style="cursor:pointer"><td class="mono ta fw6">MRN2-01</td><td class="mono f10">—</td><td class="f11 tg">Copper MillBerry</td><td class="mono">18.75 MT</td><td class="mono f10 tdim">Pending</td><td class="f10 tdim">SGS</td><td class="mono tdim">—</td><td class="f10 tdim">—</td><td><span class="badge bd-ship">PENDING</span></td></tr>
             </tbody>
           </table></div>
         </div>
         <!-- ASSAY ENTRY -->
         <div class="card" id="assay-entry-card">
-          <div class="ch"><div class="ct">Assay Certificate Entry</div><div class="cs">MRN1-01 · Copper MillBerry · 18 MT</div></div>
+          <div class="ch"><div class="ct">Assay Certificate Entry</div><div class="cs">Select a GRN record</div></div>
           <div class="cb">
             <div class="fg mb12">
               <div class="f"><div class="fl">Certificate No.</div><input type="text" class="fi" placeholder="e.g. SGS-2026-XXXXX"></div>
@@ -2493,7 +2493,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <div class="f"><div class="fl">Certificate Date</div><input type="date" class="fi"></div>
               <div class="f"><div class="fl">Assay Receipt Date <span class="opt">(QP anchor — assay-based contracts)</span></div><input type="date" class="fi" placeholder="Date we received this report"></div>
               <div class="f"><div class="fl">QP Anchor to Use</div><select class="fs"><option>BL_DATE</option><option>ETD</option><option>ETA</option><option>ARRIVAL_DATE</option><option>ASSAY_RECEIPT_DATE</option><option>DOCS_RECEIPT</option></select></div>
-              <div class="f"><div class="fl">Gross Wet Weight (MT)</div><input type="number" class="fi" value="18" oninput="recalcPayable()"></div>
+              <div class="f"><div class="fl">Gross Wet Weight (MT)</div><input type="number" class="fi" oninput="recalcPayable()"></div>
               <div class="f"><div class="fl">Whose Assay Governs</div><select class="fs"><option>BUYER'S ASSAY</option><option>SELLER'S ASSAY</option><option>UMPIRE LAB (AHK)</option><option>END-USER RESULT</option></select></div>
               <div class="f"><div class="fl">Umpire Trigger Condition</div><input type="text" class="fi" placeholder="e.g. Ag deviation > 1000ppm between test and final"></div>
             </div>
@@ -2641,12 +2641,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <table class="dt" id="forward-curve-table">
               <thead><tr><th>Prompt Month</th><th>Contract Code</th><th>Prompt Date</th><th>Bid (USD/MT)</th><th>Ask (USD/MT)</th><th>Mid (auto)</th><th>Source</th><th>Cutoff (CET)</th></tr></thead>
               <tbody id="forward-curve-body">
-                <tr><td class="f11 fw6">May 2026</td><td class="mono f10">LME-CU-MAY26</td><td class="mono f10">2026-05-20</td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="9920" oninput="calcForwardMid(this)"></td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="9922" oninput="calcForwardMid(this)"></td><td class="mono f10 ta" id="fc-mid-0">9,921</td><td class="f10 tdim">Manual</td><td class="mono f10 ta2">11:30</td></tr>
-                <tr><td class="f11 fw6">Jun 2026</td><td class="mono f10">LME-CU-JUN26</td><td class="mono f10">2026-06-17</td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="9960" oninput="calcForwardMid(this)"></td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="9962" oninput="calcForwardMid(this)"></td><td class="mono f10 ta" id="fc-mid-1">9,961</td><td class="f10 tdim">Manual</td><td class="mono f10 ta2">11:30</td></tr>
-                <tr style="background:rgba(0,200,150,.05)"><td class="f11 fw6 ta">Jul 2026 ★</td><td class="mono f10">LME-CU-JUL26</td><td class="mono f10 ta2">2026-07-15</td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="9998" oninput="calcForwardMid(this)"></td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="10000" oninput="calcForwardMid(this)"></td><td class="mono f10 ta fw7" id="fc-mid-2">9,999</td><td class="f10 tdim">Manual</td><td class="mono f10 ta2">11:30</td></tr>
-                <tr><td class="f11 fw6">Aug 2026</td><td class="mono f10">LME-CU-AUG26</td><td class="mono f10">2026-08-20</td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="10040" oninput="calcForwardMid(this)"></td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="10042" oninput="calcForwardMid(this)"></td><td class="mono f10 ta" id="fc-mid-3">10,041</td><td class="f10 tdim">Manual</td><td class="mono f10 ta2">11:30</td></tr>
-                <tr><td class="f11 fw6">Sep 2026</td><td class="mono f10">LME-CU-SEP26</td><td class="mono f10">2026-09-17</td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="10075" oninput="calcForwardMid(this)"></td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="10077" oninput="calcForwardMid(this)"></td><td class="mono f10 ta" id="fc-mid-4">10,076</td><td class="f10 tdim">Manual</td><td class="mono f10 ta2">11:30</td></tr>
-                <tr><td class="f11 fw6">Oct 2026</td><td class="mono f10">LME-CU-OCT26</td><td class="mono f10">2026-10-21</td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="10110" oninput="calcForwardMid(this)"></td><td><input type="number" class="fi" style="width:75px;font-size:10px" value="10112" oninput="calcForwardMid(this)"></td><td class="mono f10 ta" id="fc-mid-5">10,111</td><td class="f10 tdim">Manual</td><td class="mono f10 ta2">11:30</td></tr>
+                <tr><td colspan="8" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading forward curve…</td></tr>
               </tbody>
             </table>
             <div class="lar"><button class="btn bg bsm" onclick="toast('Forward Curve','Month added to strip','info')">+ Add Month</button></div>
@@ -2702,7 +2697,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Reference Price (from source master)</div><div class="fc ta fw7" id="ref-price-display">9,850 (Cash Ask)</div></div>
             <div class="f"><div class="fl">Derived MT Exposure (Qty × Index %)</div><div class="fc tg fw7">—</div></div>
             <div class="f"><div class="fl">Net Provisional Price (Ref × Payable % ± Prem/Disc)</div><div class="fc ta fw7" id="prov-price-display">—</div></div>
-            <div class="f"><div class="fl">Running QP Average</div><div class="fc ta">9,441 (10/22 days)</div></div>
+            <div class="f"><div class="fl">Running QP Average</div><div class="fc ta">—</div></div>
             <div class="f"><div class="fl">FX Rate</div><input type="number" class="fi" value="1.000" step="0.001"></div>
             <div class="f"><div class="fl">Invoice Currency</div><select class="fs"><option>USD</option><option>EUR</option></select></div>
             <div class="f"><div class="fl">Payment Due (5 WD after BL)</div><div class="fc mono ta">2026-04-25</div></div>
@@ -2714,8 +2709,8 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <table class="dt" id="fixation-table">
               <thead><tr><th>Fixation Lot ID</th><th>Deal</th><th>Linked Lots</th><th>Qty (MT)</th><th>Reference Price</th><th>Fixed Price</th><th>Formula %</th><th>Net Price</th><th>Prompt Date</th><th>Fwd Curve Ref</th><th>Timestamp</th><th>Status</th><th>Hedge Ref</th></tr></thead>
               <tbody>
-                <tr><td class="mono ta fw6">—</td><td class="mono f10">—</td><td class="mono f10">SH1·SH2·SH3</td><td class="mono">75</td><td class="f10">Cash Bid</td><td class="mono tg fw6">8,848</td><td class="mono f10">91%</td><td class="mono fw6 ta2">8,051.68</td><td class="mono f10 ta2">2026-07-15</td><td class="mono f10 tdim">LME-CU-JUL26</td><td class="mono f10">14:00:47</td><td><span class="badge bd-confirmed">FIXED</span></td><td class="mono f10 ta">SHORT REQ-001</td></tr>
-                <tr><td class="mono ta fw6">—</td><td class="mono f10">—</td><td class="mono f10">SH4·SH5</td><td class="mono">56.25</td><td class="f10">3M Ask</td><td class="mono tg fw6">10,500</td><td class="mono f10">95%</td><td class="mono fw6 ta2">9,975.00</td><td class="mono f10 ta2">2026-07-30</td><td class="mono f10 tdim">LME-CU-JUL26</td><td class="mono f10">14:00:47</td><td><span class="badge bd-confirmed">FIXED</span></td><td class="mono f10 ta">LONG REQ-002</td></tr>
+                <tr><td class="mono ta fw6">—</td><td class="mono f10">—</td><td class="mono f10">SH1·SH2·SH3</td><td class="mono">75</td><td class="f10">Cash Bid</td><td class="mono tg fw6">8,848</td><td class="mono f10">91%</td><td class="mono fw6 ta2">8,051.68</td><td class="mono f10 ta2">2026-07-15</td><td class="mono f10">—</td><td class="mono f10">14:00:47</td><td><span class="badge bd-confirmed">FIXED</span></td><td class="mono f10 ta">SHORT REQ-001</td></tr>
+                <tr><td class="mono ta fw6">—</td><td class="mono f10">—</td><td class="mono f10">SH4·SH5</td><td class="mono">56.25</td><td class="f10">3M Ask</td><td class="mono tg fw6">10,500</td><td class="mono f10">95%</td><td class="mono fw6 ta2">9,975.00</td><td class="mono f10 ta2">2026-07-30</td><td class="mono f10">—</td><td class="mono f10">14:00:47</td><td><span class="badge bd-confirmed">FIXED</span></td><td class="mono f10 ta">LONG REQ-002</td></tr>
               </tbody>
             </table>
           </div>
@@ -3039,7 +3034,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="sc"><div class="scl">Total Value</div><div class="scv ta" id="piv-stat-total">—</div></div>
       </div>
       <div class="card">
-        <div class="ch"><div class="ct">Provisional Invoice — PINV-2026-001</div><div class="cs">SC-2026-001 · Tata Metals Ltd · 56.25 MT · Provisional price $10,450/MT</div></div>
+        <div class="ch"><div class="ct">Provisional Invoice — PINV-2026-001</div><div class="cs">Select a contract to view details</div></div>
         <div class="fts">
           <div class="ft active pivt" data-tab="piv-header">Invoice Header</div>
           <div class="ft pivt" data-tab="piv-lines">Invoice Lines</div>
@@ -3119,7 +3114,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
       </div>
       <div id="fin-inv-empty" class="ban bi" style="display:none"><span>ℹ</span>Select a deal above to view its final invoice, or click + Create Final Invoice to generate one.</div>
       <div class="card">
-        <div class="ch"><div class="ct">Final Invoice — FINV-2026-001</div><div class="cs">SC-2026-001 · QP closed May 31 · Final avg $9,441 (buy) / $10,218 (sell)</div></div>
+        <div class="ch"><div class="ct">Final Invoice — FINV-2026-001</div><div class="cs">Select a contract to view details</div></div>
         <div class="fts">
           <div class="ft active fivt" data-tab="fiv-header">Invoice Header</div>
           <div class="ft fivt" data-tab="fiv-lines">Final Lines</div>
@@ -3131,10 +3126,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Invoice Type</div><div class="fc tg fw6">FINAL</div></div>
           <div class="f"><div class="fl">Invoice Date</div><input type="date" class="fi" ></div>
           <div class="f"><div class="fl">Linked Provisional Invoice</div><div class="fc ta" id="fiv-prov-ref">—</div></div>
-          <div class="f"><div class="fl">QP Window</div><div class="fc">May 1–31, 2026 · 22/22 days closed</div></div>
+          <div class="f"><div class="fl">QP Window</div><div class="fc">—</div></div>
           <div class="f"><div class="fl">Final QP Average Price</div><div class="fc tg fw7">USD <span id="fin-final-price">—</span>/MT (sell leg)</div></div>
           <div class="f"><div class="fl">Bill To</div><div class="fc fw6">—</div></div>
-          <div class="f"><div class="fl">Payment Due (balance 10%)</div><div class="fc mono ta fw7">2026-06-12 (5 WD after final invoice)</div></div>
+          <div class="f"><div class="fl">Payment Due (balance 10%)</div><div class="fc mono ta fw7">—</div></div>
           <div class="f"><div class="fl">Seller's Bank IBAN</div><input type="text" class="fi" placeholder="Full bank details required on final invoice"></div>
           <div class="f"><div class="fl">SWIFT / BIC</div><input type="text" class="fi" placeholder="SWIFT code"></div>
         </div></div>
@@ -3157,7 +3152,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Provisional Invoice Amount (Net)</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Final Invoice Amount (Net)</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Delta (Final − Provisional)</div><div class="fc td fw7"><span id="fin-delta" style="color:var(--danger)">—</span></div></div>
-            <div class="f"><div class="fl">Delta Direction</div><div class="fc td">CREDIT NOTE — final price lower than provisional. We refund buyer $12,826.54</div></div>
+            <div class="f"><div class="fl">Delta Direction</div><div class="fc td">—</div></div>
             <div class="f"><div class="fl">Already Paid (90% provisional)</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Balance Due from Buyer (10% adjusted)</div><div class="fc ta fw7"><span id="fin-balance-due">—</span></div></div>
             <div class="f"><div class="fl">Delta Note Ref</div><input type="text" class="fi" placeholder="DN-2026-001"></div>
@@ -3193,19 +3188,19 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <thead><tr><th>Ref</th><th>Document Type</th><th>Document No.</th><th>Value (USD)</th><th>Submitted By</th><th>Date</th><th>Tier</th><th>Current Approver</th><th>Status</th><th>Deadline</th><th></th></tr></thead>
           <tbody>
             <tr style="background:rgba(224,82,82,.04);cursor:pointer" onclick="document.getElementById('approval-detail-card').style.display='block';wireTabs('apvt')">
-              <td class="mono ta fw6">APR-001</td><td class="f11 fw6">Deal Confirmation</td><td class="mono ta">—</td><td class="mono ta fw7">896,168</td><td class="f10">Trader A</td><td class="mono f10">2026-04-18</td>
+              <td class="mono f10">—</td><td class="f11 fw6">Deal Confirmation</td><td class="mono ta">—</td><td class="mono ta fw7">896,168</td><td class="f10">Trader A</td><td class="mono f10">2026-04-18</td>
               <td><span class="badge bd-ship">TIER 2</span></td><td class="f11 fw6 td">You — Desk Head</td>
               <td><span class="badge bd-ship">PENDING YOUR ACTION</span></td><td class="mono f10 td">Today</td>
               <td><div class="br-row g7"><button class="btn bp bsm" onclick="approveItem('APR-001')">Approve</button><button class="btn bd bsm">Reject</button></div></td>
             </tr>
             <tr style="background:rgba(224,82,82,.04);cursor:pointer">
-              <td class="mono ta fw6">APR-002</td><td class="f11 fw6">Purchase Contract</td><td class="mono ta">PC-2026-001</td><td class="mono ta fw7">896,168</td><td class="f10">Trader A</td><td class="mono f10">2026-04-19</td>
+              <td class="mono f10">—</td><td class="f11 fw6">Purchase Contract</td><td class="mono ta">PC-2026-001</td><td class="mono ta fw7">896,168</td><td class="f10">Trader A</td><td class="mono f10">2026-04-19</td>
               <td><span class="badge bd-ship">TIER 2</span></td><td class="f11 fw6 td">You — Desk Head</td>
               <td><span class="badge bd-ship">PENDING YOUR ACTION</span></td><td class="mono f10 ta2">Tomorrow</td>
               <td><div class="br-row g7"><button class="btn bp bsm" onclick="approveItem('APR-002')">Approve</button><button class="btn bd bsm">Reject</button></div></td>
             </tr>
             <tr>
-              <td class="mono ta fw6">APR-003</td><td class="f11">Hedge Requisition</td><td class="mono ta">REQ-001</td><td class="mono">614,250</td><td class="f10">Trader A</td><td class="mono f10">2026-04-18</td>
+              <td class="mono f10">—</td><td class="f11">Hedge Requisition</td><td class="mono f10">—</td><td class="mono">614,250</td><td class="f10">Trader A</td><td class="mono f10">2026-04-18</td>
               <td><span class="badge bd-draft">TIER 1</span></td><td class="f11 fw6 ta2">CFO</td>
               <td><span class="badge bd-act">PENDING CFO</span></td><td class="mono f10">+3 days</td>
               <td><button class="btn bxs bg">View</button></td>
@@ -3224,8 +3219,8 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="cb"><div class="fg">
           <div class="f"><div class="fl">Document Type</div><div class="fc fw6">Deal Confirmation</div></div>
           <div class="f"><div class="fl">Deal Value (Provisional)</div><div class="fc ta fw7">—</div></div>
-          <div class="f"><div class="fl">Approval Tier</div><div class="fc ta2">TIER 2 — value > USD 500,000</div></div>
-          <div class="f"><div class="fl">Submitted</div><div class="fc">Trader A · 2026-04-18 14:32</div></div>
+          <div class="f"><div class="fl">Approval Tier</div><div class="fc ta2">—</div></div>
+          <div class="f"><div class="fl">Submitted</div><div class="fc">—</div></div>
           <div class="f csf"><div class="fl">Approval Notes</div><textarea class="fta" placeholder="Add conditions or notes…" style="min-height:50px"></textarea></div>
         </div>
         <div class="br-row btw mt12">
