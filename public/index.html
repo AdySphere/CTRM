@@ -6618,7 +6618,7 @@ function addPRLine() {
     + '<td><select class="fs" style="font-size:9px"><option>PENDING_QC</option><option>ON_HOLD</option><option>ACCEPTED</option><option>REJECTED</option></select></td>'
     + '<td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="Grade / profile"></td>'
     + '<td><input type="text" class="fi" style="font-size:10px" placeholder="Remarks"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bd" onclick="this.closest(\"tr\").remove()">✕</button></td>';
   tbody.appendChild(tr);
 }
 
@@ -6637,7 +6637,7 @@ function addPRQCLine() {
     + '<td><select class="fs" style="font-size:9px"><option>IN-SPEC</option><option>OUT-SPEC</option><option>PENDING</option></select></td>'
     + '<td><input type="number" class="fi" style="width:65px;font-size:10px" step="0.001" placeholder="MT"></td>'
     + '<td><select class="fs" style="font-size:9px"><option>ACCEPTED</option><option>REJECTED</option><option>PENDING</option></select></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bd" onclick="this.closest(\"tr\").remove()">✕</button></td>';
   tbody.appendChild(tr);
 }
 
@@ -6655,7 +6655,7 @@ function addAssayElement() {
     + '<td><input type="number" class="fi" style="width:65px;font-size:10px" step="0.0001" oninput="recalcPayable()" placeholder="Actual"></td>'
     + '<td><select class="fs" style="font-size:9px"><option>IN-SPEC</option><option>OUT-SPEC</option><option>PENDING</option></select></td>'
     + '<td><select class="fs" style="font-size:9px"><option>ACCEPTED</option><option>REJECTED</option><option>PENDING</option></select></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bd" onclick="this.closest(\"tr\").remove()">✕</button></td>';
   tbody.appendChild(tr);
 }
 
@@ -6696,7 +6696,7 @@ async function loadTemplateAdj() {
         + '<td><input type="number" class="fi" style="width:70px;font-size:10px" step="0.0001" placeholder="Rate"></td>'
         + '<td class="f10">' + (c.calc_type === 'PCT_OF_VALUE' ? '%' : c.calc_type === 'PER_UNIT' ? '/MT' : 'Lump') + '</td>'
         + '<td><select class="fs" style="font-size:9px"><option value="DEDUCT">DEDUCT</option><option value="ADD">ADD</option></select></td>'
-        + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+        + '<td><button class="btn bxs bd" onclick="this.closest(\"tr\").remove()">✕</button></td>';
       tbody.appendChild(tr);
       added++;
     });
@@ -6715,7 +6715,7 @@ function addTypeBSlab() {
     + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.01" placeholder="To %"></td>'
     + '<td class="mono f10">—</td>'
     + '<td><input type="number" class="fi" style="width:55px;font-size:10px" step="0.01" placeholder="Formula %"></td>'
-    + '<td><button class="btn bxs bd" onclick="this.closest('tr').remove()">✕</button></td>';
+    + '<td><button class="btn bxs bd" onclick="this.closest(\"tr\").remove()">✕</button></td>';
   tbody.appendChild(tr);
 }
 
