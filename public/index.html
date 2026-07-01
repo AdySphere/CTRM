@@ -1327,7 +1327,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <!-- CHARGE ITEMS — merged into this tab per H2 -->
           <div class="divl mt14">Charge Items</div>
           <div class="ban bi mb8"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Penalty or formula-change adjustments appear here too as Actual vs Estimated variance on the relevant line — positive or negative — there is no separate penalty table.</div>
-          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Payable To</th><th>Basis</th><th>Rate</th><th>Qty/Days</th><th>Est. Amount</th><th>Actual Amount</th><th>Variance</th><th>Accrual Trigger</th><th>Accrual Status</th><th>GL Account</th><th></th></tr></thead>
+          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Payable To</th><th>Basis</th><th>Rate</th><th>Qty/Days</th><th>Est. Amount</th><th>Actual Amount</th><th>Variance</th><th>Accrual Trigger</th><th>Accrual Status</th><th>GL Account</th><th>ERP</th><th></th></tr></thead>
           <tbody id="pc-charges-tbody">
             <tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
           </tbody></table>
@@ -1701,7 +1701,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
           <div class="divl mt14">Charge Items</div>
           <div class="ban bi mb8"><span>i</span>Commission, freight, insurance and other charges — manual entry or linked to a charge type. Penalty or formula-change adjustments appear here too as Actual vs Estimated variance on the relevant line — positive or negative — there is no separate penalty table.</div>
-          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Payable To</th><th>Basis</th><th>Rate</th><th>Qty/Days</th><th>Est. Amount</th><th>Actual Amount</th><th>Variance</th><th>Accrual Trigger</th><th>Accrual Status</th><th>GL Account</th><th></th></tr></thead>
+          <table class="lt"><thead><tr><th>Charge Type</th><th>Description</th><th>Payable To</th><th>Basis</th><th>Rate</th><th>Qty/Days</th><th>Est. Amount</th><th>Actual Amount</th><th>Variance</th><th>Accrual Trigger</th><th>Accrual Status</th><th>GL Account</th><th>ERP</th><th></th></tr></thead>
           <tbody id="sc-charges-tbody">
             <tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Loading charge items…</td></tr>
           </tbody></table>
@@ -10620,6 +10620,27 @@ async function loadChargeLines(contractId, prefix) {
     const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines');
     const data = await res.json();
     const lines = data.data || [];
+    // Fetch event dates for this contract so we can show actual dates next to trigger labels
+    let eventDates = {};
+    try {
+      const edRes = await fetch(API_BASE + '/api/contracts/' + contractId + '/event-dates');
+      const edData = await edRes.json();
+      eventDates = edData.data || {};
+    } catch(e) { /* non-fatal */ }
+    const triggerDateMap = {
+      'contract_date': eventDates.contract_date,
+      'bl_date': eventDates.bl_date,
+      'eta_date': eventDates.eta_date,
+      'pr_date': eventDates.pr_date,
+      'grn_date': eventDates.grn_date,
+      'assay_date': eventDates.assay_date,
+      'qp_close_date': eventDates.qp_close_date
+    };
+    function fmtTriggerDate(key) {
+      const d = triggerDateMap[key];
+      if (!d) return '';
+      return ' <span style="color:var(--text-accent,#4fa3e8);font-size:9px;margin-left:2px">→ ' + new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}) + '</span>';
+    }
     if (!lines.length) {
       tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;padding:14px;color:var(--text3);font-size:11px">No charge items yet — click + Add Charge Item</td></tr>';
       return;
@@ -10633,13 +10654,13 @@ async function loadChargeLines(contractId, prefix) {
         + '<td class="f11 fw6">'+(cl.charge_description||cl.charge_code||'Manual')+'</td>'
         + '<td class="f10">'+(cl.description||'—')+'</td>'
         + '<td class="f10">'+(cl.counterparty_name||'—')+'</td>'
-        + '<td class="f10">'+basisLabel+'</td>'
-        + '<td class="mono f10">'+cl.calc_value+'</td>'
+        + '<td>'        + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeBasis(this.dataset.chargeId, this.value, this.dataset.prefix)">'        + '<option value="FIXED"'+(cl.calc_basis==='FIXED'?' selected':'')+'>Lump Sum</option>'        + '<option value="PER_MT"'+(cl.calc_basis==='PER_MT'?' selected':'')+'>Per MT</option>'        + '<option value="PERCENTAGE"'+(cl.calc_basis==='PERCENTAGE'?' selected':'')+'>Percentage</option>'        + '</select>'        + '</td>'
+        + '<td><input type="number" class="fi" style="font-size:10px;width:80px" step="0.0001" value="'+(cl.calc_value!=null?cl.calc_value:'')+'"\ data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onblur="updateChargeRate(this.dataset.chargeId, this.value, this.dataset.prefix)"></td>'
         + '<td class="mono f10">'+(cl.qty_or_days!=null?cl.qty_or_days:'—')+'</td>'
         + '<td class="mono f10 fw6">'+(cl.computed_amount!=null?parseFloat(cl.computed_amount).toLocaleString():'—')+'</td>'
         + '<td><input type="number" class="fi" style="font-size:10px;width:80px" step="0.01" value="'+(cl.actual_amount!=null?cl.actual_amount:'')+'" placeholder="—" data-charge-id="'+cl.id+'" data-contract-id="'+contractId+'" onblur="onChargeActualAmountChange(this)"></td>'
         + '<td class="mono f10 fw6 '+varianceCls+'">'+varianceText+'</td>'
-        + '<td>'        + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeTrigger(this.dataset.chargeId, this.value, this.dataset.prefix)">'        + '<option value=""'+((!cl.accrual_trigger_event)?' selected':'')+'>— None —</option>'        + '<option value="contract_date"'+(cl.accrual_trigger_event==='contract_date'?' selected':'')+'>Contract Date</option>'        + '<option value="bl_date"'+(cl.accrual_trigger_event==='bl_date'?' selected':'')+'>BL Date</option>'        + '<option value="eta_date"'+(cl.accrual_trigger_event==='eta_date'?' selected':'')+'>ETA Date</option>'        + '<option value="pr_date"'+(cl.accrual_trigger_event==='pr_date'?' selected':'')+'>PR Date</option>'        + '<option value="grn_date"'+(cl.accrual_trigger_event==='grn_date'?' selected':'')+'>GRN Date</option>'        + '<option value="assay_date"'+(cl.accrual_trigger_event==='assay_date'?' selected':'')+'>Assay Date</option>'        + '<option value="qp_close_date"'+(cl.accrual_trigger_event==='qp_close_date'?' selected':'')+'>QP Close Date</option>'        + '</select>'        + '</td>'
+        + '<td style="white-space:nowrap">'        + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeTrigger(this.dataset.chargeId, this.value, this.dataset.prefix)">'        + '<option value=""'+((!cl.accrual_trigger_event)?' selected':'')+'>— None —</option>'        + '<option value="contract_date"'+(cl.accrual_trigger_event==='contract_date'?' selected':'')+'>Contract Date</option>'        + '<option value="bl_date"'+(cl.accrual_trigger_event==='bl_date'?' selected':'')+'>BL Date</option>'        + '<option value="eta_date"'+(cl.accrual_trigger_event==='eta_date'?' selected':'')+'>ETA Date</option>'        + '<option value="pr_date"'+(cl.accrual_trigger_event==='pr_date'?' selected':'')+'>PR Date</option>'        + '<option value="grn_date"'+(cl.accrual_trigger_event==='grn_date'?' selected':'')+'>GRN Date</option>'        + '<option value="assay_date"'+(cl.accrual_trigger_event==='assay_date'?' selected':'')+'>Assay Date</option>'        + '<option value="qp_close_date"'+(cl.accrual_trigger_event==='qp_close_date'?' selected':'')+'>QP Close Date</option>'        + '</select>'        + (cl.accrual_trigger_event ? fmtTriggerDate(cl.accrual_trigger_event) : '')        + '</td>'
         + '<td>'
           + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeAccrual(this.dataset.chargeId, this.value, this.dataset.prefix)">'
             + '<option value="NOT_ACCRUED"'+(cl.accrual_status==='NOT_ACCRUED'?' selected':'')+'>Pending</option>'
@@ -10647,8 +10668,7 @@ async function loadChargeLines(contractId, prefix) {
             + '<option value="POSTED"'+(cl.accrual_status==='POSTED'?' selected':'')+'>Posted</option>'
           + '</select>'
         + '</td>'
-        + '<td class="mono f10">'+(cl.gl_account||'—')+'</td>'
-        + '<td><button class="btn bxs bd" data-line-id="'+cl.id+'" data-contract-id="'+contractId+'" onclick="deleteChargeLine(this.dataset.lineId, this, this.dataset.contractId)">✕</button></td>'
+        + '<td class="mono f10">'+(cl.gl_account||'—')+'</td>'        + '<td>'        + (cl.accrual_status==='POSTED'          ? '<span class="badge bd-act" style="font-size:9px">POSTED</span>'          : cl.accrual_status==='ACCRUED'          ? '<button class="btn bxs" style="font-size:9px;background:var(--warning,#e07b39);color:#fff" data-charge-id="'+cl.id+'" data-contract-id="'+contractId+'" onclick="postChargeToERP(this.dataset.chargeId, this.dataset.contractId, this)">Post →</button>'          : '<span style="font-size:9px;color:var(--text3)">Pending accrual</span>')        + '</td>'        + '<td><button class="btn bxs bd" data-line-id="'+cl.id+'" data-contract-id="'+contractId+'" onclick="deleteChargeLine(this.dataset.lineId, this, this.dataset.contractId)">✕</button></td>'
         + '</tr>';
     }).join('');
   } catch(e) { console.warn('loadChargeLines:', e); }
@@ -10685,6 +10705,50 @@ async function updateChargeAccrual(lineId, status, prefix) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     toast('Updated', 'Accrual status set to ' + status, 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function postChargeToERP(lineId, contractId, btn) {
+  if (!confirm('Post this charge line to ERP? This marks it as POSTED and cannot be undone.')) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId + '/charge-lines/' + lineId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ accrual_status: 'POSTED' })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    // Replace the Post button with POSTED badge immediately
+    const td = btn.parentElement;
+    td.innerHTML = '<span class="badge bd-act" style="font-size:9px">POSTED</span>';
+    toast('ERP Posted', 'Charge line marked as POSTED', 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function updateChargeRate(lineId, value, prefix) {
+  const c = window._currentContract;
+  if (!c || value === '') return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/charge-lines/' + lineId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ calc_value: parseFloat(value) })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Updated', 'Rate updated', 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function updateChargeBasis(lineId, basis, prefix) {
+  const c = window._currentContract;
+  if (!c) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/charge-lines/' + lineId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ calc_basis: basis })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Updated', 'Basis updated to ' + basis, 'success');
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 

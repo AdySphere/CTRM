@@ -503,7 +503,7 @@ router.patch('/:id/charge-lines/:lineId', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   try {
     const allowed = ['accrual_status', 'computed_amount', 'actual_amount', 'qty_or_days',
-      'accrual_trigger_event', 'accrual_reversal_event', 'notes'];
+      'accrual_trigger_event', 'accrual_reversal_event', 'notes', 'calc_basis', 'calc_value'];
     const fields = {};
     Object.keys(req.body).forEach(function(k) { if (allowed.includes(k)) fields[k] = req.body[k]; });
     if (fields.accrual_status === 'ACCRUED') fields.accrued_at = new Date().toISOString();
