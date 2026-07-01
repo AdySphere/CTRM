@@ -552,14 +552,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Enquiry No.</div><div class="fc" id="enq-detail-no">—</div></div>
             <div class="f"><div class="fl">Enquiry Date</div><input type="date" class="fi" ></div>
             <div class="f"><div class="fl">Validity Date</div><input type="date" class="fi"></div>
-            <div class="f"><div class="fl">Status</div><div class="fc ta">OPEN</div></div>
+            <div class="f"><div class="fl">Status</div><div class="fc ta">—</div></div>
             <div class="f"><div class="fl">Enquiry Source <span class="req">*</span></div>
               <select class="fs"><option>INBOUND-COUNTERPARTY</option><option>INTERNAL-OPPORTUNITY</option><option>BROKER</option><option>TENDER</option><option>ROLLOVER</option></select></div>
             <div class="f"><div class="fl">Direction <span class="req">*</span></div>
               <select class="fs" onchange="onEnqDir(this.value)"><option>BUY</option><option>SELL</option><option>BACK-TO-BACK</option></select></div>
             <div class="f"><div class="fl">Trading Desk <span class="req">*</span></div>
               <select class="fs"><option>BASE-METALS</option><option>FERROUS</option><option>BULK</option><option>AGRI</option><option>ENERGY</option></select></div>
-            <div class="f"><div class="fl">Assigned Trader <span class="req">*</span></div><input type="text" class="fi" value="A. Mallick"></div>
+            <div class="f"><div class="fl">Assigned Trader <span class="req">*</span></div><input type="text" class="fi" placeholder="Your name"></div>
             <div class="f"><div class="fl">Secondary Trader</div><input type="text" class="fi" placeholder="Optional"></div>
             <div class="f"><div class="fl">Priority</div><select class="fs"><option>NORMAL</option><option>HIGH</option><option>URGENT</option></select></div>
             <div class="f"><div class="fl">Internal Reference</div><input type="text" class="fi" placeholder="Free text internal tag"></div>
@@ -1328,7 +1328,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
           <div class="divl mt14">General Material Terms</div>
           <div class="fg">
-            <div class="f"><div class="fl">Material Free From</div><input type="text" class="fi" value="Harmful impurities not stated, including radioactivity"></div>
+            <div class="f"><div class="fl">Material Free From</div><input type="text" class="fi" placeholder="e.g. Harmful impurities not stated, including radioactivity"></div>
             <div class="f"><div class="fl">Container Type</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option><option>BULK VESSEL</option></select></div>
           </div>
         </div>
@@ -1402,10 +1402,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
               <div class="divl">QP Window Dates</div>
               <div class="fg">
                 <div class="f"><div class="fl">Shipment Month</div><div class="fc mono">November 2026</div></div>
-                <div class="f"><div class="fl">QP Rule</div><div class="fc">30 days from shipment month</div></div>
+                <div class="f"><div class="fl">QP Rule</div><div class="fc">—</div></div>
                 <div class="f"><div class="fl">QP Start Date <span class="req">*</span></div><input type="date" class="fi" ></div>
                 <div class="f"><div class="fl">QP End Date <span class="req">*</span></div><input type="date" class="fi" ></div>
-                <div class="f"><div class="fl">Business Days in Window</div><div class="fc mono">22 bd</div></div>
+                <div class="f"><div class="fl">Business Days in Window</div><div class="fc mono">—</div></div>
                 <div class="f"><div class="fl">Pricing Option</div><select class="fs"><option>SUPPLIER fixes (supplier chooses day)</option><option>LONGER (buyer chooses day)</option><option>N/A (average — no choice)</option></select></div>
               </div>
             </div>
@@ -1446,16 +1446,16 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <!-- PROVISIONAL PRICE SUMMARY -->
           <div class="divl mt12">Provisional Price Calculation</div>
           <div class="fg">
-            <div class="f"><div class="fl">Contract Qty</div><div class="fc mono">100 MT</div></div>
+            <div class="f"><div class="fl">Contract Qty</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Index % (metal content)</div><div class="fc mono ta">91%</div></div>
-            <div class="f"><div class="fl">Derived MT Exposure (Qty × Index %)</div><div class="fc tg fw7">91.00 MT — hedge sizing basis</div></div>
+            <div class="f"><div class="fl">Derived MT Exposure (Qty × Index %)</div><div class="fc tg fw7">—</div></div>
             <div class="f"><div class="fl">Reference Price (blended/selected)</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Payable / Recovery %</div><div class="fc mono ta">91%</div></div>
             <div class="f"><div class="fl">Payable Price (Ref × Payable %)</div><div class="fc mono ta2">—</div></div>
-            <div class="f"><div class="fl">Premium / Discount</div><div class="fc mono">+ USD 0.00/MT</div></div>
+            <div class="f"><div class="fl">Premium / Discount</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Net Provisional Price</div><div class="fc ta fw7" style="font-size:14px">—</div></div>
             <div class="f"><div class="fl">Provisional Contract Value (100 MT)</div><div class="fc tg fw7">—</div></div>
-            <div class="f"><div class="fl">Price Status</div><div class="fc ta2">PROVISIONAL — QP window Nov 1–30, 2026</div></div>
+            <div class="f"><div class="fl">Price Status</div><div class="fc ta2">—</div></div>
           </div>
         </div>
         <div id="pc-pay" class="ftc hidden">
@@ -1498,7 +1498,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="pc-ship" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Incoterms</div><select class="fs"><option>CIF</option><option>CFR</option><option>FOB</option><option>DDP</option><option>EXW</option><option>FCA</option></select></div>
-          <div class="f"><div class="fl">Named Port / Place</div><input type="text" class="fi" value="Nhava Sheva, India"></div>
+          <div class="f"><div class="fl">Named Port / Place</div><input type="text" class="fi" placeholder="e.g. Nhava Sheva, India"></div>
           <div class="f"><div class="fl">Port of Loading (POL)</div><select class="fs" id="pcd-pol"><option value="">— Select —</option></select></div>
           <div class="f"><div class="fl">Port of Discharge (POD)</div><select class="fs" id="pcd-pod"><option value="">— Select —</option></select></div>
           <div class="f"><div class="fl">Shipment Window From</div><input type="date" class="fi" id="pcd-ship-from"></div>
@@ -1533,7 +1533,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Anti-Bribery & Corruption</div><select class="fs" id="pcd-abc"><option value="standard">Standard ABC clause applies</option><option value="enhanced">Enhanced — with compliance certificate</option></select></div>
             <div class="f"><div class="fl">Sanctions Clause</div><select class="fs" id="pcd-sanctions"><option value="standard">Standard — Neither party is a sanctioned entity</option><option value="enhanced">Enhanced OFAC / EU / UN</option></select></div>
             <div class="f csf"><div class="fl">Special Conditions / Other Clauses</div><textarea class="fta" id="pcd-special-conditions" placeholder="Any additional terms agreed between the parties..." style="min-height:60px"></textarea></div>
-          <div class="f"><div class="fl">Radioactivity Clause</div><div class="fc">Material to be free from radioactivity — rejection applies</div></div>
+          <div class="f"><div class="fl">Radioactivity Clause</div><div class="fc">—</div></div>
           <div class="f cs2"><div class="fl">Special Remarks</div><textarea class="fta" style="min-height:48px"></textarea></div>
         </div></div>
         <div id="pc-rollover" class="ftc hidden">
@@ -1735,11 +1735,11 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div>
               <div class="divl">QP Window Dates</div>
               <div class="fg">
-                <div class="f"><div class="fl">Shipment Month</div><div class="fc mono">January 2026</div></div>
-                <div class="f"><div class="fl">QP Rule</div><div class="fc">30 days from shipment month</div></div>
+                <div class="f"><div class="fl">Shipment Month</div><div class="fc mono">—</div></div>
+                <div class="f"><div class="fl">QP Rule</div><div class="fc">—</div></div>
                 <div class="f"><div class="fl">QP Start Date</div><input type="date" class="fi" ></div>
                 <div class="f"><div class="fl">QP End Date</div><input type="date" class="fi" ></div>
-                <div class="f"><div class="fl">Business Days in Window</div><div class="fc mono">22 bd</div></div>
+                <div class="f"><div class="fl">Business Days in Window</div><div class="fc mono">—</div></div>
               </div>
             </div>
           </div>
@@ -1764,15 +1764,15 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
 
           <div class="divl mt12">Provisional Revenue</div>
           <div class="fg">
-            <div class="f"><div class="fl">Contract Qty</div><div class="fc mono">56.25 MT delivered</div></div>
+            <div class="f"><div class="fl">Contract Qty</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Index % (metal content)</div><div class="fc mono ta">95%</div></div>
-            <div class="f"><div class="fl">Derived MT Exposure</div><div class="fc tg fw7">53.44 MT</div></div>
+            <div class="f"><div class="fl">Derived MT Exposure</div><div class="fc tg fw7">—</div></div>
             <div class="f"><div class="fl">Reference Price</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Payable %</div><div class="fc mono ta">95%</div></div>
             <div class="f"><div class="fl">Payable Price</div><div class="fc mono ta2"><span id="prov-payable-price">—</span>/MT</div></div>
             <div class="f"><div class="fl">Net Provisional Price</div><div class="fc ta fw7" style="font-size:14px">—</div></div>
             <div class="f"><div class="fl">Provisional Revenue (56.25 MT)</div><div class="fc tg fw7">—</div></div>
-            <div class="f"><div class="fl">Price Status</div><div class="fc ta2">PROVISIONAL — awaiting Longer fixation · QP window Jan 1–31, 2026</div></div>
+            <div class="f"><div class="fl">Price Status</div><div class="fc ta2">—</div></div>
           </div>
         </div>
         <div id="sc-pay" class="ftc hidden">
@@ -1796,9 +1796,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div id="sc-qc" class="ftc hidden"><div class="fg mb12">
           <div class="f"><div class="fl">Whose Weights Govern</div><select class="fs"><option>BUYER'S WEIGHTS</option><option>SELLER'S WEIGHTS</option><option>JOINT SURVEY</option></select></div>
           <div class="f"><div class="fl">Whose Assays Govern</div><select class="fs"><option>BUYER'S ASSAYS</option><option>SELLER'S ASSAYS</option><option>END-USER RESULT — FINAL</option></select></div>
-          <div class="f"><div class="fl">Umpire Lab</div><input type="text" class="fi" value="Alfred H. Knight (AHK) UK"></div>
+          <div class="f"><div class="fl">Umpire Lab</div><input type="text" class="fi" placeholder="e.g. Alfred H. Knight (AHK) UK"></div>
           <div class="f"><div class="fl">Umpire Trigger</div><input type="text" class="fi" placeholder="e.g. Important discrepancy between buyer and seller analyses"></div>
-          <div class="f"><div class="fl">Assay Report Due</div><input type="text" class="fi" value="Within 30 days of delivery at POD"></div>
+          <div class="f"><div class="fl">Assay Report Due</div><input type="text" class="fi" placeholder="e.g. Within 30 days of delivery"></div>
           <div class="f"><div class="fl">End-User Result Final</div><select class="fs"><option>YES</option><option>NO</option></select></div>
           </div>
           <div class="ban bi mb12"><span>i</span>Define either a Min/Max range OR a single Standard Value per element, not both. If a Standard Value is set, Min/Max are disabled for that line.</div>
@@ -1810,7 +1810,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         </div>
         <div id="sc-ship" class="ftc hidden"><div class="fg">
           <div class="f"><div class="fl">Incoterms</div><select class="fs"><option>CIF</option><option>CFR</option><option>FOB</option><option>DDP</option></select></div>
-          <div class="f"><div class="fl">Named Port / Place</div><input type="text" class="fi" value="Nhava Sheva, India"></div>
+          <div class="f"><div class="fl">Named Port / Place</div><input type="text" class="fi" placeholder="e.g. Nhava Sheva, India"></div>
           <div class="f"><div class="fl">Port of Loading (POL)</div><select class="fs" id="scd-pol"><option value="">— Select —</option></select></div>
           <div class="f"><div class="fl">Port of Discharge (POD)</div><select class="fs" id="scd-pod"><option value="">— Select —</option></select></div>
           <div class="f"><div class="fl">Shipment Window From</div><input type="date" class="fi" id="scd-ship-from"></div>
@@ -2000,19 +2000,19 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Expected Delivery</div><input type="date" class="fi" ></div>
           <div class="f"><div class="fl">PO Currency</div><div class="fc">USD</div></div>
           <div class="f"><div class="fl">PO Status</div><div class="fc ta2">—</div></div>
-          <div class="f"><div class="fl">GRN Status</div><div class="fc ta2">NOT RECEIVED — 3 containers in transit</div></div>
-          <div class="f"><div class="fl">Incoterms</div><div class="fc">CIF · Dar es Salaam → Nhava Sheva</div></div>
+          <div class="f"><div class="fl">GRN Status</div><div class="fc ta2">—</div></div>
+          <div class="f"><div class="fl">Incoterms</div><div class="fc">—</div></div>
         </div></div>
         <div id="po-lines" class="ftc hidden">
           <div class="ban bi mb12"><span>ℹ</span>One PO line per shipment lot. Discrepancy lines flagged amber — amendment required before GRN posts to BC.</div>
           <table class="dt"><thead><tr><th>PO Line</th><th>Shipment Lot</th><th>Container</th><th>Expected Item</th><th>Actual Item (from GRN)</th><th>Qty (MT)</th><th>Received</th><th>Unit Price</th><th>Line Amount</th><th>Amendment</th></tr></thead>
           <tbody>
-            <tr><td class="mono f10">1a</td><td class="mono ta">SH1</td><td class="mono f10">—</td><td class="f11">CU-MILLBERRY</td><td class="f11 tg">CU-MILLBERRY ✓</td><td class="mono">18</td><td class="mono tdim">0</td><td class="mono f10">8,051.68</td><td class="mono">144,930</td><td><span class="badge bd-confirmed">NO CHANGE</span></td></tr>
-            <tr style="background:rgba(240,165,0,.04)"><td class="mono f10">1b</td><td class="mono ta">SH1</td><td class="mono f10">—</td><td class="f11">CU-MILLBERRY</td><td class="f11 td fw6">CU-BERRY ⚠</td><td class="mono">6</td><td class="mono tdim">0</td><td class="mono f10 ta2">7,078.40</td><td class="mono ta2">42,470</td><td><span class="badge bd-ship">PENDING AMEND</span></td></tr>
-            <tr><td class="mono f10">2a</td><td class="mono ta">SH2</td><td class="mono f10">KMTC122</td><td class="f11">CU-MILLBERRY</td><td class="f11 tg">CU-MILLBERRY ✓</td><td class="mono">18.75</td><td class="mono tdim">0</td><td class="mono f10">8,051.68</td><td class="mono">150,969</td><td><span class="badge bd-confirmed">NO CHANGE</span></td></tr>
-            <tr style="background:rgba(240,165,0,.04)"><td class="mono f10">2b</td><td class="mono ta">SH2</td><td class="mono f10">KMTC122</td><td class="f11">CU-MILLBERRY</td><td class="f11 td fw6">CU-BERRY ⚠</td><td class="mono">6.25</td><td class="mono tdim">0</td><td class="mono f10 ta2">7,078.40</td><td class="mono ta2">44,240</td><td><span class="badge bd-ship">PENDING AMEND</span></td></tr>
-            <tr><td class="mono f10">3a</td><td class="mono ta">SH3</td><td class="mono f10">KMTC123</td><td class="f11">CU-MILLBERRY</td><td class="f11 tg">CU-MILLBERRY ✓</td><td class="mono">19.5</td><td class="mono tdim">0</td><td class="mono f10">8,051.68</td><td class="mono">157,008</td><td><span class="badge bd-confirmed">NO CHANGE</span></td></tr>
-            <tr style="background:rgba(240,165,0,.04)"><td class="mono f10">3b</td><td class="mono ta">SH3</td><td class="mono f10">KMTC123</td><td class="f11">CU-MILLBERRY</td><td class="f11 td fw6">CU-BERRY ⚠</td><td class="mono">6.5</td><td class="mono tdim">0</td><td class="mono f10 ta2">7,078.40</td><td class="mono ta2">46,010</td><td><span class="badge bd-ship">PENDING AMEND</span></td></tr>
+            
+            
+            
+            
+            
+            
           </tbody></table>
         </div>
         <div id="po-amendments" class="ftc hidden">
@@ -2024,9 +2024,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           </tbody></table>
         </div>
         <div id="po-receipt" class="ftc hidden"><div class="fg">
-          <div class="f"><div class="fl">Total PO Qty</div><div class="fc mono">75 MT</div></div>
-          <div class="f"><div class="fl">Received (GRN posted)</div><div class="fc mono tdim">0 MT — GRNs pending BC post</div></div>
-          <div class="f"><div class="fl">Outstanding</div><div class="fc mono ta2">75 MT</div></div>
+          <div class="f"><div class="fl">Total PO Qty</div><div class="fc mono">—</div></div>
+          <div class="f"><div class="fl">Received (GRN posted)</div><div class="fc mono tdim">—</div></div>
+          <div class="f"><div class="fl">Outstanding</div><div class="fc mono ta2">—</div></div>
           <div class="f"><div class="fl">Provisional Receipt Done</div><div class="fc tg">YES — PR-001, PR-002, PR-003</div></div>
           <div class="f"><div class="fl">GRN Status</div><div class="fc ta2">6 GRN drafts — 3 with discrepancy — awaiting BC post</div></div>
           <div class="f"><div class="fl">Next Action</div><div class="fc td fw6">Post GRN → PO amendments auto-apply in BC</div></div>
@@ -2093,13 +2093,13 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bi mb12"><span>ℹ</span>SC was for 100 MT but only 56.25 MT of MillBerry available after GRN segregation. Berry excluded from outbound. Partial delivery confirmed.</div>
           <table class="dt"><thead><tr><th>Shipment Lot</th><th>Container</th><th>Contract Lot</th><th>Material</th><th>Shipped (MT)</th><th>BL Date</th><th>POL</th><th>POD</th><th>Status</th></tr></thead>
           <tbody>
-            <tr><td class="mono ta fw6">SH4</td><td class="mono">MAER232</td><td class="mono f10">SC-LOT-001</td><td class="f11 tg">Copper MillBerry</td><td class="mono tg fw6">27.5</td><td class="mono">2026-01-15</td><td class="f10">Jebel Ali</td><td class="f10">Nhava Sheva</td><td><span class="badge bd-ship">IN TRANSIT</span></td></tr>
-            <tr><td class="mono ta fw6">SH5</td><td class="mono">MAER233</td><td class="mono f10">SC-LOT-001</td><td class="f11 tg">Copper MillBerry</td><td class="mono tg fw6">28.75</td><td class="mono">2026-01-15</td><td class="f10">Jebel Ali</td><td class="f10">Nhava Sheva</td><td><span class="badge bd-ship">IN TRANSIT</span></td></tr>
+            
+            
           </tbody></table>
           <div class="fg mt12">
-            <div class="f"><div class="fl">SC Quantity</div><div class="fc mono">100 MT</div></div>
-            <div class="f"><div class="fl">Delivered (MillBerry only)</div><div class="fc mono tg">56.25 MT</div></div>
-            <div class="f"><div class="fl">Outstanding</div><div class="fc mono ta2">43.75 MT — pending sourcing</div></div>
+            <div class="f"><div class="fl">SC Quantity</div><div class="fc mono">—</div></div>
+            <div class="f"><div class="fl">Delivered (MillBerry only)</div><div class="fc mono tg">—</div></div>
+            <div class="f"><div class="fl">Outstanding</div><div class="fc mono ta2">—</div></div>
             <div class="f"><div class="fl">Reason for Short Delivery</div><div class="fc td">Berry received vs MillBerry contracted — Berry excluded from outbound to customer</div></div>
           </div>
         </div>
@@ -2168,10 +2168,10 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Vessel Name</div><input type="text" class="fi" id="log-vessel-name" placeholder="e.g. MV Pacific Star"></div>
           <div class="f"><div class="fl">Vessel IMO No.</div><input type="text" class="fi" placeholder="IMO tracking reference"></div>
           <div class="f"><div class="fl">Shipping Line / Carrier</div><input type="text" class="fi" id="new-log-carrier" placeholder="e.g. Maersk, MSC, CMA CGM"></div>
-          <div class="f"><div class="fl">Port of Loading (POL) <span class="req">*</span></div><input type="text" class="fi" value="Shanghai, CN"></div>
-          <div class="f"><div class="fl">POL Country / Region</div><input type="text" class="fi" value="China / Asia-Pacific"></div>
-          <div class="f"><div class="fl">Port of Discharge (POD) <span class="req">*</span></div><input type="text" class="fi" value="Nhava Sheva, IN"></div>
-          <div class="f"><div class="fl">POD Country / Region</div><input type="text" class="fi" value="India / South Asia"></div>
+          <div class="f"><div class="fl">Port of Loading (POL) <span class="req">*</span></div><input type="text" class="fi" placeholder="e.g. Shanghai, CN"></div>
+          <div class="f"><div class="fl">POL Country / Region</div><input type="text" class="fi" placeholder="e.g. China / Asia-Pacific"></div>
+          <div class="f"><div class="fl">Port of Discharge (POD) <span class="req">*</span></div><input type="text" class="fi" placeholder="e.g. Nhava Sheva, IN"></div>
+          <div class="f"><div class="fl">POD Country / Region</div><input type="text" class="fi" placeholder="e.g. India / South Asia"></div>
           <div class="f"><div class="fl">Transhipment Port</div><input type="text" class="fi" placeholder="If applicable"></div>
           <div class="f"><div class="fl">Incoterms</div><select class="fs"><option>CIF</option><option>FOB</option><option>CFR</option><option>DDP</option><option>EXW</option></select></div>
         </div></div>
@@ -2256,36 +2256,9 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
         <div class="cbf"><table class="dt">
           <thead><tr><th>Shipment Lot</th><th>Container No.</th><th>Contract</th><th>Contract Lot</th><th>Material</th><th>BL Qty (MT)</th><th>Packing</th><th>Container Type</th><th>POL</th><th>Vessel</th><th>BL Date</th><th>ETD</th><th>ETA</th><th>Docs Received</th><th>receipt_status (shipments)</th><th></th></tr></thead>
           <tbody>
-            <tr style="cursor:pointer" onclick="openTransitDetail('SH1')">
-              <td class="mono ta fw6">SH1</td><td class="mono">—</td><td class="mono">PC-2026-001</td>
-              <td class="mono f10">—</td><td class="f11">Copper MillBerry</td>
-              <td class="mono fw6">24</td><td class="f10">Bags</td><td class="f10">20FT</td>
-              <td class="f10">Dar es Salaam</td><td class="f10">—</td>
-              <td class="mono ta2">2026-04-18</td><td class="mono">2026-04-15</td><td class="mono">2026-05-02</td>
-              <td><span class="badge bd-confirmed">YES</span></td>
-              <td><span class="badge bd-ship">—</span></td>
-              <td><button class="btn bxs bg" onclick="event.stopPropagation();openTransitDetail('SH1')">Open</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openTransitDetail('SH2')">
-              <td class="mono ta fw6">SH2</td><td class="mono">KMTC122</td><td class="mono">PC-2026-001</td>
-              <td class="mono f10">—</td><td class="f11">Copper MillBerry</td>
-              <td class="mono fw6">25</td><td class="f10">Bags</td><td class="f10">20FT</td>
-              <td class="f10">Dar es Salaam</td><td class="f10">—</td>
-              <td class="mono ta2">2026-04-18</td><td class="mono">2026-04-15</td><td class="mono">2026-05-02</td>
-              <td><span class="badge bd-confirmed">YES</span></td>
-              <td><span class="badge bd-ship">—</span></td>
-              <td><button class="btn bxs bg">Open</button></td>
-            </tr>
-            <tr style="cursor:pointer" onclick="openTransitDetail('SH3')">
-              <td class="mono ta fw6">SH3</td><td class="mono">KMTC123</td><td class="mono">PC-2026-001</td>
-              <td class="mono f10">—</td><td class="f11">Copper MillBerry</td>
-              <td class="mono fw6">26</td><td class="f10">Bags</td><td class="f10">20FT</td>
-              <td class="f10">Dar es Salaam</td><td class="f10">—</td>
-              <td class="mono ta2">2026-04-18</td><td class="mono">2026-04-15</td><td class="mono">2026-05-02</td>
-              <td><span class="badge bd-draft">NO</span></td>
-              <td><span class="badge bd-ship">—</span></td>
-              <td><button class="btn bxs bg">Open</button></td>
-            </tr>
+            
+            
+            
           </tbody>
         </table></div>
       </div>
@@ -2301,7 +2274,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ft stt" data-tab="st-attach">Attachments</div>
         </div>
         <div id="st-gen" class="ftc active"><div class="fg">
-          <div class="f"><div class="fl">Shipment Lot No.</div><div class="fc">SH1</div></div>
+          <div class="f"><div class="fl">Shipment Lot No.</div><div class="fc">—</div></div>
           <div class="f"><div class="fl">Container No.</div><div class="fc mono">—</div></div>
           <div class="f"><div class="fl">Seal No.</div><input type="text" class="fi" placeholder="Seal number on container"></div>
           <div class="f"><div class="fl">Container Size</div><select class="fs"><option>20FT</option><option>40FT</option><option>40HC</option></select></div>
@@ -2343,7 +2316,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bi mb12"><span>ℹ</span>Lots registered at Stage 1 match the packing list. Actual material/qty may differ and will be updated at Stage 3 (GRN) after yard segregation.</div>
           <table class="lt"><thead><tr><th>Lot No.</th><th>Expected Material</th><th>BL Qty (MT)</th><th>Gross Wt</th><th>Bundle Count</th><th>Ingot Size</th><th>Lot Status</th><th>Hedge Ref</th></tr></thead>
           <tbody>
-            <tr><td class="mono f10 ta fw6">SH1-L01</td><td class="f11">Copper MillBerry</td><td class="mono">24</td><td class="mono">26.2 MT</td><td class="mono">24</td><td class="f10">25kg/ingot · 1MT bundles</td><td><span class="badge bd-ship">IN_TRANSIT</span></td><td><input type="text" class="fi" style="width:90px;font-size:10px" placeholder="—"></td></tr>
+            
           </tbody></table>
           <div class="lar"><button class="btn bg bsm" onclick="toast('Lot','New lot added to container','info')">+ Add Lot</button></div>
         </div>
@@ -2468,12 +2441,12 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="lar"><button class="btn bg bsm" onclick="addPRQCLine()">+ Add Element</button></div>
           <div class="divl mt12">payable_quantity Calculation</div>
           <div class="fg">
-            <div class="f"><div class="fl">gross_quantity (wet weight)</div><div class="fc mono">24 MT</div></div>
+            <div class="f"><div class="fl">gross_quantity (wet weight)</div><div class="fc mono">—</div></div>
             <div class="f"><div class="fl">Moisture % Actual</div><div class="fc mono ta2">9.2% — above 8% spec</div></div>
             <div class="f"><div class="fl">dry_quantity = gross × (1 − moisture%)</div><div class="fc mono">24 × (1−9.2%) = 21.792 dmt</div></div>
             <div class="f"><div class="fl">Payable Grade (Cu % − 1% deduction)</div><div class="fc mono">28.5% − 1% = 27.5%</div></div>
             <div class="f"><div class="fl">payable_quantity = dry × payable grade</div><div class="fc tg fw7">21.792 × 27.5% = 5.993 MT Cu</div></div>
-            <div class="f"><div class="fl">→ Feeds into Pricing Engine</div><div class="fc ta">5.993 MT × provisional price</div></div>
+            <div class="f"><div class="fl">→ Feeds into Pricing Engine</div><div class="fc ta">—</div></div>
           </div>
         </div>
         <div id="pr-attach" class="ftc hidden">
@@ -2691,7 +2664,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Pricing Item / Benchmark</div><select class="fs"><option>LME Copper Cathode Grade A (LME-CU)</option><option>LME Lead (LME-PB)</option><option>LME Tin (LME-SN)</option><option>Brent ICE (BRENT)</option><option>Platts Dubai (PLATTS-DUBAI)</option></select></div>
             <div class="f"><div class="fl">Exchange</div><select class="fs"><option>LME</option><option>CME</option><option>ICE</option></select></div>
             <div class="f"><div class="fl">Reporting Agency</div><select class="fs"><option>LME (same as exchange)</option><option>Platts (separate reporting agency)</option><option>Argus</option><option>Bloomberg</option></select></div>
-            <div class="f"><div class="fl">Instrument Code</div><input type="text" class="fi" value="LME-CU-PROMPT" placeholder="As per reporting agency"></div>
+            <div class="f"><div class="fl">Instrument Code</div><input type="text" class="fi" placeholder="e.g. LME-CU-PROMPT" placeholder="As per reporting agency"></div>
             <div class="f"><div class="fl">Index % (metal content in source item)</div><input type="number" class="fi" id="formula-pct" value="91" oninput="recalcPricing()" step="0.01"></div>
             <div class="f"><div class="fl">Payable / Recovery %</div><input type="number" class="fi" id="payable-pct" value="91" step="0.01"></div>
             <div class="f"><div class="fl">Premium / Discount (USD/MT)</div><input type="number" class="fi" id="prem-disc" value="0" step="0.01"></div>
@@ -2727,7 +2700,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">QP End Date <span class="req">*</span></div><input type="date" class="fi" ></div>
             <div class="f"><div class="fl">Pricing Option</div><select class="fs"><option>SUPPLIER (supplier fixes date)</option><option>LONGER (buyer fixes date)</option><option>N/A (average)</option></select></div>
             <div class="f"><div class="fl">Reference Price (from source master)</div><div class="fc ta fw7" id="ref-price-display">9,850 (Cash Ask)</div></div>
-            <div class="f"><div class="fl">Derived MT Exposure (Qty × Index %)</div><div class="fc tg fw7">91.00 MT — hedge sizing basis</div></div>
+            <div class="f"><div class="fl">Derived MT Exposure (Qty × Index %)</div><div class="fc tg fw7">—</div></div>
             <div class="f"><div class="fl">Net Provisional Price (Ref × Payable % ± Prem/Disc)</div><div class="fc ta fw7" id="prov-price-display">—</div></div>
             <div class="f"><div class="fl">Running QP Average</div><div class="fc ta">9,441 (10/22 days)</div></div>
             <div class="f"><div class="fl">FX Rate</div><input type="number" class="fi" value="1.000" step="0.001"></div>
