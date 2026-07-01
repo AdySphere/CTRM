@@ -6548,6 +6548,129 @@ async function loadQPDealOptions() {
 }
 
 
+
+// ── REACTIVE FIELD FUNCTIONS ──────────────────────────────────
+
+// Enquiry — Direction change (BUY/SELL/BACK-TO-BACK): show/hide direction-specific fields
+function onEnqDir() {
+  const sel = document.querySelector('#page-enquiry select[onchange*="onEnqDir"]') ||
+              document.querySelector('select[onchange="onEnqDir()"]');
+  if (!sel) return;
+  const val = sel.value;
+  // Show hedge section only for BUY and SELL, not BACK-TO-BACK
+  document.querySelectorAll('.enq-hedge-row').forEach(function(el){
+    el.style.display = val === 'BACK-TO-BACK' ? 'none' : '';
+  });
+}
+
+// Enquiry — Pricing Type change: show/hide pricing-specific fields
+function onEnqPricingType() {
+  const sel = document.querySelector('select[onchange="onEnqPricingType()"]');
+  if (!sel) return;
+  const val = sel.value;
+  const fixedRows = document.querySelectorAll('.enq-fixed-price-row');
+  const benchmarkRows = document.querySelectorAll('.enq-benchmark-row');
+  fixedRows.forEach(function(el){ el.style.display = val === 'FIXED' ? '' : 'none'; });
+  benchmarkRows.forEach(function(el){ el.style.display = (val === 'BENCHMARK' || val === 'QP-AVERAGE') ? '' : 'none'; });
+}
+
+// Enquiry — Hedge Required toggle: show/hide hedge type field
+function onHedge() {
+  const sel = document.querySelector('select[onchange="onHedge()"]');
+  if (!sel) return;
+  const nextRow = sel.closest('.f')?.nextElementSibling;
+  if (nextRow) nextRow.style.display = sel.value === 'YES' ? '' : 'none';
+}
+
+// Provisional Receipt — actual item code change: auto-fill related fields
+function onActualItemChange(sel) {
+  // Update any derived display fields based on the selected item
+  if (!sel) return;
+  const row = sel.closest('tr');
+  if (!row) return;
+  // Could auto-fill grade based on item code in future — for now just log
+  console.log('Item changed to:', sel.value);
+}
+
+// PR / Assay / QC — recalculate payable quantity from assay element values
+function recalcPayable() {
+  // Find gross wet weight
+  const grossInputs = document.querySelectorAll('input[oninput="recalcPayable()"]');
+  let grossWet = 0;
+  grossInputs.forEach(function(inp) {
+    const label = inp.closest('.f')?.querySelector('.fl')?.textContent || '';
+    if (label.toLowerCase().includes('gross wet')) grossWet = parseFloat(inp.value) || 0;
+  });
+  if (!grossWet) return;
+
+  // Find Cu actual value (main payable element) from assay table
+  let cuPct = null;
+  document.querySelectorAll('#assay-elements-body tr, #pr-qc-tbody tr').forEach(function(tr) {
+    const cells = tr.querySelectorAll('td');
+    if (!cells.length) return;
+    const elem = cells[0]?.textContent?.trim().toUpperCase();
+    if (elem === 'CU' || elem === 'PB' || elem === 'ZN') {
+      const actualInput = cells[5]?.querySelector('input');
+      if (actualInput) cuPct = parseFloat(actualInput.value) || null;
+    }
+  });
+
+  // Update payable qty display fields
+  const payableFields = document.querySelectorAll('[id*="payable"],[id*="Payable"]');
+  payableFields.forEach(function(el) {
+    if (cuPct && grossWet) {
+      const payable = (cuPct / 100) * grossWet;
+      if (el.tagName === 'INPUT') el.value = payable.toFixed(3);
+      else el.textContent = payable.toFixed(3) + ' MT';
+    }
+  });
+}
+
+// Pricing / Market data — price source change: update labels/placeholders
+function onPriceSourceChange() {
+  const sel = document.querySelector('select[onchange="onPriceSourceChange()"]');
+  if (!sel) return;
+  // Could update benchmark labels based on source — no-op for now, field is informational
+  console.log('Price source changed to:', sel.value);
+}
+
+// Forward Curve — calculate mid from bid/ask inputs
+function calcForwardMid(inputEl) {
+  if (!inputEl) return;
+  const row = inputEl.closest('tr');
+  if (!row) return;
+  const inputs = row.querySelectorAll('input[type="number"]');
+  if (inputs.length < 2) return;
+  const bid = parseFloat(inputs[0].value) || 0;
+  const ask = parseFloat(inputs[1].value) || 0;
+  if (bid && ask) {
+    const mid = ((bid + ask) / 2).toFixed(2);
+    // Find the mid cell (td with id fc-mid-* or 3rd number-ish cell)
+    const midCell = row.querySelector('[id*="fc-mid"], td:nth-child(6)');
+    if (midCell && !midCell.querySelector('input')) midCell.textContent = mid;
+    else if (midCell && midCell.querySelector('input')) midCell.querySelector('input').value = mid;
+  }
+}
+
+// Assay — calculate Sn adjustment (tin deduction based on % content)
+function calcSnAdj() {
+  // Sn deduction: typically a per-unit penalty applied to payable qty when Sn > threshold
+  const snRows = document.querySelectorAll('#assay-elements-body tr, #pr-qc-tbody tr');
+  let snPct = 0;
+  snRows.forEach(function(tr) {
+    const cells = tr.querySelectorAll('td');
+    const elem = (cells[0]?.textContent || cells[0]?.querySelector('input')?.value || '').trim().toUpperCase();
+    if (elem === 'SN') {
+      const actualInput = cells[5]?.querySelector('input');
+      if (actualInput) snPct = parseFloat(actualInput.value) || 0;
+    }
+  });
+  // Update any Sn adj display cells
+  document.querySelectorAll('[id*="sn-adj"],[data-sn-adj]').forEach(function(el) {
+    el.textContent = snPct > 0 ? '−' + (snPct * 100).toFixed(4) + '%' : '—';
+  });
+}
+
 // ── MISSING BUTTON FUNCTIONS ─────────────────────────────────
 
 // Provisional Receipt — add a new receipt line row
