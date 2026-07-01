@@ -3153,6 +3153,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <div class="page" id="page-provisional-invoice">
       <div class="ph"><div class="ph-l"><div class="pt">Provisional Invoice</div><div class="ps">Based on provisional price · 90% payment trigger · Sent to buyer after BL date · Adjusted when QP closes</div></div>
         <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Provisional Invoice')">Print</button><button class="export-btn" onclick="exportToExcel('prov-inv-table','Provisional_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('PROVISIONAL')">＋ Create Invoice</button></div></div></div>
+      <div class="fg mb14" style="max-width:480px">
+        <div class="f"><div class="fl">View Invoice for Deal</div>
+          <select class="fs" id="prov-inv-deal-sel" onchange="onProvInvDealChange(this.value)">
+            <option value="">— Select a deal —</option>
+          </select>
+        </div>
+      </div>
+      <div id="prov-inv-empty" class="ban bi" style="display:none"><span>ℹ</span>Select a deal above to view its provisional invoice, or click + Create Invoice to generate one.</div>
       <div class="sr">
         <div class="sc"><div class="scl">Draft</div><div class="scv tdim">1</div></div>
         <div class="sc"><div class="scl">Sent</div><div class="scv ta2">1</div></div>
@@ -3231,6 +3239,14 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
     <div class="page" id="page-final-invoice">
       <div class="ph"><div class="ph-l"><div class="pt">Final Invoice</div><div class="ps">QP window closed · Final price locked · Delta note vs provisional · 10% balance payment trigger</div></div>
         <div class="ph-r"><div class="br-row g7"><button class="print-btn" onclick="printPage('Final Invoice')">Print</button><button class="export-btn" onclick="exportToExcel('final-inv-table','Final_Invoice')">⬇ Excel</button><button class="btn bp" onclick="openCreateInvoice('FINAL')">＋ Create Final Invoice</button></div></div></div>
+      <div class="fg mb14" style="max-width:480px">
+        <div class="f"><div class="fl">View Invoice for Deal</div>
+          <select class="fs" id="fin-inv-deal-sel" onchange="onFinInvDealChange(this.value)">
+            <option value="">— Select a deal —</option>
+          </select>
+        </div>
+      </div>
+      <div id="fin-inv-empty" class="ban bi" style="display:none"><span>ℹ</span>Select a deal above to view its final invoice, or click + Create Final Invoice to generate one.</div>
       <div class="card">
         <div class="ch"><div class="ct">Final Invoice — FINV-2026-001</div><div class="cs">SC-2026-001 · QP closed May 31 · Final avg $9,441 (buy) / $10,218 (sell)</div></div>
         <div class="fts">
@@ -3960,8 +3976,37 @@ async function renderHedgeCard() {
 }
 
 // ── INVOICE — reads from /api/invoices/compute ───────────────
+async function loadInvoiceDealSelectors() {
+  try {
+    const res = await fetch(API_BASE + '/api/deals');
+    const data = await res.json();
+    const deals = (data.data || []).filter(function(d){ return d.commodity_code; });
+    const opts = '<option value="">— Select a deal —</option>' + deals.map(function(d){
+      return '<option value="'+d.deal_no+'">'+d.deal_no+' — '+(d.commodity_name||d.commodity_code)+' · '+(d.customer_name||d.supplier_name||'—')+'</option>';
+    }).join('');
+    const provSel = document.getElementById('prov-inv-deal-sel');
+    const finSel = document.getElementById('fin-inv-deal-sel');
+    if (provSel) provSel.innerHTML = opts;
+    if (finSel) finSel.innerHTML = opts;
+  } catch(e) { console.warn('loadInvoiceDealSelectors:', e); }
+}
+
+async function onProvInvDealChange(dealId) {
+  await renderProvInvoice(dealId);
+}
+
+async function onFinInvDealChange(dealId) {
+  await renderFinalInvoice(dealId);
+}
+
 async function renderProvInvoice(dealId) {
-  dealId = dealId || 'DEAL456';
+  if (!dealId) {
+    const empty = document.getElementById('prov-inv-empty');
+    if (empty) empty.style.display = '';
+    return;
+  }
+  const empty = document.getElementById('prov-inv-empty');
+  if (empty) empty.style.display = 'none';
   const data = await api('/api/invoices/compute', {
     method: 'POST',
     body: JSON.stringify({ deal_no: dealId, invoice_type: 'PROVISIONAL' }),
@@ -3981,7 +4026,13 @@ async function renderProvInvoice(dealId) {
 }
 
 async function renderFinalInvoice(dealId) {
-  dealId = dealId || 'DEAL456';
+  if (!dealId) {
+    const empty = document.getElementById('fin-inv-empty');
+    if (empty) empty.style.display = '';
+    return;
+  }
+  const empty = document.getElementById('fin-inv-empty');
+  if (empty) empty.style.display = 'none';
   const data = await api('/api/invoices/compute', {
     method: 'POST',
     body: JSON.stringify({ deal_no: dealId, invoice_type: 'FINAL' }),
@@ -6516,8 +6567,8 @@ function afterNav(pageId) {
     else if (pageId === 'purchase-orders') loadOrdersList('PO');
     else if (pageId === 'sales-orders') loadOrdersList('SO');
     else if (pageId === 'hedge') renderHedgeCard();
-    else if (pageId === 'provisional-invoice') renderProvInvoice();
-    else if (pageId === 'final-invoice') renderFinalInvoice();
+    else if (pageId === 'provisional-invoice') { loadInvoiceDealSelectors(); renderProvInvoice(); }
+    else if (pageId === 'final-invoice') { loadInvoiceDealSelectors(); renderFinalInvoice(); }
   }, 80);
 }
 
