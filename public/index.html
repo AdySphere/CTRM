@@ -1299,7 +1299,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Quantity</div>
             <div style="display:flex;gap:6px;align-items:center">
               <input type="number" class="fi" id="pcd-qty" step="0.001" style="flex:1">
-              <span class="fc mono" id="pcd-qty-uom">MT</span>
+              <select class="fs" id="pcd-qty-uom" style="width:90px"><option value="MT">MT</option><option value="BBL">BBL</option><option value="KG">KG</option><option value="LB">LB</option><option value="TOZ">TOZ</option><option value="BU">BU</option><option value="MMBTU">MMBTU</option><option value="GAL">GAL</option></select>
             </div>
           </div>
           <div class="f"><div class="fl">Incoterms</div><input type="text" class="fi" id="pcd-incoterms" placeholder="e.g. CIF, FOB, CFR"></div>
@@ -1555,7 +1555,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="ban bw mb12"><span>⚠</span>Rollover applies when counterparty misses fixing window. Each missed period = one append-only row. Rate basis: PER-MT, FIXED-TOTAL (÷ contract qty), or PERCENTAGE (× provisional price). All resolve to per-MT for accounting.</div>
           <div class="fg mb12">
             <div class="f"><div class="fl">Rollover Applicable</div><select class="fs" id="pcd-rollover-applicable"><option value="true">YES</option><option value="false">NO</option></select></div>
-            <div class="f"><div class="fl">Fixing Trigger Date (QP End)</div><input type="date" class="fi" id="pcd-rollover-start" readonly></div>
+            <div class="f"><div class="fl">Fixing Trigger Date (QP End)</div><input type="date" class="fi" id="pcd-rollover-start"></div>
             <div class="f"><div class="fl">Fixing Frequency</div><select class="fs"><option>MONTHLY</option><option>WEEKLY</option><option>CUSTOM</option></select></div>
             <div class="f"><div class="fl">Fixing Rule</div><select class="fs"><option>CALENDAR-MONTH</option><option>BL-MONTH</option><option>CUSTOM-PERIOD</option></select></div>
             <div class="f"><div class="fl">Rate Basis</div><select class="fs" id="rollover-rate-basis" onchange="toggleRolloverRateBasis()"><option value="PER-MT">PER-MT (USD/MT/period)</option><option value="FIXED-TOTAL">FIXED-TOTAL (total ÷ contract qty)</option><option value="PERCENTAGE">PERCENTAGE (% of provisional price)</option></select></div>
@@ -1676,7 +1676,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
           <div class="f"><div class="fl">Quantity</div>
             <div style="display:flex;gap:6px;align-items:center">
               <input type="number" class="fi" id="scd-qty" step="0.001" style="flex:1">
-              <span class="fc mono" id="scd-qty-uom">MT</span>
+              <select class="fs" id="scd-qty-uom" style="width:90px"><option value="MT">MT</option><option value="BBL">BBL</option><option value="KG">KG</option><option value="LB">LB</option><option value="TOZ">TOZ</option><option value="BU">BU</option><option value="MMBTU">MMBTU</option><option value="GAL">GAL</option></select>
             </div>
           </div>
           <div class="f"><div class="fl">Incoterms</div><input type="text" class="fi" id="scd-incoterms" placeholder="e.g. CIF, FOB, CFR"></div>
@@ -2484,7 +2484,7 @@ body.light-mode .modal-ft{background:var(--card-bg);border-top-color:var(--borde
             <div class="f"><div class="fl">Linked Contract</div><div class="fc tg fw7" id="prd-contract">—</div></div>
             <div class="f"><div class="fl">receipt_date <span class="req">*</span></div><input type="date" class="fi" id="prd-receipt-date"></div>
             <div class="f"><div class="fl">received_quantity <span class="req">*</span></div><input type="number" class="fi" id="prd-qty" step="0.001"></div>
-            <div class="f"><div class="fl">uom</div><div class="fc" id="prd-uom">MT</div></div>
+            <div class="f"><div class="fl">UOM</div><select class="fs" id="prd-uom"><option value="MT">MT</option><option value="BBL">BBL</option><option value="KG">KG</option><option value="LB">LB</option><option value="TOZ">TOZ</option><option value="BU">BU</option></select></div>
             <div class="f"><div class="fl">warehouse_location <span class="req">*</span></div><select class="fs" id="prd-warehouse"><option value="">— Select —</option></select></div>
             <div class="f"><div class="fl">receipt_status</div><select class="fs" id="prd-status"><option>DRAFT</option><option>PENDING_QC</option><option>PROVISIONAL</option><option>FINALIZED</option><option>REJECTED</option></select></div>
             <div class="f"><div class="fl">Lots Received</div><div class="fc mono ta" id="prd-lot-count">—</div></div>
@@ -10639,7 +10639,7 @@ async function loadChargeLines(contractId, prefix) {
         + '<td class="mono f10 fw6">'+(cl.computed_amount!=null?parseFloat(cl.computed_amount).toLocaleString():'—')+'</td>'
         + '<td><input type="number" class="fi" style="font-size:10px;width:80px" step="0.01" value="'+(cl.actual_amount!=null?cl.actual_amount:'')+'" placeholder="—" data-charge-id="'+cl.id+'" data-contract-id="'+contractId+'" onblur="onChargeActualAmountChange(this)"></td>'
         + '<td class="mono f10 fw6 '+varianceCls+'">'+varianceText+'</td>'
-        + '<td class="f10">'+(cl.accrual_trigger_event||'—')+'</td>'
+        + '<td>'        + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeTrigger(this.dataset.chargeId, this.value, this.dataset.prefix)">'        + '<option value=""'+((!cl.accrual_trigger_event)?' selected':'')+'>— None —</option>'        + '<option value="contract_date"'+(cl.accrual_trigger_event==='contract_date'?' selected':'')+'>Contract Date</option>'        + '<option value="bl_date"'+(cl.accrual_trigger_event==='bl_date'?' selected':'')+'>BL Date</option>'        + '<option value="eta_date"'+(cl.accrual_trigger_event==='eta_date'?' selected':'')+'>ETA Date</option>'        + '<option value="pr_date"'+(cl.accrual_trigger_event==='pr_date'?' selected':'')+'>PR Date</option>'        + '<option value="grn_date"'+(cl.accrual_trigger_event==='grn_date'?' selected':'')+'>GRN Date</option>'        + '<option value="assay_date"'+(cl.accrual_trigger_event==='assay_date'?' selected':'')+'>Assay Date</option>'        + '<option value="qp_close_date"'+(cl.accrual_trigger_event==='qp_close_date'?' selected':'')+'>QP Close Date</option>'        + '</select>'        + '</td>'
         + '<td>'
           + '<select class="fs" style="font-size:9px" data-charge-id="'+cl.id+'" data-prefix="'+prefix+'" onchange="updateChargeAccrual(this.dataset.chargeId, this.value, this.dataset.prefix)">'
             + '<option value="NOT_ACCRUED"'+(cl.accrual_status==='NOT_ACCRUED'?' selected':'')+'>Pending</option>'
@@ -10685,6 +10685,20 @@ async function updateChargeAccrual(lineId, status, prefix) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     toast('Updated', 'Accrual status set to ' + status, 'success');
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
+async function updateChargeTrigger(lineId, triggerEvent, prefix) {
+  const c = window._currentContract;
+  if (!c) return;
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + c.id + '/charge-lines/' + lineId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ accrual_trigger_event: triggerEvent || null })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    toast('Updated', 'Accrual trigger updated', 'success');
   } catch(e) { toast('Error', e.message, 'error'); }
 }
 
@@ -11361,7 +11375,7 @@ async function loadQPListView() {
       if (r.group === 'ROLLOVER_REQUIRED') {
         actionBtn = '<button class="btn bxs bd" data-contract-id="'+r.id+'" onclick="openQPTab2ForContract(this.dataset.contractId, \'manage\')">Manage →</button>';
       } else if (r.group === 'QP_OPEN') {
-        actionBtn = '<button class="btn bxs bp" data-contract-id="'+r.id+'" onclick="openQPTab2ForContract(this.dataset.contractId, \'fix\')">Fix →</button>';
+        actionBtn = '<button class="btn bxs bp" data-contract-id="'+r.id+'" onclick="openFixTodayDirectly(this.dataset.contractId)">★ Fix</button>';
       } else if (r.group === 'FULLY_PRICED') {
         actionBtn = '<button class="btn bxs bg" data-contract-id="'+r.id+'" onclick="openQPTab2ForContract(this.dataset.contractId, \'view\')">View</button>';
       } else {
@@ -11391,6 +11405,34 @@ async function loadQPListView() {
 // Opens the EXISTING QP detail screen (Tab 2), pre-loaded with the clicked contract.
 // Per the spec: 'No changes to the existing screen.' Tab 2's label updates to show the
 // contract number, as shown in the mockup.
+// Direct Fix Today from QP list — opens modal without switching to Tab 2
+async function openFixTodayDirectly(contractId) {
+  try {
+    const res = await fetch(API_BASE + '/api/contracts/' + contractId);
+    const data = await res.json();
+    if (!data.success) throw new Error('Contract not found');
+    const contract = data.data;
+    const dealNo = contract.deal_id
+      ? (await (await fetch(API_BASE + '/api/deals/' + contract.deal_id)).json()).data?.deal_no
+      : contract.contract_no;
+    const sel = document.getElementById('qp-deal-select');
+    if (sel && dealNo) {
+      let found = false;
+      for (const opt of sel.options) {
+        if (opt.value === dealNo || opt.text.startsWith(dealNo)) { sel.value = opt.value; found = true; break; }
+      }
+      if (!found) {
+        const opt = document.createElement('option');
+        opt.value = dealNo;
+        opt.text = dealNo + ' — ' + (contract.commodity_name || contract.commodity_code) + ' (' + (contract.contract_type === 'PC' ? 'Buy' : 'Sell') + ')';
+        sel.appendChild(opt);
+        sel.value = opt.value;
+      }
+    }
+    await fixToday(dealNo);
+  } catch(e) { toast('Error', e.message, 'error'); }
+}
+
 async function openQPTab2ForContract(contractId, mode) {
   try {
     const res = await fetch(API_BASE + '/api/contracts/' + contractId);
