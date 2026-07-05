@@ -7,29 +7,17 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ── GLOBAL PROCESS STABILITY ──────────────────────────────────
-// Prevent any unhandled error or rejected promise from crashing
-// the Node process — log it and keep running instead.
+// Prevent unhandled errors from crashing the process
 process.on('uncaughtException', (err) => {
-  console.error('[uncaughtException] Process kept alive:', err.message, err.stack);
+  console.error('[uncaughtException]', err.message);
 });
 process.on('unhandledRejection', (reason) => {
-  console.error('[unhandledRejection] Process kept alive:', reason);
+  console.error('[unhandledRejection]', reason);
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json());
-
-// ── REQUEST TIMEOUT ───────────────────────────────────────────
-// Kill requests that hang for more than 30s so they can't pile up
-app.use((req, res, next) => {
-  res.setTimeout(30000, () => {
-    console.warn('[timeout] Request timed out:', req.method, req.path);
-    res.status(503).json({ error: 'Request timed out' });
-  });
-  next();
-});
 
 const { dealsRouter, logRouter, conRouter, fixRouter, hedgeRouter, allocRouter, ordersRouter, enquiriesRouter, quotationsRouter, buyLegsRouter, dealEnqRouter, adjLinesRouter, penaltiesRouter, rfqRouter, quoteResponseRouter, feasibilityRouter, budgetActualRouter, searchRouter, auditRouter, creditRouter, goodsReceiptRouter, qcResultsRouter, lotsRouter, adjCodesRouter, invoiceAdjRouter, pricingBenchmarksRouter, dateEventMasterRouter, currencyMasterRouter, uomMasterRouter, taxCodeRouter, dealFeasibilityRouter } = require('./routes/deals');
 const { invoiceRouter, masterRouter } = require('./routes/invoices');
@@ -56,7 +44,7 @@ app.use('/api/invoice-adj-lines', invoiceAdjRouter);
 app.use('/api/pricing-benchmarks', pricingBenchmarksRouter);
 app.use('/api/date-event-master', dateEventMasterRouter);
 app.use('/api/master/currencies', currencyMasterRouter);
-app.use('/api/master/uom', uomMasterRouter);
+app.use('/api/master/uom',      uomMasterRouter);
 app.use('/api/master/tax-codes', taxCodeRouter);
 app.use('/api/deal-feasibility', dealFeasibilityRouter);
 app.use('/api/penalties',       penaltiesRouter);
@@ -76,7 +64,7 @@ app.get('/api/health', async (req, res) => {
   const { query } = require('./db');
   try {
     await query('SELECT 1');
-    res.json({ ok: true, status: 'ok', db: 'connected', time: new Date().toISOString() });
+    res.json({ ok: true, status: 'ok', db: 'connected', ts: Date.now() });
   } catch (err) {
     res.status(500).json({ ok: false, status: 'error', db: 'disconnected', error: err.message });
   }
@@ -86,9 +74,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
 app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, '../public/setup.html')));
 
-// ── GLOBAL EXPRESS ERROR HANDLER ─────────────────────────────
 app.use((err, req, res, next) => {
-  console.error('[express error]', err.stack);
+  console.error(err.stack);
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
